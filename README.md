@@ -72,3 +72,5 @@ Of course for frontend there should be some type of agreed upon folders, same go
 ## Um miscleaneous
 
 umm kuberneetes, devops, ci/cd seeding the database all of that securely and not prematurely.
+
+I think I will use Figma and start learning some UI/UX I guess too.
