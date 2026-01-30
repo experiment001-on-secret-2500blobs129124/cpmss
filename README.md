@@ -74,3 +74,7 @@ Of course for frontend there should be some type of agreed upon folders, same go
 umm kuberneetes, devops, ci/cd seeding the database all of that securely and not prematurely.
 
 I think I will use Figma and start learning some UI/UX I guess too.
+
+## Regarding api testing and autoatmion and all of that
+
+and what is the meaning of legacy scripting and api testing and seeding it through layers is all of that in it or what? like you know how building an intensive database is like a simulation project because of all the phases it has to go throguh because all of the triggers and constraints. like I'm still confused do I just use yaaki, what will happen if someone else uses postman, is bruno good, but it's bad because of the pro plan, same goes with like is apidog good too, what requires offline connection no telemgerny and feels like going to a future direction.
