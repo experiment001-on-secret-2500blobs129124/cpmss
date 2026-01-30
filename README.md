@@ -3,6 +3,8 @@
 This will be my first ever big data intensive project,
 that revolves around a real application that could be solved to orgs.
 
+This is kinda of Brainstorming my README.md or I could say Plan.md
+
 ## Language
 
 Since this Project is kinda for production and companies it should be stable, hence
@@ -50,3 +52,23 @@ and how peopel go around these projects
 ## Current State of the Project
 
 The Database Design has been finished it took around 2 months of work or in other words 2 weeks of very hard work.
+
+## Logging
+
+The application should be able to use a good logging thing and not just some random println or printf everywhere.
+
+## Debugging
+
+I'm not super knowing about this too but I think it should have umm some kind of good debugging tools to for just like stopping repetitive starting work, I think this is like for games to get full health and stuff but exploring the options is always a good thing
+
+## OOP and Design Patterns and Structures
+
+Of course I should emphasize about the structure and learning all about differnet styles of building whether its like os application or a fullstack applicatoin like this one, just to get the rough idea there will laways be like services if it's an os i guess and some api and
+
+## Folders and structure
+
+Of course for frontend there should be some type of agreed upon folders, same goes for backend
+
+## Um miscleaneous
+
+umm kuberneetes, devops, ci/cd seeding the database all of that securely and not prematurely.
