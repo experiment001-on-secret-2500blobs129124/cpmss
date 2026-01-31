@@ -69,7 +69,7 @@ Of course I should emphasize about the structure and learning all about differne
 
 Of course for frontend there should be some type of agreed upon folders, same goes for backend
 Do I use like feature folder structure or like the old or common way of folder structure there was a video that linked to it
-()[https://www.youtube.com/watch?v=xyxrB2Aa7KE] I don't know.
+()[https://www.youtube.com/watch?v=xyxrB2Aa7KE] I don't know, and I'm not really sure.
 
 ## Um miscleaneous
 
@@ -84,3 +84,7 @@ and what is the meaning of legacy scripting and api testing and seeding it throu
 ## More about the Execution plan.
 
 I think I will use some wireframes and figma for the dsign of everything and all the pages that I want. I think I will have to use some graphs that how the system will interact with itself
+
+I also wnat to see like what is scrum master, waterfall technique and like agile and all of that.
+
+and I also heard about mockups and lots of things, so I really want to take this README and convert it to useful knowledge like zetellkasten or something like that.
