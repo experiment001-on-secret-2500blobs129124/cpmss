@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cpmss-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: cpmss_db
+      POSTGRES_USER: cpmss
+      POSTGRES_PASSWORD: cpmss_dev
+    volumes:
+      - cpmss_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cpmss -d cpmss_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  cpmss_pgdata:
