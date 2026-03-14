@@ -59,9 +59,9 @@
 
 | Phase | Status |
 |-------|--------|
-| 0: Setup | ⬜ Not Started |
-| 1: Database | ⬜ Not Started |
-| 2: Core Features | ⬜ Not Started |
-| 3: Web UI | ⬜ Not Started |
+| 0: Setup | ✅ Done |
+| 1: Database | ✅ Done |
+| 2: Core Services | ✅ Done |
+| 3: Web UI | ✅ Done |
 | 4: Auth & Testing | ⬜ Not Started |
 | 5: Docker & CI | ⬜ Not Started |
