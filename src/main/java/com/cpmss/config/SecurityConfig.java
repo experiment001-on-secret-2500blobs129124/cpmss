@@ -10,7 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Security configuration.
- * Phase 0: permits all routes. Auth enforcement added in Phase 4.
+ * Phase 0-2: permits all routes. Auth enforcement added in Phase 4.
  */
 @Configuration
 @EnableWebSecurity
@@ -20,19 +20,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                .anyRequest().permitAll() // TODO Phase 4: lock down with .authenticated()
+                .anyRequest().permitAll()
             )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .defaultSuccessUrl("/", true)
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutSuccessUrl("/login?logout")
-                .permitAll()
-            )
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
+            .formLogin(form -> form.disable())
+            .csrf(csrf -> csrf.disable());
 
         return http.build();
     }

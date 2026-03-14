@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="error-content" class="glass-panel" style="text-align: center; padding: 60px;">
+    <div style="font-size: 72px; margin-bottom: 16px;">⚠️</div>
+    <h1 style="font-size: 24px; margin-bottom: 8px;">Something went wrong</h1>
+    <p style="color: var(--text-muted);" th:text="${message ?: 'An unexpected error occurred.'}">Error</p>
+    <a th:href="@{/}" class="btn btn-primary" style="margin-top: 24px;">← Back to Dashboard</a>
+</div>
+</body>
+</html>
