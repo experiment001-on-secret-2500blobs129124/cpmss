@@ -1,27 +1,78 @@
-# Architecture
 
-## Overview
+## Architecture Pattern: MVCS (Model-View-Controller-Service)
 
-**Hybrid approach:** Spring Boot backend serving both Thymeleaf views (HTML)
-and REST API (JSON). Same service layer, two types of controllers.
+We use a **Layered MVCS Architecture**. This is an evolution of standard MVC that splits the "Model" into two distinct layers: **Service** (Logic) and **Repository** (Data).
 
+### The High-Level Structure
+
+```mermaid
+flowchart TB
+    subgraph Presentation["Layer 1: Presentation (MVC)"]
+        direction TB
+        WebCtrl["Web Controller (@Controller)<br/>Returns: HTML"]
+        ApiCtrl["API Controller (@RestController)<br/>Returns: JSON"]
+    end
+
+    subgraph Business["Layer 2: Business Logic (Service)"]
+        Service["Service Layer (@Service)<br/>Transactional Logic"]
+    end
+
+    subgraph Data["Layer 3: Data Access (Repository)"]
+        Repo["Repository Layer (Interface)<br/>Spring Data JPA"]
+    end
+
+    DB[(PostgreSQL)]
+
+    WebCtrl --> Service
+    ApiCtrl --> Service
+    Service --> Repo
+    Repo --> DB
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  @Controller (Web)      │  @RestController (API)           │
-│  Returns: HTML views    │  Returns: JSON                   │
-├─────────────────────────┴───────────────────────────────────┤
-│                    Service Layer                            │
-│                  (business logic)                           │
-├─────────────────────────────────────────────────────────────┤
-│                   Repository Layer                          │
-│                  (database access)                          │
-└─────────────────────────────────────────────────────────────┘
+
+### The "Hidden" Layers (Real-World Architecture)
+
+Beyond the standard 3 layers, we explicitly acknowledge the "glue" that holds production apps together:
+
+```mermaid
+flowchart LR
+    Request --> Security["Security Layer<br/>(Filters/Auth)"]
+    Security --> Controller["Controllers"]
+    
+    subgraph Presentation["Presentation Zone"]
+        Controller
+        Mapper["Mapping Layer<br/>(DTO ↔ Entity)"]
+        Advice["Global Error Handling<br/>(@ControllerAdvice)"]
+    end
+
+    Controller --> Mapper
+    Controller --> Service
+    Controller -.-> Advice
+    
+    subgraph Core["Core Logic"]
+        Service["Service"]
+    end
+    
+    subgraph Persistence["Persistence"]
+        Repo["Repository"]
+    end
+
+    Service --> Repo
 ```
 
-**Why hybrid?**
-- Thymeleaf meets "all Java" requirement
-- REST API allows testing with Yaak, future mobile/Flutter apps
-- No code duplication (shared services)
+### Strict Layer Rules
+
+1.  **Presentation (Web/API):**
+    *   **NEVER** call Repositories directly.
+    *   **ALWAYS** return DTOs (API) or Views (Web), never raw Entities.
+    *   **role:** Validate input, map to DTOs, call Service.
+
+2.  **Business (Service):**
+    *   **NEVER** return HTML or HTTP specific objects (ResponseEntity).
+    *   **role:** Transactional boundaries, business rules, orchestration.
+
+3.  **Data (Repository):**
+    *   **NEVER** contain business logic.
+    *   **role:** Pure database access (CRUD).
 
 ---
 
