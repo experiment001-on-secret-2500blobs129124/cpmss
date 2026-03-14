@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>Work Orders</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1>Work Orders</h1><p>Manage maintenance and service requests</p></div>
+        <a th:href="@{/workorders/new}" class="btn btn-primary">➕ New Work Order</a>
+    </div>
+    <div class="glass-panel">
+        <table class="data-table" th:if="${!workOrders.isEmpty()}">
+            <thead><tr><th>ID</th><th>Category</th><th>Priority</th><th>Status</th><th>Scheduled</th></tr></thead>
+            <tbody>
+                <tr th:each="wo : ${workOrders}" th:onclick="|window.location='/workorders/' + '${wo.id}'|">
+                    <td><a th:href="@{/workorders/{id}(id=${wo.id})}" th:text="${#strings.abbreviate(wo.id.toString(), 12)}">ID</a></td>
+                    <td th:text="${wo.serviceCategory ?: '—'}" style="color: var(--text-secondary);">—</td>
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="${wo.priority == 'Emergency' ? 'emergency' : (wo.priority == 'High' ? 'overdue' : (wo.priority == 'Normal' ? 'pending' : 'expired'))}"
+                              th:text="${wo.priority}">Priority</span>
+                    </td>
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="${wo.jobStatus == 'Pending' ? 'pending' : (wo.jobStatus == 'Assigned' ? 'assigned' : (wo.jobStatus == 'In Progress' ? 'in-progress' : (wo.jobStatus == 'Completed' ? 'completed' : 'active')))}"
+                              th:text="${wo.jobStatus}">Status</span>
+                    </td>
+                    <td th:text="${wo.dateScheduled ?: '—'}">—</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="empty-state" th:if="${workOrders.isEmpty()}">
+            <div class="empty-state-icon">🔧</div><h3>No work orders</h3><p>Create a maintenance request.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

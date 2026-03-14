@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>People</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1>People</h1>
+            <p>Manage residents, staff, visitors, and investors</p>
+        </div>
+        <a th:href="@{/persons/new}" class="btn btn-primary">➕ Add Person</a>
+    </div>
+
+    <!-- Search -->
+    <div class="glass-panel" style="margin-bottom: 18px; padding: 14px 18px;">
+        <form th:action="@{/persons}" method="get" style="display: flex; gap: 10px;">
+            <input type="text" name="search" th:value="${search}" placeholder="Search by name..." class="form-control" style="flex: 1;">
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+
+    <div class="glass-panel">
+        <table class="data-table" th:if="${!persons.isEmpty()}">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>National ID</th>
+                    <th>Type</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="person : ${persons}" th:onclick="|window.location='/persons/' + '${person.id}'|">
+                    <td><a th:href="@{/persons/{id}(id=${person.id})}" th:text="${person.fullName}">Name</a></td>
+                    <td th:text="${person.nationalId}" style="color: var(--text-muted);">NID</td>
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="${person.personType == 'Staff' ? 'active' : (person.personType == 'Tenant' ? 'draft' : (person.personType == 'Investor' ? 'pending' : 'expired'))}"
+                              th:text="${person.personType}">Type</span>
+                    </td>
+                    <td th:text="${person.phone1Number}" style="color: var(--text-secondary);">—</td>
+                    <td th:text="${person.email1}" style="color: var(--text-secondary);">—</td>
+                    <td>
+                        <span th:if="${person.isBlacklisted}" class="status-badge overdue">Blacklisted</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="empty-state" th:if="${persons.isEmpty()}">
+            <div class="empty-state-icon">👥</div>
+            <h3>No people registered yet</h3>
+            <p>Start by adding the first person to the system.</p>
+            <a th:href="@{/persons/new}" class="btn btn-primary" style="margin-top: 16px;">Add Person</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

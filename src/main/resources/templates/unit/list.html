@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>Units</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1>Units</h1><p>Manage residential and commercial units</p></div>
+        <a th:href="@{/units/new}" class="btn btn-primary">➕ Add Unit</a>
+    </div>
+    <div class="glass-panel">
+        <table class="data-table" th:if="${!units.isEmpty()}">
+            <thead><tr><th>Unit #</th><th>Building</th><th>Floor</th><th>Bedrooms</th><th>Status</th><th>Price</th></tr></thead>
+            <tbody>
+                <tr th:each="u : ${units}" th:onclick="|window.location='/units/' + '${u.id}'|">
+                    <td><a th:href="@{/units/{id}(id=${u.id})}" th:text="${u.unitNumber}">Unit</a></td>
+                    <td th:text="${u.building?.buildingName ?: '—'}" style="color: var(--text-secondary);">—</td>
+                    <td th:text="${u.floorNumber ?: '—'}">—</td>
+                    <td th:text="${u.bedrooms}">0</td>
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="${u.currentStatus == 'Vacant' ? 'vacant' : (u.currentStatus == 'Occupied' ? 'occupied' : (u.currentStatus == 'Reserved' ? 'reserved' : 'under-maintenance'))}"
+                              th:text="${u.currentStatus}">Status</span>
+                    </td>
+                    <td th:text="${u.listingPrice != null ? #numbers.formatDecimal(u.listingPrice, 1, 2) : '—'}" style="color: var(--green-300);">—</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="empty-state" th:if="${units.isEmpty()}">
+            <div class="empty-state-icon">🏠</div><h3>No units yet</h3><p>Add units to buildings first.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

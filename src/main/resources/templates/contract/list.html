@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>Contracts</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1>Contracts</h1><p>Manage leases and service agreements</p></div>
+        <a th:href="@{/contracts/new}" class="btn btn-primary">➕ New Contract</a>
+    </div>
+    <div class="glass-panel">
+        <table class="data-table" th:if="${!contracts.isEmpty()}">
+            <thead><tr><th>ID</th><th>Type</th><th>Status</th><th>Start</th><th>End</th><th>Price</th></tr></thead>
+            <tbody>
+                <tr th:each="c : ${contracts}" th:onclick="|window.location='/contracts/' + '${c.id}'|">
+                    <td><a th:href="@{/contracts/{id}(id=${c.id})}" th:text="${#strings.abbreviate(c.id.toString(), 12)}">ID</a></td>
+                    <td th:text="${c.contractType}" style="color: var(--text-secondary);">Type</td>
+                    <td>
+                        <span class="status-badge"
+                              th:classappend="${c.contractStatus == 'Active' ? 'active' : (c.contractStatus == 'Draft' ? 'draft' : (c.contractStatus == 'Terminated' ? 'terminated' : 'expired'))}"
+                              th:text="${c.contractStatus}">Status</span>
+                    </td>
+                    <td th:text="${c.startDate}">—</td>
+                    <td th:text="${c.endDate}">—</td>
+                    <td style="color: var(--green-300);" th:text="${#numbers.formatDecimal(c.finalPrice, 1, 2)}">—</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="empty-state" th:if="${contracts.isEmpty()}">
+            <div class="empty-state-icon">📋</div><h3>No contracts yet</h3><p>Create your first contract.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

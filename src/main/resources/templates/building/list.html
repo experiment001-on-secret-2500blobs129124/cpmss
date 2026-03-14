@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>Buildings</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1>Buildings</h1><p>Manage compound buildings</p></div>
+        <a th:href="@{/buildings/new}" class="btn btn-primary">➕ Add Building</a>
+    </div>
+    <div class="glass-panel">
+        <table class="data-table" th:if="${!buildings.isEmpty()}">
+            <thead><tr><th>Name</th><th>Number</th><th>Type</th><th>Floors</th></tr></thead>
+            <tbody>
+                <tr th:each="b : ${buildings}" th:onclick="|window.location='/buildings/' + '${b.id}'|">
+                    <td><a th:href="@{/buildings/{id}(id=${b.id})}" th:text="${b.buildingName}">Name</a></td>
+                    <td th:text="${b.buildingNumber ?: '—'}" style="color: var(--text-muted);">—</td>
+                    <td><span class="status-badge" th:classappend="${b.buildingType == 'Residential' ? 'active' : 'draft'}" th:text="${b.buildingType}">Type</span></td>
+                    <td th:text="${b.floorsCount ?: '—'}">—</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="empty-state" th:if="${buildings.isEmpty()}">
+            <div class="empty-state-icon">🏗️</div><h3>No buildings yet</h3>
+            <p>Add the first building.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

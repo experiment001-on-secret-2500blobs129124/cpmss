@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>Work Order Detail</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1>Work Order Detail</h1><p th:text="'ID: ' + ${workOrder.id}">WO</p></div>
+        <div style="display: flex; gap: 10px;">
+            <form th:if="${workOrder.jobStatus == 'Pending' or workOrder.jobStatus == 'Assigned'}" th:action="@{/workorders/{id}/complete(id=${workOrder.id})}" method="post">
+                <button type="submit" class="btn btn-primary">✅ Mark Complete</button>
+            </form>
+        </div>
+    </div>
+    <div class="glass-panel">
+        <div class="detail-grid">
+            <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value">
+                <span class="status-badge" th:classappend="${workOrder.jobStatus == 'Completed' ? 'completed' : (workOrder.jobStatus == 'Pending' ? 'pending' : 'assigned')}" th:text="${workOrder.jobStatus}">Status</span>
+            </div></div>
+            <div class="detail-item"><div class="detail-label">Priority</div><div class="detail-value">
+                <span class="status-badge" th:classappend="${workOrder.priority == 'Emergency' ? 'emergency' : 'pending'}" th:text="${workOrder.priority}">Priority</span>
+            </div></div>
+            <div class="detail-item"><div class="detail-label">Category</div><div class="detail-value" th:text="${workOrder.serviceCategory ?: '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Cost</div><div class="detail-value" style="color: var(--green-300);" th:text="${workOrder.costAmount != null ? #numbers.formatDecimal(workOrder.costAmount, 1, 2) : '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Scheduled</div><div class="detail-value" th:text="${workOrder.dateScheduled ?: '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Completed</div><div class="detail-value" th:text="${workOrder.dateCompleted ?: '—'}">—</div></div>
+            <div class="detail-item" style="grid-column: 1/-1;">
+                <div class="detail-label">Description</div>
+                <div class="detail-value" th:text="${workOrder.description ?: 'No description provided.'}">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Vendor -->
+    <div class="glass-panel" th:if="${workOrder.jobStatus == 'Pending'}">
+        <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px;">Assign Vendor</h3>
+        <form th:action="@{/workorders/{id}/assign(id=${workOrder.id})}" method="post" style="display: flex; gap: 10px;">
+            <select name="companyId" class="form-control" required style="flex: 1;">
+                <option value="">— Select Company —</option>
+                <option th:each="c : ${companies}" th:value="${c.id}" th:text="${c.companyName}">Company</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Assign</button>
+        </form>
+    </div>
+
+    <a th:href="@{/workorders}" class="btn">← Back to Work Orders</a>
+</div>
+</body>
+</html>

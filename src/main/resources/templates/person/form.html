@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title th:text="${isNew ? 'New Person' : 'Edit Person'}">Person Form</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 th:text="${isNew ? 'Register New Person' : 'Edit Person'}">Form</h1>
+            <p th:text="${isNew ? 'Add a new person to the system' : 'Update person information'}">Description</p>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <form th:action="${isNew ? '/persons/new' : '/persons/' + person.id + '/edit'}"
+              th:object="${person}" method="post">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="nationalId">National ID *</label>
+                    <input id="nationalId" type="text" class="form-control"
+                           th:field="*{nationalId}" required placeholder="Enter National ID">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="personType">Person Type</label>
+                    <select id="personType" class="form-control" th:field="*{personType}">
+                        <option value="Visitor">Visitor</option>
+                        <option value="Tenant">Tenant</option>
+                        <option value="Staff">Staff</option>
+                        <option value="Investor">Investor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="firstName">First Name *</label>
+                    <input id="firstName" type="text" class="form-control"
+                           th:field="*{firstName}" required placeholder="First name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="lastName">Last Name *</label>
+                    <input id="lastName" type="text" class="form-control"
+                           th:field="*{lastName}" required placeholder="Last name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="gender">Gender</label>
+                    <select id="gender" class="form-control" th:field="*{gender}">
+                        <option value="">— Select —</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dateOfBirth">Date of Birth</label>
+                    <input id="dateOfBirth" type="date" class="form-control" th:field="*{dateOfBirth}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="nationality">Nationality</label>
+                    <input id="nationality" type="text" class="form-control"
+                           th:field="*{nationality}" placeholder="Nationality">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="qualification">Qualification</label>
+                    <input id="qualification" type="text" class="form-control"
+                           th:field="*{qualification}" placeholder="Highest qualification">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone1Number">Phone</label>
+                    <input id="phone1Number" type="text" class="form-control"
+                           th:field="*{phone1Number}" placeholder="Primary phone number">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="email1">Email</label>
+                    <input id="email1" type="email" class="form-control"
+                           th:field="*{email1}" placeholder="Primary email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="city">City</label>
+                    <input id="city" type="text" class="form-control"
+                           th:field="*{city}" placeholder="City">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="street">Street</label>
+                    <input id="street" type="text" class="form-control"
+                           th:field="*{street}" placeholder="Street address">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"
+                        th:text="${isNew ? '✅ Create Person' : '💾 Save Changes'}">Submit</button>
+                <a th:href="@{/persons}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

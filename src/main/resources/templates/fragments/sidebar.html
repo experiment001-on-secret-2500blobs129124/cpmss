@@ -1,0 +1,57 @@
+<nav th:fragment="sidebar" class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">🏢</div>
+        <div class="brand-text">
+            <h1>CPMSS</h1>
+            <span>Compound Management</span>
+        </div>
+    </div>
+
+    <div class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Overview</div>
+            <a class="nav-item" th:classappend="${#httpServletRequest.requestURI == '/' ? 'active' : ''}" th:href="@{/}">
+                <span class="nav-icon">📊</span> Dashboard
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Management</div>
+            <a class="nav-item" th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/persons') ? 'active' : ''}" th:href="@{/persons}">
+                <span class="nav-icon">👥</span> People
+            </a>
+            <a class="nav-item" th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/buildings') ? 'active' : ''}" th:href="@{/buildings}">
+                <span class="nav-icon">🏗️</span> Buildings
+            </a>
+            <a class="nav-item" th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/units') ? 'active' : ''}" th:href="@{/units}">
+                <span class="nav-icon">🏠</span> Units
+            </a>
+            <a class="nav-item" th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/contracts') ? 'active' : ''}" th:href="@{/contracts}">
+                <span class="nav-icon">📋</span> Contracts
+            </a>
+            <a class="nav-item" th:classappend="${#strings.startsWith(#httpServletRequest.requestURI, '/workorders') ? 'active' : ''}" th:href="@{/workorders}">
+                <span class="nav-icon">🔧</span> Work Orders
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Operations</div>
+            <a class="nav-item" th:href="@{/payments}">
+                <span class="nav-icon">💰</span> Payments
+            </a>
+            <a class="nav-item" th:href="@{/access}">
+                <span class="nav-icon">🔐</span> Access Control
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-avatar">A</div>
+            <div class="user-info">
+                <div class="user-name">Admin</div>
+                <div class="user-role">System Administrator</div>
+            </div>
+        </div>
+    </div>
+</nav>

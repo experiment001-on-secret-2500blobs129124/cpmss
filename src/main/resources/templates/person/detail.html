@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title th:text="${person.fullName}">Person Detail</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 th:text="${person.fullName}">Person Name</h1>
+            <p>Person Details</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a th:href="@{/persons/{id}/edit(id=${person.id})}" class="btn">✏️ Edit</a>
+            <form th:action="@{/persons/{id}/delete(id=${person.id})}" method="post"
+                  onsubmit="return confirm('Are you sure?')">
+                <button type="submit" class="btn btn-danger">🗑️ Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="detail-label">National ID</div>
+                <div class="detail-value" th:text="${person.nationalId}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Type</div>
+                <div class="detail-value">
+                    <span class="status-badge active" th:text="${person.personType}">Type</span>
+                </div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Gender</div>
+                <div class="detail-value" th:text="${person.gender ?: '—'}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Date of Birth</div>
+                <div class="detail-value" th:text="${person.dateOfBirth ?: '—'}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Nationality</div>
+                <div class="detail-value" th:text="${person.nationality ?: '—'}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Qualification</div>
+                <div class="detail-value" th:text="${person.qualification ?: '—'}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Phone</div>
+                <div class="detail-value" th:text="${person.phone1Number ?: '—'}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Email</div>
+                <div class="detail-value" th:text="${person.email1 ?: '—'}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Address</div>
+                <div class="detail-value" th:text="${(person.street ?: '') + ', ' + (person.city ?: '')}">—</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Blacklisted</div>
+                <div class="detail-value">
+                    <span th:if="${person.isBlacklisted}" class="status-badge overdue">Yes</span>
+                    <span th:unless="${person.isBlacklisted}">No</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a th:href="@{/persons}" class="btn" style="margin-top: 10px;">← Back to People</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title th:text="'Unit ' + ${unit.unitNumber}">Unit Detail</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1 th:text="'Unit ' + ${unit.unitNumber}">Unit</h1><p>Unit Details</p></div>
+        <a th:href="@{/units/{id}/edit(id=${unit.id})}" class="btn">✏️ Edit</a>
+    </div>
+    <div class="glass-panel">
+        <div class="detail-grid">
+            <div class="detail-item"><div class="detail-label">Building</div><div class="detail-value" th:text="${unit.building?.buildingName ?: '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge" th:classappend="${unit.currentStatus == 'Vacant' ? 'vacant' : 'occupied'}" th:text="${unit.currentStatus}">Status</span></div></div>
+            <div class="detail-item"><div class="detail-label">Floor</div><div class="detail-value" th:text="${unit.floorNumber ?: '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Bedrooms</div><div class="detail-value" th:text="${unit.bedrooms}">0</div></div>
+            <div class="detail-item"><div class="detail-label">Bathrooms</div><div class="detail-value" th:text="${unit.bathrooms}">0</div></div>
+            <div class="detail-item"><div class="detail-label">Area</div><div class="detail-value" th:text="${unit.squareFootage != null ? unit.squareFootage + ' sq ft' : '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Price</div><div class="detail-value" style="color: var(--green-300);" th:text="${unit.listingPrice != null ? #numbers.formatDecimal(unit.listingPrice, 1, 2) : '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">View</div><div class="detail-value" th:text="${unit.viewOrientation ?: '—'}">—</div></div>
+        </div>
+    </div>
+    <a th:href="@{/units}" class="btn">← Back to Units</a>
+</div>
+</body>
+</html>

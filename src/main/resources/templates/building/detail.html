@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title th:text="${building.buildingName}">Building Detail</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1 th:text="${building.buildingName}">Building</h1><p>Building Details</p></div>
+        <a th:href="@{/buildings/{id}/edit(id=${building.id})}" class="btn">✏️ Edit</a>
+    </div>
+    <div class="glass-panel">
+        <div class="detail-grid">
+            <div class="detail-item"><div class="detail-label">Number</div><div class="detail-value" th:text="${building.buildingNumber ?: '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value"><span class="status-badge active" th:text="${building.buildingType}">Type</span></div></div>
+            <div class="detail-item"><div class="detail-label">Floors</div><div class="detail-value" th:text="${building.floorsCount ?: '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Construction Date</div><div class="detail-value" th:text="${building.constructionDate ?: '—'}">—</div></div>
+        </div>
+    </div>
+    <a th:href="@{/buildings}" class="btn">← Back to Buildings</a>
+</div>
+</body>
+</html>

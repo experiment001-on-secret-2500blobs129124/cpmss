@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p>Overview of your compound</p>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">Total Units</span>
+                <div class="stat-icon green">🏠</div>
+            </div>
+            <div class="stat-value" th:text="${totalUnits}">0</div>
+            <div class="stat-change positive">
+                <span th:text="${occupiedUnits}">0</span> occupied ·
+                <span th:text="${vacantUnits}">0</span> vacant
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">Active Contracts</span>
+                <div class="stat-icon blue">📋</div>
+            </div>
+            <div class="stat-value" th:text="${activeContracts}">0</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">Total Revenue</span>
+                <div class="stat-icon amber">💰</div>
+            </div>
+            <div class="stat-value" th:text="${#numbers.formatDecimal(totalRevenue, 1, 0)}">0</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-label">Open Work Orders</span>
+                <div class="stat-icon red">🔧</div>
+            </div>
+            <div class="stat-value" th:text="${openWorkOrders}">0</div>
+            <div class="stat-change negative" th:if="${overdueInstallments > 0}">
+                <span th:text="${overdueInstallments}">0</span> overdue installments
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="glass-panel">
+        <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px;">Quick Actions</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a th:href="@{/persons/new}" class="btn">➕ Register Person</a>
+            <a th:href="@{/contracts/new}" class="btn">📋 New Contract</a>
+            <a th:href="@{/workorders/new}" class="btn">🔧 New Work Order</a>
+            <a th:href="@{/units}" class="btn">🏠 View Units</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

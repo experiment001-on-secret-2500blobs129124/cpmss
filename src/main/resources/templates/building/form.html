@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title th:text="${isNew ? 'New Building' : 'Edit Building'}">Building Form</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header"><div><h1 th:text="${isNew ? 'New Building' : 'Edit Building'}">Form</h1></div></div>
+    <div class="glass-panel">
+        <form th:action="${isNew ? '/buildings/new' : '/buildings/' + building.id + '/edit'}" th:object="${building}" method="post">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="buildingName">Building Name *</label>
+                    <input id="buildingName" class="form-control" th:field="*{buildingName}" required placeholder="e.g. Tower A">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="buildingNumber">Building Number</label>
+                    <input id="buildingNumber" class="form-control" th:field="*{buildingNumber}" placeholder="e.g. B-01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="buildingType">Type *</label>
+                    <select id="buildingType" class="form-control" th:field="*{buildingType}">
+                        <option value="Residential">Residential</option>
+                        <option value="Non-Residential">Non-Residential</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="floorsCount">Floors</label>
+                    <input id="floorsCount" type="number" class="form-control" th:field="*{floorsCount}" placeholder="Number of floors">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="constructionDate">Construction Date</label>
+                    <input id="constructionDate" type="date" class="form-control" th:field="*{constructionDate}">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" th:text="${isNew ? '✅ Create Building' : '💾 Save Changes'}">Submit</button>
+                <a th:href="@{/buildings}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

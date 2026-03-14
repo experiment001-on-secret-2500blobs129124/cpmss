@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>Contract Detail</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header">
+        <div><h1>Contract Detail</h1><p th:text="'ID: ' + ${contract.id}">Contract</p></div>
+        <div style="display: flex; gap: 10px;">
+            <form th:if="${contract.contractStatus == 'Draft'}" th:action="@{/contracts/{id}/activate(id=${contract.id})}" method="post">
+                <button type="submit" class="btn btn-primary">✅ Activate</button>
+            </form>
+            <form th:if="${contract.contractStatus == 'Active'}" th:action="@{/contracts/{id}/terminate(id=${contract.id})}" method="post"
+                  onsubmit="return confirm('Are you sure you want to terminate this contract?')">
+                <button type="submit" class="btn btn-danger">⛔ Terminate</button>
+            </form>
+        </div>
+    </div>
+    <div class="glass-panel">
+        <div class="detail-grid">
+            <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value">
+                <span class="status-badge" th:classappend="${contract.contractStatus == 'Active' ? 'active' : (contract.contractStatus == 'Draft' ? 'draft' : 'terminated')}" th:text="${contract.contractStatus}">Status</span>
+            </div></div>
+            <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value" th:text="${contract.contractType}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Start Date</div><div class="detail-value" th:text="${contract.startDate}">—</div></div>
+            <div class="detail-item"><div class="detail-label">End Date</div><div class="detail-value" th:text="${contract.endDate}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Final Price</div><div class="detail-value" style="color: var(--green-300);" th:text="${#numbers.formatDecimal(contract.finalPrice, 1, 2)}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Payment Frequency</div><div class="detail-value" th:text="${contract.paymentFrequency ?: '—'}">—</div></div>
+            <div class="detail-item"><div class="detail-label">Security Deposit</div><div class="detail-value" th:text="${contract.securityDeposit != null ? #numbers.formatDecimal(contract.securityDeposit, 1, 2) : '—'}">—</div></div>
+        </div>
+    </div>
+    <a th:href="@{/contracts}" class="btn">← Back to Contracts</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}">
+<head><title>New Contract</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="page-header"><div><h1>New Contract</h1><p>Create a new lease or service agreement</p></div></div>
+    <div class="glass-panel">
+        <form th:action="@{/contracts/new}" th:object="${contract}" method="post">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Contract Type *</label>
+                    <select class="form-control" th:field="*{contractType}" required>
+                        <option value="">— Select —</option>
+                        <option value="Residential Lease">Residential Lease</option>
+                        <option value="Commercial Lease">Commercial Lease</option>
+                        <option value="Service Agreement">Service Agreement</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Payment Frequency</label>
+                    <select class="form-control" th:field="*{paymentFrequency}">
+                        <option value="">— Select —</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Semi-Annually">Semi-Annually</option>
+                        <option value="Annually">Annually</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Start Date *</label>
+                    <input type="date" class="form-control" th:field="*{startDate}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Date *</label>
+                    <input type="date" class="form-control" th:field="*{endDate}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Final Price *</label>
+                    <input type="number" step="0.01" class="form-control" th:field="*{finalPrice}" required placeholder="Total contract value">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Security Deposit</label>
+                    <input type="number" step="0.01" class="form-control" th:field="*{securityDeposit}" placeholder="0.00">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 8px;">
+                <label class="form-label">Renewal Terms</label>
+                <textarea class="form-control" th:field="*{renewalTerms}" placeholder="Describe any automatic renewal conditions..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">✅ Create Contract (as Draft)</button>
+                <a th:href="@{/contracts}" class="btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
