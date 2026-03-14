@@ -6,9 +6,23 @@
 <body>
 <div layout:fragment="content">
     <div class="page-header"><div><h1>New Work Order</h1><p>Create a maintenance or service request</p></div></div>
+
+    <!-- Validation Error -->
+    <div class="alert alert-error" th:if="${error}" th:text="${error}">Error</div>
+
     <div class="glass-panel">
         <form th:action="@{/workorders/new}" th:object="${workOrder}" method="post">
             <div class="form-grid">
+                <!-- Who is requesting -->
+                <div class="form-group">
+                    <label class="form-label">Requested By *</label>
+                    <select class="form-control" name="requestedById" required>
+                        <option value="">— Select Person —</option>
+                        <option th:each="p : ${persons}" th:value="${p.id}" th:text="${p.firstName + ' ' + p.lastName}">Person</option>
+                    </select>
+                </div>
+
+                <!-- Service Category -->
                 <div class="form-group">
                     <label class="form-label">Service Category *</label>
                     <select class="form-control" th:field="*{serviceCategory}" required>
@@ -22,6 +36,26 @@
                         <option value="General">General</option>
                     </select>
                 </div>
+
+                <!-- Target Unit -->
+                <div class="form-group">
+                    <label class="form-label">Target Unit</label>
+                    <select class="form-control" name="targetUnitId">
+                        <option value="">— No Unit —</option>
+                        <option th:each="u : ${units}" th:value="${u.id}" th:text="${u.unitNumber + (u.building != null ? ' (' + u.building.buildingName + ')' : '')}">Unit</option>
+                    </select>
+                </div>
+
+                <!-- Target Facility -->
+                <div class="form-group">
+                    <label class="form-label">Target Facility</label>
+                    <select class="form-control" name="targetFacilityId">
+                        <option value="">— No Facility —</option>
+                        <option th:each="f : ${facilities}" th:value="${f.id}" th:text="${f.facilityName}">Facility</option>
+                    </select>
+                </div>
+
+                <!-- Priority -->
                 <div class="form-group">
                     <label class="form-label">Priority</label>
                     <select class="form-control" th:field="*{priority}">
@@ -31,19 +65,29 @@
                         <option value="Emergency">Emergency</option>
                     </select>
                 </div>
+
+                <!-- Scheduled Date -->
                 <div class="form-group">
                     <label class="form-label">Scheduled Date</label>
-                    <input type="date" class="form-control" th:field="*{dateScheduled}">
+                    <input type="date" class="form-control" th:field="*{dateScheduled}"
+                           th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">
+                    <small style="color: var(--text-muted);">Cannot be in the past</small>
                 </div>
+
+                <!-- Estimated Cost -->
                 <div class="form-group">
                     <label class="form-label">Estimated Cost</label>
-                    <input type="number" step="0.01" class="form-control" th:field="*{costAmount}" placeholder="0.00">
+                    <input type="number" step="0.01" min="0" class="form-control" th:field="*{costAmount}" placeholder="0.00">
                 </div>
             </div>
+
+            <!-- Description -->
             <div class="form-group" style="margin-top: 8px;">
                 <label class="form-label">Description *</label>
-                <textarea class="form-control" th:field="*{description}" required placeholder="Describe the issue or work needed..."></textarea>
+                <textarea class="form-control" th:field="*{description}" required
+                          placeholder="Describe the issue or work needed..." rows="4"></textarea>
             </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">✅ Create Work Order</button>
                 <a th:href="@{/workorders}" class="btn">Cancel</a>
