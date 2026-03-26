@@ -43,6 +43,7 @@ flowchart TD
         F -->|"Authorized"| G["Business Validator — Rules Class"]
         G -->|"Rule violated"| G1["422 Unprocessable Entity"]
         G -->|"Valid"| H["Service — Orchestration"]
+        H2["Service — Entity to DTO"]
     end
 
     subgraph MDL ["Model Layer — M in MVCS"]
@@ -51,14 +52,16 @@ flowchart TD
     end
 
     H --> I
-    H -.->|"future"| R["Redis Cache"]
+    J --> H2
+
+    H -..->|"future"| R["Redis Cache"]
 
     subgraph VW ["View Layer — V in MVCS"]
         K["Response DTO / Thymeleaf Template"]
         K --> L["HTTP Response"]
     end
 
-    J --> K
+    H2 --> K
 
     style SEC fill:#1a1a2e,stroke:#0f3460,color:#fff
     style CTRL fill:#16213e,stroke:#0f3460,color:#fff
@@ -94,7 +97,7 @@ flowchart LR
 
     subgraph Routes
         R1["/entity-name → web UI"]
-        R2["/api/entity-name → JSON"]
+        R2["/api/v1/entity-name → JSON"]
     end
 
     R1 --> WC
@@ -119,7 +122,7 @@ src/main/java/com/cpmss/
   │     BaseEntity.java              ← id, createdAt, updatedAt, createdBy, updatedBy
   │     GlobalExceptionHandler.java  ← @RestControllerAdvice
   │     ApiPaths.java                ← All route constants
-  │     ApiResponse.java             ← Standard response envelope
+  │     ApiResponse.java             ← Standard response envelope + PagedResponse<T>
   │
   ├── exception/
   │     BusinessException.java       ← 422
@@ -129,6 +132,7 @@ src/main/java/com/cpmss/
   │
   ├── util/
   │     DateUtils.java
+  │     SlugUtils.java               ← Generate URL-friendly slugs from names
   │     MaskingUtils.java            ← National ID masking, bank account masking
   │     AuthUtils.java               ← Extract current user from security context
   │
@@ -148,6 +152,10 @@ src/main/java/com/cpmss/
   └── CpmssApplication.java
 ```
 
+See [`CONVENTIONS.md`](./CONVENTIONS.md) for implementation patterns: `BaseEntity`,
+entity annotations, `{Feature}Rules.java` contract, slug pattern, `PagedResponse<T>`,
+`ApiPaths.java`, transaction boundaries, and MapStruct + Records.
+
 ---
 
 ## Centralized Routes (ApiPaths.java)
@@ -156,16 +164,17 @@ All endpoint strings live in one file. Controllers import constants, never
 hardcode strings. This is the application-layer equivalent of `.proto` route
 definitions — one place to see what the entire API surface looks like.
 
-```java
-public final class ApiPaths {
-    private ApiPaths() {}
+API versioning starts at `v1` from day one. A breaking change introduces
+`/api/v2/...` while `v1` continues to operate.
 
-    // Pattern: RESOURCE + action
-    // public static final String RESOURCE        = "/api/resource";
-    // public static final String RESOURCE_BY_ID  = "/api/resource/{id}";
-    // ... defined as features are implemented
-}
-```
+---
+
+## {Feature}Rules.java
+
+Business rules are an explicit, testable first-class component — not buried in
+the service. The service loads all necessary data, then passes it to the Rules
+class before orchestrating the write. See [`CONVENTIONS.md`](./CONVENTIONS.md)
+for the full contract and example.
 
 ---
 
@@ -210,6 +219,17 @@ Validation error format (format validation failures):
 }
 ```
 
+HTML error pages for Thymeleaf routes — Spring Boot's `BasicErrorController`
+automatically serves these when the request comes from a browser:
+
+```
+src/main/resources/templates/error/
+  403.html
+  404.html
+  422.html
+  500.html
+```
+
 ---
 
 ## Transaction Boundaries
@@ -219,6 +239,7 @@ multiple repository operations are wrapped in a single transaction — if any
 step fails, all prior steps roll back automatically.
 
 Read-only service methods use `@Transactional(readOnly = true)` for performance.
+See [`CONVENTIONS.md`](./CONVENTIONS.md#transaction-boundaries) for the naming rule.
 
 ---
 
@@ -229,14 +250,18 @@ These apply across all layers and are not owned by any single layer.
 | Concern | Implementation |
 |---|---|
 | Logging | SLF4J / Logback. Controller logs request entry. Service logs decisions. Exception handler logs errors with stack traces. |
-| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) — catches all custom exceptions, maps to structured JSON. |
+| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) — catches all custom exceptions, maps to structured JSON. Thymeleaf routes get HTML error pages via `templates/error/`. |
 | CORS | Configured in `SecurityConfig`. |
-| Authentication | JWT via Spring Security filter chain. |
+| Authentication | Stateless JWT. Token issued on login, validated on every request via Spring Security filter chain. CSRF disabled — no session cookies are issued. |
 | Authorization | `@PreAuthorize` for role-based. Explicit ownership checks in service for resource-based. |
-| Audit Fields | `BaseEntity` with `@CreatedDate`, `@LastModifiedDate`, `@CreatedBy`, `@LastModifiedBy`. |
+| Password Hashing | BCrypt via Spring Security. Raw passwords are never stored. |
+| Refresh Tokens | Access token (short-lived) + refresh token (long-lived). Client uses refresh token to silently obtain a new access token. |
+| Rate Limiting | Applied at Nginx level on auth endpoints (`/api/v1/auth/login`, `/api/v1/auth/refresh`). |
+| Audit Fields | `BaseEntity` with `@CreatedDate`, `@LastModifiedDate`, `@CreatedBy`, `@LastModifiedBy`. Requires `AuditorAware` bean and `@EnableJpaAuditing`. |
 | Data Masking | Sensitive fields returned masked in Response DTOs via `MaskingUtils`. Role-specific DTOs for different access levels. |
 | Input Validation | Format: `@Valid` annotations on Request DTOs. Business: explicit Rules class per feature. |
-| Pagination | All list endpoints accept `Pageable`. Spring Data returns `Page<T>`. |
+| Pagination | All list endpoints accept `Pageable`. Service returns `PagedResponse<T>`. |
+| Slugs | URL-friendly identifier on applicable entities. Generated by `SlugUtils` on create. |
 
 ---
 

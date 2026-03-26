@@ -13,7 +13,7 @@ Three environments, each with its own Spring profile and configuration file.
 Active profile is set in the `.env` file:
 
 ```env
-# .env
+# .env — never commit this file
 SPRING_PROFILES_ACTIVE=dev
 
 DB_URL=jdbc:postgresql://localhost:5432/cpmss
@@ -36,7 +36,15 @@ jwt:
   secret: ${JWT_SECRET}
 ```
 
-Docker Compose loads the `.env` file automatically.
+### Secret Management Per Environment
+
+| Environment | How secrets are provided |
+|---|---|
+| `dev` | `.env` file on local machine — always in `.gitignore`, never committed |
+| `test` | Testcontainers manages the DB automatically. JWT secret is a hardcoded value in `application-test.yml` |
+| `prod` | Jenkins credentials store — injected via `withCredentials`, no `.env` file on server |
+
+Docker Compose loads the `.env` file automatically (dev only).
 
 ---
 
@@ -52,6 +60,11 @@ services:
     ports: ["8080:8080"]
     env_file: .env
     depends_on: [postgres]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   postgres:
     image: postgres:16
@@ -100,19 +113,30 @@ termination (HTTPS) and reverse proxy. TLS certificates are provided by
 Let's Encrypt via Certbot — a free certificate authority that auto-renews.
 
 ```nginx
-server {
-    listen 443 ssl;
-    server_name yourdomain.com;
+# In nginx.conf — limit_req_zone must be in the http {} context, not server {}
+http {
+    limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;
 
-    ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    server {
+        listen 443 ssl;
+        server_name yourdomain.com;
 
-    location / {
-        proxy_pass         http://app:8080;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+        # Rate limiting applied to auth endpoints only
+        location /api/v1/auth/ {
+            limit_req zone=auth burst=5 nodelay;
+            proxy_pass http://app:8080;
+        }
+
+        location / {
+            proxy_pass         http://app:8080;
+            proxy_set_header   Host $host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+        }
     }
 }
 ```
@@ -163,6 +187,17 @@ pipeline {
             }
         }
 
+        stage('API Test') {
+            steps {
+                sh '''
+                    python3 -m venv .venv
+                    source .venv/bin/activate
+                    pip install -r tests/api/requirements.txt
+                    python3 tests/api/run_tests.py
+                '''
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
@@ -178,6 +213,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                    sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                     sh "docker push ${IMAGE_NAME}:latest"
                 }
             }
@@ -185,7 +221,24 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'ssh deploy@server "cd /app && docker-compose pull && docker-compose up -d"'
+                withCredentials([
+                    string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
+                    string(credentialsId: 'jwt-secret',  variable: 'JWT_SECRET'),
+                    sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY')
+                ]) {
+                    sh '''
+                        # Write secrets to a temp .env file locally — never inline in the command
+                        # string, which would expose them in the server process list (ps aux).
+                        printf 'DB_PASSWORD=%s\nJWT_SECRET=%s\n' "$DB_PASSWORD" "$JWT_SECRET" > /tmp/deploy.env
+
+                        # Transfer the .env file to the server, then deploy
+                        scp -i $SSH_KEY /tmp/deploy.env deploy@server:/app/.env
+                        ssh -i $SSH_KEY deploy@server "cd /app && docker compose pull && docker compose up -d"
+
+                        # Remove the local temp file immediately
+                        rm -f /tmp/deploy.env
+                    '''
+                }
             }
         }
     }
@@ -198,12 +251,45 @@ pipeline {
 }
 ```
 
+### Credentials Required in Jenkins
+
+| Credential ID | Type | Used in |
+|---|---|---|
+| `dockerhub-creds` | Username/Password | Docker Push stage |
+| `db-password` | Secret text | Deploy stage |
+| `jwt-secret` | Secret text | Deploy stage |
+| `deploy-ssh-key` | SSH private key | Deploy stage — key must be pre-authorized on the server |
+
 ### Trigger
 
 Every push to `master` triggers the full pipeline via GitHub webhook. PRs
 trigger Build + Test stages only (no deploy).
 
+### Rollback
 
+Each push produces a tagged image (`cpmss:BUILD_NUMBER`) that remains in the
+registry. Add an `image:` key to the `app` service in `docker-compose.yml` to
+enable tag-based rollback:
+
+```yaml
+services:
+  app:
+    build: .
+    image: cpmss:${IMAGE_TAG:-latest}  # add this line
+    ports: ["8080:8080"]
+    ...
+```
+
+To roll back to a previous build:
+
+```bash
+ssh -i $SSH_KEY deploy@server \
+  "cd /app && IMAGE_TAG=42 docker compose up -d"
+```
+
+Keep at least the last 5 build-numbered images in the registry.
+
+---
 
 ## Health Check
 
@@ -213,13 +299,5 @@ Spring Boot Actuator provides `/actuator/health`:
 { "status": "UP" }
 ```
 
-Docker Compose health check:
-
-```yaml
-# docker-compose.yml
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-```
+Health check is defined in the Docker Compose service above (30s interval,
+3 retries before the container is marked unhealthy).

@@ -22,14 +22,22 @@ Every tool, library, and framework used in this project.
 builders at compile time.
 
 ```java
+// On JPA entities — @Data is forbidden (see Architecture docs)
 @Entity
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Entity extends BaseEntity {
     private String name;
     private String email;
+}
+
+// @Data is fine on plain POJOs (non-entity classes)
+@Data
+public class SomePlainObject {
+    private String name;
 }
 ```
 
@@ -49,10 +57,18 @@ public record CreateEntityRequest(
 **MapStruct** — compile-time DTO mapper. Generates mapping code between entities
 and DTOs.
 
+When the target DTO is a Java Record (immutable, no setters), annotate the
+mapper method with `@BeanMapping(builder = @Builder(disableBuilder = true))`.
+This tells MapStruct to call the all-args constructor directly instead of using
+setters.
+
 ```java
 @Mapper(componentModel = "spring")
 public interface EntityMapper {
+
+    @BeanMapping(builder = @Builder(disableBuilder = true))
     EntityResponse toResponse(Entity entity);
+
     Entity toEntity(CreateEntityRequest dto);
 }
 ```
@@ -77,6 +93,9 @@ schema changes only. Additionally, a `CommandLineRunner` bean annotated with
 `@Profile("dev")` can generate larger volumes of randomized demo data on
 startup for development and showcasing.
 
+> **Warning**: `R__` seed files and the `@Profile("dev")` seeder are
+> development-only. Neither runs in the `prod` environment.
+
 ---
 
 ## API Documentation
@@ -95,11 +114,23 @@ startup for development and showcasing.
 **Yaak CLI + Python script** — automated collection runner for CI and
 environment verification.
 
+- Location: `tests/api/`
+- Runtime: Python 3.14, `venv`-managed
+- Dependencies: `tests/api/requirements.txt`
+- Test cases assert specific responses — not just status codes
+- Local run:
+  ```sh
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r tests/api/requirements.txt
+  python3 tests/api/run_tests.py
+  ```
+
 Workflow:
 1. Spring controllers define endpoints
 2. springdoc-openapi generates OpenAPI spec at `/v3/api-docs`
 3. Yaak imports spec (collection stays in sync)
-4. Python script runs Yaak CLI against target environment
+4. `run_tests.py` runs Yaak CLI against target environment and asserts responses
 
 ---
 
@@ -118,8 +149,9 @@ class SomeServiceTest {
 
     @Test
     void shouldThrowWhenNotFound() {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.getById(99L));
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> service.getById(id));
     }
 }
 ```
@@ -152,7 +184,7 @@ using SLF4J, Logback handles the output.
 
 ## Data Seeding
 
-See Flyway migration files above — `V3__seed_default_data.sql` contains
+See Flyway migration files above — `R__seed_default_data.sql` contains
 structural seed data (admin user, lookup values). For larger demo datasets,
 a `CommandLineRunner` bean annotated with `@Profile("dev")` generates
 randomized data on startup.
