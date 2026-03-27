@@ -117,6 +117,11 @@ Let's Encrypt via Certbot — a free certificate authority that auto-renews.
 http {
     limit_req_zone $binary_remote_addr zone=auth:10m rate=10r/m;
 
+    # merge_slashes is on by default in Nginx. It collapses duplicate slashes
+    # (e.g. /api//v1/auth → /api/v1/auth) but does NOT equate a missing
+    # trailing slash with a present one. The regex location below handles both.
+    merge_slashes on;
+
     server {
         listen 443 ssl;
         server_name yourdomain.com;
@@ -124,10 +129,16 @@ http {
         ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
         ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
 
-        # Rate limiting applied to auth endpoints only
-        location /api/v1/auth/ {
+        # Regex location matches /api/v1/auth and /api/v1/auth/ identically.
+        # A plain `location /api/v1/auth/` would miss requests without the
+        # trailing slash, leaving them unrate-limited.
+        location ~ ^/api/v1/auth(/|$) {
             limit_req zone=auth burst=5 nodelay;
             proxy_pass http://app:8080;
+            proxy_set_header   Host $host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto $scheme;
         }
 
         location / {
@@ -190,9 +201,12 @@ pipeline {
         stage('API Test') {
             steps {
                 sh '''
-                    python3 -m venv .venv
+                    # Reuse the venv across builds — pip only re-installs when
+                    # requirements.txt changes, so this avoids a full download
+                    # on every pipeline run.
+                    test -d .venv || python3 -m venv .venv
                     source .venv/bin/activate
-                    pip install -r tests/api/requirements.txt
+                    pip install --quiet -r tests/api/requirements.txt
                     python3 tests/api/run_tests.py
                 '''
             }
