@@ -257,3 +257,45 @@ public interface {Feature}Mapper {
     {Feature} toEntity(Create{Feature}Request dto);
 }
 ```
+
+---
+
+## Bridge Tables — `@JoinTable` vs `@Entity`
+
+M:M relationships require a bridge table. JPA offers two ways to map it.
+
+| | Silent `@JoinTable` | Full `@Entity` |
+|---|---|---|
+| Java class for the bridge? | No — Hibernate manages it invisibly | Yes — extends `BaseEntity` |
+| Audit columns? | Cannot have | Inherited from `BaseEntity` |
+| Extra columns beyond two FKs? | Cannot have | Yes |
+| Total participation rule? | Cannot enforce | Enforced in service layer |
+| Who inserts rows? | Hibernate automatically | Your service layer |
+
+**Decision rule:**
+
+> If the bridge table has **any** column beyond the two FK columns — or if you need to record who/when/why the relationship was created — it **must** be a full `@Entity`.
+>
+> If it has only two FK columns and no audit or participation constraint: silent `@JoinTable` is fine.
+
+```java
+// Silent @JoinTable — purely structural M:M, no history needed
+// No {Parent}{Child}.java class — Hibernate manages the rows invisibly
+@ManyToMany
+@JoinTable(
+    name = "{Parent}_{Child}",
+    joinColumns        = @JoinColumn(name = "{parent}_id"),
+    inverseJoinColumns = @JoinColumn(name = "{child}_id")
+)
+private Set<{Child}> {children};
+
+// Full @Entity — when audit or extra data is required
+@Entity
+@IdClass({Parent}{Child}Id.class)
+public class {Parent}{Child} extends BaseEntity {  // audit fields inherited
+    @Id @ManyToOne @JoinColumn(name = "{parent}_id") private {Parent} {parent};
+    @Id @ManyToOne @JoinColumn(name = "{child}_id")  private {Child}  {child};
+    // any additional columns here
+}
+```
+

@@ -12,6 +12,7 @@ Every tool, library, and framework used in this project.
 | Web Views | ![Thymeleaf](https://img.shields.io/badge/Thymeleaf-optional-005F0F?logo=thymeleaf) |
 | API | ![REST](https://img.shields.io/badge/REST-JSON-blue) |
 | Database | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white) |
+| File Storage | ![MinIO](https://img.shields.io/badge/MinIO-latest-C72E49?logo=minio&logoColor=white) |
 | Build | ![Gradle](https://img.shields.io/badge/Gradle-8-02303A?logo=gradle) |
 
 ---
@@ -75,26 +76,27 @@ public interface EntityMapper {
 
 ---
 
-## Database Migrations
+## Database Migrations & Seeding
 
 **Flyway** — SQL-based migration tool. Every schema change is a versioned SQL
 file. Flyway runs on application startup and applies pending migrations in order.
 
 ```
 src/main/resources/db/migration/
-  V1__create_initial_tables.sql
-  V2__add_constraints.sql
-  R__seed_default_data.sql         ← repeatable: re-runs when file changes
+  V1__create_initial_tables.sql    ← DDL: all CREATE TABLE statements
+  V2__add_constraints.sql          ← Deferred CHECKs added after Java validation
+  V3__seed_catalog_data.sql        ← Reference data required for the app to function (all environments)
+  R__seed_dev_data.sql             ← Dev-only: fixed set of fake records for local testing
 ```
 
-The `R__` prefix is Flyway's convention for repeatable migrations — seed data
-that evolves during development. Numbered migrations (`V1`, `V2`) are for
-schema changes only. Additionally, a `CommandLineRunner` bean annotated with
-`@Profile("dev")` can generate larger volumes of randomized demo data on
-startup for development and showcasing.
+Numbered migrations (`V1`, `V2`, `V3`) run once, in order, and are never modified after commit.
+`V3` catalog data runs in all environments including production.
+The `R__` prefix is Flyway’s repeatable migration convention — dev only, re-runs whenever the file changes.
 
-> **Warning**: `R__` seed files and the `@Profile("dev")` seeder are
-> development-only. Neither runs in the `prod` environment.
+A `CommandLineRunner` bean annotated with `@Profile("dev")` can run any dev-only startup automation
+(e.g. bulk demo data generation, MinIO bucket setup, test user creation). Planned, not yet implemented.
+
+See [DATABASE.md](./DATABASE.md) for the full migration convention and rationale.
 
 ---
 
@@ -180,16 +182,7 @@ request via `Authorization: Bearer` header.
 is the engine behind it. They always work together. You write `log.info(...)`
 using SLF4J, Logback handles the output.
 
----
 
-## Data Seeding
-
-See Flyway migration files above — `R__seed_default_data.sql` contains
-structural seed data (admin user, lookup values). For larger demo datasets,
-a `CommandLineRunner` bean annotated with `@Profile("dev")` generates
-randomized data on startup.
-
----
 
 ## Future: Caching
 

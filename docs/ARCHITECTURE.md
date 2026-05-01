@@ -81,6 +81,8 @@ PostgreSQL enforces structural integrity independently of the application:
 - `NOT NULL` constraints enforce required fields
 - Audit triggers: `created_at`, `updated_at` (structural only, never business rules)
 
+See [DATABASE.md](./DATABASE.md) for schema design decisions, migration conventions, and rationale.
+
 ---
 
 ## Hybrid API Design

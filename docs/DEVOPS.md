@@ -8,6 +8,7 @@ Three environments, each with its own Spring profile and configuration file.
 |---|---|---|---|
 | Development | `dev` | `application-dev.yml` | Local development. PostgreSQL via Docker. Debug logging. Data seeding enabled. |
 | Testing | `test` | `application-test.yml` | Automated tests. Testcontainers spins up isolated PostgreSQL. Wiped after each run. |
+| Staging | `staging` | `application-staging.yml` | Pre-production. Same config as prod — used to validate changes before going live. |
 | Production | `prod` | `application-prod.yml` | Live system. No seeding. Info-level logging only. |
 
 Active profile is set in the `.env` file:
@@ -19,6 +20,9 @@ SPRING_PROFILES_ACTIVE=dev
 DB_URL=jdbc:postgresql://localhost:5432/cpmss
 DB_USERNAME=cpmss_user
 DB_PASSWORD=changeme
+
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=changeme
 
 JWT_SECRET=your-secret-key
 ```
@@ -59,7 +63,7 @@ services:
     build: .
     ports: ["8080:8080"]
     env_file: .env
-    depends_on: [postgres]
+    depends_on: [postgres, minio]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -77,6 +81,24 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports: ["5432:5432"]
 
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    env_file: .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"   # S3-compatible file API
+      - "9001:9001"   # MinIO console UI
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Future: Redis
   # redis:
   #   image: redis:7-alpine
@@ -84,6 +106,7 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:
 ```
 
 ### Dockerfile
@@ -236,14 +259,17 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
-                    string(credentialsId: 'jwt-secret',  variable: 'JWT_SECRET'),
+                    string(credentialsId: 'db-password',    variable: 'DB_PASSWORD'),
+                    string(credentialsId: 'jwt-secret',     variable: 'JWT_SECRET'),
+                    string(credentialsId: 'minio-user',     variable: 'MINIO_ROOT_USER'),
+                    string(credentialsId: 'minio-password', variable: 'MINIO_ROOT_PASSWORD'),
                     sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY')
                 ]) {
                     sh '''
                         # Write secrets to a temp .env file locally — never inline in the command
                         # string, which would expose them in the server process list (ps aux).
-                        printf 'DB_PASSWORD=%s\nJWT_SECRET=%s\n' "$DB_PASSWORD" "$JWT_SECRET" > /tmp/deploy.env
+                        printf 'DB_PASSWORD=%s\nJWT_SECRET=%s\nMINIO_ROOT_USER=%s\nMINIO_ROOT_PASSWORD=%s\n' \
+                            "$DB_PASSWORD" "$JWT_SECRET" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" > /tmp/deploy.env
 
                         # Transfer the .env file to the server, then deploy
                         scp -i $SSH_KEY /tmp/deploy.env deploy@server:/app/.env
@@ -272,6 +298,8 @@ pipeline {
 | `dockerhub-creds` | Username/Password | Docker Push stage |
 | `db-password` | Secret text | Deploy stage |
 | `jwt-secret` | Secret text | Deploy stage |
+| `minio-user` | Secret text | Deploy stage |
+| `minio-password` | Secret text | Deploy stage |
 | `deploy-ssh-key` | SSH private key | Deploy stage — key must be pre-authorized on the server |
 
 ### Trigger
