@@ -367,6 +367,12 @@ Each commit should do **one thing**. If you changed two unrelated things, make t
 | Renamed a variable across 5 files | **Combine** — one logical refactor |
 | Added a test AND the code it tests | **Combine** — they belong together |
 | Fixed typo while working on a feature | **Split** — `style` + `feat` |
+| Added a feature AND docs that describe it | **Combine** — docs are part of the deliverable, not a separate concern |
+
+> **Code + its own docs = one concern.**
+> The distinction is whether the docs *describe what you just built* (combine)
+> or are a *separate documentation task* unrelated to the current code change
+> (split). If reverting the code would make the docs wrong, they belong together.
 
 ### The Atomic Test
 
