@@ -85,13 +85,15 @@ file. Flyway runs on application startup and applies pending migrations in order
 src/main/resources/db/migration/
   V1__create_initial_tables.sql    ← DDL: all CREATE TABLE statements
   V2__add_constraints.sql          ← Deferred CHECKs added after Java validation
-  V3__seed_catalog_data.sql        ← Reference data required for the app to function (all environments)
+  V3__add_auth_tables.sql          ← App_User table (authentication)
+  V4__add_auth_constraints.sql     ← App_User CHECK constraints
+  V5__seed_catalog_data.sql        ← Reference data required for the app to function (all environments)
   R__seed_dev_data.sql             ← Dev-only: fixed set of fake records for local testing
 ```
 
-Numbered migrations (`V1`, `V2`, `V3`) run once, in order, and are never modified after commit.
-`V3` catalog data runs in all environments including production.
-The `R__` prefix is Flyway’s repeatable migration convention — dev only, re-runs whenever the file changes.
+Numbered migrations (`V1`–`V5`) run once, in order, and are never modified after commit.
+`V3`/`V4` add the auth tables and constraints. `V5` catalog data runs in all environments including production.
+The `R__` prefix is Flyway's repeatable migration convention — dev only, re-runs whenever the file changes.
 
 A `CommandLineRunner` bean annotated with `@Profile("dev")` can run any dev-only startup automation
 (e.g. bulk demo data generation, MinIO bucket setup, test user creation). Planned, not yet implemented.

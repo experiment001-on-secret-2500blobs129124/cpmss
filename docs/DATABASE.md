@@ -13,18 +13,21 @@ Flyway runs on application startup and applies any pending files in version orde
 src/main/resources/db/migration/
   V1__create_initial_tables.sql    ← DDL: all CREATE TABLE statements
   V2__add_constraints.sql          ← Deferred CHECKs added after Java validation
-  V3__seed_catalog_data.sql        ← Reference data required for the app to function
+  V3__add_auth_tables.sql          ← App_User table (authentication)
+  V4__add_auth_constraints.sql     ← App_User CHECK constraints
+  V5__seed_catalog_data.sql        ← Reference data required for the app to function
   R__seed_dev_data.sql             ← Dev-only: fixed list of fake records for testing
 ```
 
 | File | Runs in prod? | Purpose |
 |---|---|---|
-| `V1`, `V2`, `V3` | All environments | Schema structure and required reference data |
+| `V1`–`V5` | All environments | Schema structure, auth tables, constraints, and required reference data |
 | `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
 
 **Rules:**
 - Never modify a committed versioned migration — Flyway checksums them. Add a new `Vn__` file instead.
-- `V2` (constraints) runs before `V3` (data) — data is inserted into a fully constrained schema.
+- `V3`/`V4` (auth) follow the same DDL → constraints pattern as `V1`/`V2`.
+- `V5` (catalog seed data) runs after all schema and constraints are in place — data is inserted into a fully constrained schema.
 - `R__` stands for **Repeatable** — Flyway re-runs it whenever the file content changes (checksum-based). You can edit it freely. Used only in `dev` profile.
 - A `CommandLineRunner` for randomised bulk demo data is planned but not implemented.
 
@@ -263,6 +266,66 @@ curl -sf -X POST http://localhost:8080/setup \
 ```
 
 `BOOTSTRAP_PASSWORD` is a Jenkins credential — never hardcoded.
+
+---
+
+## Role Architecture: Business Roles vs System Roles
+
+The schema deliberately separates **two independent role concepts** into different tables. This is a design decision, not an oversight — they answer different questions and have different lifecycles.
+
+### The two axes
+
+| Axis | Table | Question it answers | Example values |
+|---|---|---|---|
+| **Business role** | `Person_Role` (junction → `Role`) | *"What is this person in the compound?"* | Staff, Tenant, Investor, Visitor |
+| **System role** | `App_User.system_role` | *"What can this person do in the software?"* | ADMIN, MANAGER, STAFF |
+
+### Why they cannot be the same thing
+
+A **business role** is a real-world fact: "Ahmed is a staff member who also rents a unit." He has two `Person_Role` rows: Staff + Tenant. This is about *who he is* in the compound.
+
+A **system role** is a software permission: "Ahmed can approve work orders and view payroll." He has one `App_User` row with `system_role = 'MANAGER'`. This is about *what the software lets him do*.
+
+These are independent:
+
+| Person | Business roles (Person_Role) | System role (App_User) | Login? |
+|---|---|---|---|
+| HR Manager | Staff | MANAGER | ✅ |
+| Security Guard | Staff | STAFF | ✅ |
+| System Admin | *(none — no Person record yet)* | ADMIN | ✅ |
+| Tenant's child | Tenant *(via parent's contract)* | *(no App_User row)* | ❌ |
+| Visiting plumber | Visitor | *(no App_User row)* | ❌ |
+| Investor who is also a tenant | Investor, Tenant | *(no App_User row)* | ❌ |
+
+### Why they live in different tables
+
+| Reason | Detail |
+|---|---|
+| **Not every Person logs in** | Tenants, visitors, children, contractors — all Persons, none use the software. Adding auth columns to Person would leave them NULL for most rows. |
+| **Bootstrap chicken-and-egg** | The first admin (`POST /setup`) is created when Person is empty. `App_User.person_id` is nullable for this reason — the admin account exists before any Person does. |
+| **Different lifecycles** | A Person can exist for years before getting login access (e.g. a tenant becomes a staff member). An App_User can be deactivated (`is_active = false`) without touching the Person record. |
+| **Security isolation** | Password hashes live in `App_User`, not `Person`. Queries against Person data never accidentally expose credentials. |
+| **M:N vs 1:1** | A Person can hold *multiple* business roles simultaneously (Staff + Tenant). But a Person has at most *one* system login account. Different cardinalities → different table structures. |
+
+### How they connect
+
+```mermaid
+erDiagram
+    Person ||--o{ Person_Role : "holds (1:N)"
+    Person_Role }o--|| Role : "references (N:1)"
+    Person ||--o| App_User : "has account (1:0..1)"
+
+    Role {
+        string role_name "Staff, Tenant, Investor, Visitor"
+    }
+    App_User {
+        string system_role "ADMIN, MANAGER, STAFF"
+        string password_hash
+        boolean is_active
+    }
+```
+
+The service layer bridges them: when `PersonService` assigns the Staff role to a Person, a separate call to `AppUserService` can create their login account. These are two distinct operations — having a business role does not automatically grant software access.
 
 ---
 
