@@ -11,7 +11,7 @@
 -- Structural check: gender is limited to the three recognized system values.
 ALTER TABLE Person
     ADD CONSTRAINT chk_person_gender CHECK (
-        gender IN ('Male', 'Female', 'Other')
+        gender IN ('Male', 'Female')
     );
 
 -- ============================================================================
