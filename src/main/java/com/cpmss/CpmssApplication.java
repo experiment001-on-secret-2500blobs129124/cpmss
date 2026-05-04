@@ -2,6 +2,7 @@ package com.cpmss;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 /**
@@ -12,9 +13,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  * {@code updatedBy} are populated automatically on every save.
  * The auditor identity is supplied by
  * {@link com.cpmss.config.SecurityAuditorAware}.
+ *
+ * <p>{@code @ConfigurationPropertiesScan} enables auto-binding of
+ * {@link com.cpmss.config.JwtProperties} from {@code application.yml}.
  */
 @SpringBootApplication
 @EnableJpaAuditing
+@ConfigurationPropertiesScan
 public class CpmssApplication {
 
     public static void main(String[] args) {
