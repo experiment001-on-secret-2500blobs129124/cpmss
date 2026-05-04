@@ -44,4 +44,45 @@ public final class ApiPaths {
     public static final String GATES_BY_ID = "/api/v1/gates/{id}";
     public static final String VEHICLES = "/api/v1/vehicles";
     public static final String VEHICLES_BY_ID = "/api/v1/vehicles/{id}";
+
+    // Phase 4 — Staff & HR
+    public static final String STAFF_POSITIONS = "/api/v1/staff-positions";
+    public static final String STAFF_POSITIONS_BY_ID = "/api/v1/staff-positions/{id}";
+    public static final String STAFF_PROFILES = "/api/v1/staff-profiles";
+    public static final String STAFF_PROFILES_BY_ID = "/api/v1/staff-profiles/{id}";
+    public static final String BANK_ACCOUNTS = "/api/v1/bank-accounts";
+    public static final String BANK_ACCOUNTS_BY_ID = "/api/v1/bank-accounts/{id}";
+
+    // Phase 5 — Contracts & Occupancy
+    public static final String CONTRACTS = "/api/v1/contracts";
+    public static final String CONTRACTS_BY_ID = "/api/v1/contracts/{id}";
+    public static final String INSTALLMENTS = "/api/v1/installments";
+    public static final String INSTALLMENTS_BY_ID = "/api/v1/installments/{id}";
+
+    // Phase 6 — Access Control
+    public static final String ACCESS_PERMITS = "/api/v1/access-permits";
+    public static final String ACCESS_PERMITS_BY_ID = "/api/v1/access-permits/{id}";
+    public static final String ENTRIES = "/api/v1/entries";
+    public static final String ENTRIES_BY_ID = "/api/v1/entries/{id}";
+
+    // Phase 7 — Recruitment
+    public static final String APPLICATIONS = "/api/v1/applications";
+
+    // Phase 8 — Attendance & Payroll
+    public static final String ASSIGNED_TASKS = "/api/v1/assigned-tasks";
+    public static final String ASSIGNED_TASKS_BY_ID = "/api/v1/assigned-tasks/{id}";
+    public static final String KPI_POLICIES = "/api/v1/kpi-policies";
+    public static final String KPI_POLICIES_BY_ID = "/api/v1/kpi-policies/{id}";
+    public static final String PERFORMANCE_REVIEWS = "/api/v1/performance-reviews";
+    public static final String PERFORMANCE_REVIEWS_BY_ID = "/api/v1/performance-reviews/{id}";
+    public static final String GATE_GUARD_ASSIGNMENTS = "/api/v1/gate-guard-assignments";
+    public static final String GATE_GUARD_ASSIGNMENTS_BY_ID = "/api/v1/gate-guard-assignments/{id}";
+
+    // Phase 9 — Work Orders
+    public static final String WORK_ORDERS = "/api/v1/work-orders";
+    public static final String WORK_ORDERS_BY_ID = "/api/v1/work-orders/{id}";
+
+    // Phase 10 — Payments
+    public static final String PAYMENTS = "/api/v1/payments";
+    public static final String PAYMENTS_BY_ID = "/api/v1/payments/{id}";
 }
