@@ -1,0 +1,155 @@
+package com.cpmss.staffprofile;
+
+import com.cpmss.common.PagedResponse;
+import com.cpmss.exception.ResourceNotFoundException;
+import com.cpmss.person.Person;
+import com.cpmss.person.PersonRepository;
+import com.cpmss.qualification.Qualification;
+import com.cpmss.qualification.QualificationRepository;
+import com.cpmss.staffprofile.dto.CreateStaffProfileRequest;
+import com.cpmss.staffprofile.dto.StaffProfileResponse;
+import com.cpmss.staffprofile.dto.UpdateStaffProfileRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+/**
+ * Orchestrates staff profile lifecycle operations.
+ *
+ * <p>Manages 1:1 extensions of {@link Person} for staff-specific
+ * attributes. A staff profile is created when a person is assigned
+ * the Staff role. Delegates business rules to {@link StaffProfileRules}.
+ *
+ * @see StaffProfileRules
+ * @see StaffProfileRepository
+ */
+@Service
+public class StaffProfileService {
+
+    private static final Logger log = LoggerFactory.getLogger(StaffProfileService.class);
+
+    private final StaffProfileRepository repository;
+    private final PersonRepository personRepository;
+    private final QualificationRepository qualificationRepository;
+    private final StaffProfileMapper mapper;
+    private final StaffProfileRules rules = new StaffProfileRules();
+
+    /**
+     * Constructs the service with required dependencies.
+     *
+     * @param repository                staff profile data access
+     * @param personRepository          person data access (FK lookup)
+     * @param qualificationRepository   qualification data access (FK lookup)
+     * @param mapper                    entity-DTO mapper
+     */
+    public StaffProfileService(StaffProfileRepository repository,
+                               PersonRepository personRepository,
+                               QualificationRepository qualificationRepository,
+                               StaffProfileMapper mapper) {
+        this.repository = repository;
+        this.personRepository = personRepository;
+        this.qualificationRepository = qualificationRepository;
+        this.mapper = mapper;
+    }
+
+    /**
+     * Retrieves a staff profile by the person's UUID.
+     *
+     * @param personId the person's UUID (also the profile PK)
+     * @return the matching staff profile response
+     * @throws ResourceNotFoundException if no profile exists for this person
+     */
+    @Transactional(readOnly = true)
+    public StaffProfileResponse getById(UUID personId) {
+        return mapper.toResponse(repository.findById(personId)
+                .orElseThrow(() -> new ResourceNotFoundException("StaffProfile", personId)));
+    }
+
+    /**
+     * Lists all staff profiles with pagination.
+     *
+     * @param pageable pagination parameters (page, size, sort)
+     * @return a paged response of staff profile DTOs
+     */
+    @Transactional(readOnly = true)
+    public PagedResponse<StaffProfileResponse> listAll(Pageable pageable) {
+        return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+    }
+
+    /**
+     * Creates a new staff profile for a person.
+     *
+     * <p>Validates that no profile already exists for this person,
+     * and resolves the person and qualification FK references.
+     *
+     * @param request the create request with person ID and qualification details
+     * @return the created staff profile response
+     * @throws com.cpmss.exception.ConflictException if a profile already exists
+     * @throws ResourceNotFoundException if the person or qualification does not exist
+     */
+    @Transactional
+    public StaffProfileResponse create(CreateStaffProfileRequest request) {
+        rules.validateProfileNotExists(request.personId(),
+                repository.existsById(request.personId()));
+
+        Person person = personRepository.findById(request.personId())
+                .orElseThrow(() -> new ResourceNotFoundException("Person", request.personId()));
+
+        Qualification qualification = qualificationRepository.findById(request.qualificationId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Qualification", request.qualificationId()));
+
+        StaffProfile profile = StaffProfile.builder()
+                .person(person)
+                .qualification(qualification)
+                .qualificationDate(request.qualificationDate())
+                .cvFileUrl(request.cvFileUrl())
+                .build();
+        profile = repository.save(profile);
+        log.info("StaffProfile created for person: {}", request.personId());
+        return mapper.toResponse(profile);
+    }
+
+    /**
+     * Updates an existing staff profile.
+     *
+     * @param personId the person's UUID (profile PK)
+     * @param request  the update request with new qualification details
+     * @return the updated staff profile response
+     * @throws ResourceNotFoundException if the profile or qualification does not exist
+     */
+    @Transactional
+    public StaffProfileResponse update(UUID personId, UpdateStaffProfileRequest request) {
+        StaffProfile profile = repository.findById(personId)
+                .orElseThrow(() -> new ResourceNotFoundException("StaffProfile", personId));
+
+        Qualification qualification = qualificationRepository.findById(request.qualificationId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Qualification", request.qualificationId()));
+
+        profile.setQualification(qualification);
+        profile.setQualificationDate(request.qualificationDate());
+        profile.setCvFileUrl(request.cvFileUrl());
+        profile = repository.save(profile);
+        log.info("StaffProfile updated for person: {}", personId);
+        return mapper.toResponse(profile);
+    }
+
+    /**
+     * Deletes a staff profile by person ID.
+     *
+     * @param personId the person's UUID (profile PK)
+     * @throws ResourceNotFoundException if no profile exists for this person
+     */
+    @Transactional
+    public void delete(UUID personId) {
+        StaffProfile profile = repository.findById(personId)
+                .orElseThrow(() -> new ResourceNotFoundException("StaffProfile", personId));
+        repository.delete(profile);
+        log.info("StaffProfile deleted for person: {}", personId);
+    }
+}
