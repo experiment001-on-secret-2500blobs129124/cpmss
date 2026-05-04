@@ -177,6 +177,19 @@ CREATE TABLE Staff_Profile (
     updated_by         VARCHAR(255)
 );
 
+-- Owned entity: a named job position that staff can hold, scoped to a department (e.g. 'Security Guard', 'Maintenance Tech') — owned by Department, cannot exist without it.
+-- Audit columns capture when the record was added or changed, and which authenticated user did it.
+CREATE TABLE Staff_Position (
+    position_id   UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    position_name VARCHAR(100) NOT NULL,
+    department_id UUID         NOT NULL REFERENCES Department(department_id) ON DELETE RESTRICT,
+    -- Audit columns (mapped to BaseEntity)
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    created_by    VARCHAR(255),
+    updated_by    VARCHAR(255)
+);
+
 -- Detail-History table: tracks which Position a Staff member has held over time (SCD Type 2).
 -- Answers "what position does this person currently hold?" (end_date IS NULL = still active).
 -- person_id must reference a Person with the 'Staff' role — enforced in StaffService + StaffRules.java.
@@ -320,18 +333,7 @@ CREATE TABLE Bank_Account (
     updated_by       VARCHAR(255)
 );
 
--- Owned entity: a named job position that staff can hold, scoped to a department (e.g. 'Security Guard', 'Maintenance Tech') — owned by Department, cannot exist without it.
--- Audit columns capture when the record was added or changed, and which authenticated user did it.
-CREATE TABLE Staff_Position (
-    position_id   UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    position_name VARCHAR(100) NOT NULL,
-    department_id UUID         NOT NULL REFERENCES Department(department_id) ON DELETE RESTRICT,
-    -- Audit columns (mapped to BaseEntity)
-    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    created_by    VARCHAR(255),
-    updated_by    VARCHAR(255)
-);
+
 
 -- Detail-History table: tracks salary bands for a Staff_Position over time (SCD Type 2).
 -- ORDER BY salary_effective_date DESC LIMIT 1 = current salary band.
@@ -629,6 +631,28 @@ CREATE TABLE Vehicle (
     updated_by          VARCHAR(255)
 );
 
+-- Owned entity: a maintenance or service request raised by a person — owned by Person (requester), cannot exist without one.
+-- Audit columns capture when the record was added or changed, and which authenticated user did it.
+CREATE TABLE Work_Order (
+    work_order_id    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    work_order_no    VARCHAR(20)   NOT NULL UNIQUE,
+    date_scheduled   DATE,
+    date_completed   DATE,
+    cost_amount      DECIMAL(12, 2),
+    job_status       VARCHAR(50)   NOT NULL,
+    description      TEXT,
+    priority         VARCHAR(20),
+    service_category VARCHAR(50),
+    requester_id     UUID          NOT NULL REFERENCES Person(person_id)       ON DELETE RESTRICT,
+    facility_id      UUID                   REFERENCES Facility(facility_id)   ON DELETE SET NULL,
+    company_id       UUID                   REFERENCES Company(company_id)     ON DELETE SET NULL,
+    -- Audit columns (mapped to BaseEntity)
+    created_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    created_by       VARCHAR(255),
+    updated_by       VARCHAR(255)
+);
+
 -- ============================================================================
 -- ACCESS CONTROL & GATE MANAGEMENT
 -- (depends on: Person, Contract, Department, Gate, Vehicle)
@@ -701,28 +725,6 @@ CREATE TABLE Enters_At (
 -- MAINTENANCE & WORK ORDERS
 -- (depends on: Person, Facility, Company)
 -- ============================================================================
-
--- Owned entity: a maintenance or service request raised by a person — owned by Person (requester), cannot exist without one.
--- Audit columns capture when the record was added or changed, and which authenticated user did it.
-CREATE TABLE Work_Order (
-    work_order_id    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    work_order_no    VARCHAR(20)   NOT NULL UNIQUE,
-    date_scheduled   DATE,
-    date_completed   DATE,
-    cost_amount      DECIMAL(12, 2),
-    job_status       VARCHAR(50)   NOT NULL,
-    description      TEXT,
-    priority         VARCHAR(20),
-    service_category VARCHAR(50),
-    requester_id     UUID          NOT NULL REFERENCES Person(person_id)       ON DELETE RESTRICT,
-    facility_id      UUID                   REFERENCES Facility(facility_id)   ON DELETE SET NULL,
-    company_id       UUID                   REFERENCES Company(company_id)     ON DELETE SET NULL,
-    -- Audit columns (mapped to BaseEntity)
-    created_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-    updated_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-    created_by       VARCHAR(255),
-    updated_by       VARCHAR(255)
-);
 
 -- Junction table: records which company was assigned to a work order (M:M with assignment date).
 -- Full @Entity because the assignment date is tracked as extra data.
