@@ -19,7 +19,7 @@ public final class ApiPaths {
     public static final String USERS = "/api/v1/users";
     public static final String USERS_BY_ID = "/api/v1/users/{id}";
     public static final String USERS_ROLE = "/api/v1/users/{id}/role";
-    public static final String USERS_DEACTIVATE = "/api/v1/users/{id}/deactivate";
+    public static final String USERS_STATUS = "/api/v1/users/{id}/status";
     public static final String REGISTER = "/register";
 
     // Phase 2 — Catalogs

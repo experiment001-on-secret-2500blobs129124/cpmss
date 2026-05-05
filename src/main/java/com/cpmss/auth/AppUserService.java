@@ -183,24 +183,30 @@ public class AppUserService {
     }
 
     /**
-     * Deactivates a user account.
+     * Activates or deactivates a user account.
      *
      * <p>Enforces: cannot deactivate your own account.
+     * Reactivation is allowed (e.g. employee returns, admin break-glass).
      *
      * @param userId the target user's UUID
+     * @param active the new active status
      * @return the updated user response
      * @throws ResourceNotFoundException if no user exists with this ID
      * @throws ForbiddenException if the actor tries to deactivate themselves
      */
     @Transactional
-    public AppUserResponse deactivateUser(UUID userId) {
+    public AppUserResponse updateStatus(UUID userId, boolean active) {
         UUID actorId = getCurrentUserId();
-        rules.validateCannotDeactivateSelf(actorId, userId);
+
+        if (!active) {
+            rules.validateCannotDeactivateSelf(actorId, userId);
+        }
 
         AppUser user = findOrThrow(userId);
-        user.setActive(false);
+        user.setActive(active);
         user = repository.save(user);
-        log.info("User {} deactivated by {}", user.getEmail(), actorId);
+        log.info("User {} active status changed to {} by {}",
+                user.getEmail(), active, actorId);
         return mapper.toResponse(user);
     }
 
