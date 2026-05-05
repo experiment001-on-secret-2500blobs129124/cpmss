@@ -6,6 +6,10 @@ import com.cpmss.common.PagedResponse;
 import com.cpmss.facility.dto.CreateFacilityRequest;
 import com.cpmss.facility.dto.FacilityResponse;
 import com.cpmss.facility.dto.UpdateFacilityRequest;
+import com.cpmss.facilityhourshistory.dto.CreateFacilityHoursHistoryRequest;
+import com.cpmss.facilityhourshistory.dto.FacilityHoursHistoryResponse;
+import com.cpmss.facilitymanager.dto.CreateFacilityManagerRequest;
+import com.cpmss.facilitymanager.dto.FacilityManagerResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +21,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
- * REST controller for facility CRUD operations.
+ * REST controller for facility CRUD and history sub-resources.
  *
  * <p>Exposes paginated list, single-resource GET, create, update,
- * and delete endpoints under {@link ApiPaths#FACILITIES}.
+ * delete, hours-history, and manager assignment endpoints
+ * under {@link ApiPaths#FACILITIES}.
  *
  * @see FacilityService
  */
@@ -101,5 +107,63 @@ public class FacilityApiController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         facilityService.delete(id);
         return ResponseEntity.status(204).body(ApiResponse.noContent());
+    }
+
+    // ── Hours History Sub-Endpoints ────────────────────────────────────
+
+    /**
+     * Adds a hours history entry to a facility.
+     *
+     * @param id      the facility UUID
+     * @param request the hours details
+     * @return 201 Created with the new hours history entry
+     */
+    @PostMapping(ApiPaths.FACILITIES_HOURS_HISTORY)
+    public ResponseEntity<ApiResponse<FacilityHoursHistoryResponse>> addHoursHistory(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateFacilityHoursHistoryRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(facilityService.addHoursHistory(id, request)));
+    }
+
+    /**
+     * Retrieves all hours history entries for a facility.
+     *
+     * @param id the facility UUID
+     * @return 200 OK with hours history list
+     */
+    @GetMapping(ApiPaths.FACILITIES_HOURS_HISTORY)
+    public ResponseEntity<ApiResponse<List<FacilityHoursHistoryResponse>>> getHoursHistory(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(facilityService.getHoursHistory(id)));
+    }
+
+    // ── Manager Sub-Endpoints ─────────────────────────────────────────
+
+    /**
+     * Assigns a manager to a facility.
+     *
+     * @param id      the facility UUID
+     * @param request the manager assignment details
+     * @return 201 Created with the new assignment
+     */
+    @PostMapping(ApiPaths.FACILITIES_MANAGERS)
+    public ResponseEntity<ApiResponse<FacilityManagerResponse>> assignManager(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateFacilityManagerRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(facilityService.assignManager(id, request)));
+    }
+
+    /**
+     * Retrieves all manager assignments for a facility.
+     *
+     * @param id the facility UUID
+     * @return 200 OK with manager assignment list
+     */
+    @GetMapping(ApiPaths.FACILITIES_MANAGERS)
+    public ResponseEntity<ApiResponse<List<FacilityManagerResponse>>> getManagers(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(facilityService.getManagers(id)));
     }
 }

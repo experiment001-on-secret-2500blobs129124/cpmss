@@ -6,6 +6,10 @@ import com.cpmss.common.PagedResponse;
 import com.cpmss.department.dto.CreateDepartmentRequest;
 import com.cpmss.department.dto.DepartmentResponse;
 import com.cpmss.department.dto.UpdateDepartmentRequest;
+import com.cpmss.departmentlocationhistory.dto.CreateDeptLocationHistoryRequest;
+import com.cpmss.departmentlocationhistory.dto.DeptLocationHistoryResponse;
+import com.cpmss.departmentmanagers.dto.CreateDeptManagerRequest;
+import com.cpmss.departmentmanagers.dto.DeptManagerResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +21,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
- * REST controller for department CRUD operations.
+ * REST controller for department CRUD and history sub-resources.
+ *
+ * <p>Exposes paginated list, single-resource GET, create, update,
+ * delete, location-history, and manager assignment endpoints
+ * under {@link ApiPaths#DEPARTMENTS}.
  *
  * @see DepartmentService
  */
@@ -98,5 +107,63 @@ public class DepartmentApiController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         departmentService.delete(id);
         return ResponseEntity.status(204).body(ApiResponse.noContent());
+    }
+
+    // ── Location History Sub-Endpoints ─────────────────────────────────
+
+    /**
+     * Adds a location history entry to a department.
+     *
+     * @param id      the department UUID
+     * @param request the location details (start date + building ID)
+     * @return 201 Created with the new location history entry
+     */
+    @PostMapping(ApiPaths.DEPARTMENTS_LOCATION_HISTORY)
+    public ResponseEntity<ApiResponse<DeptLocationHistoryResponse>> addLocationHistory(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateDeptLocationHistoryRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(departmentService.addLocationHistory(id, request)));
+    }
+
+    /**
+     * Retrieves all location history entries for a department.
+     *
+     * @param id the department UUID
+     * @return 200 OK with location history list
+     */
+    @GetMapping(ApiPaths.DEPARTMENTS_LOCATION_HISTORY)
+    public ResponseEntity<ApiResponse<List<DeptLocationHistoryResponse>>> getLocationHistory(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(departmentService.getLocationHistory(id)));
+    }
+
+    // ── Manager Sub-Endpoints ─────────────────────────────────────────
+
+    /**
+     * Assigns a manager to a department.
+     *
+     * @param id      the department UUID
+     * @param request the manager assignment details
+     * @return 201 Created with the new assignment
+     */
+    @PostMapping(ApiPaths.DEPARTMENTS_MANAGERS)
+    public ResponseEntity<ApiResponse<DeptManagerResponse>> assignManager(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateDeptManagerRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(departmentService.assignManager(id, request)));
+    }
+
+    /**
+     * Retrieves all manager assignments for a department.
+     *
+     * @param id the department UUID
+     * @return 200 OK with manager assignment list
+     */
+    @GetMapping(ApiPaths.DEPARTMENTS_MANAGERS)
+    public ResponseEntity<ApiResponse<List<DeptManagerResponse>>> getManagers(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(departmentService.getManagers(id)));
     }
 }

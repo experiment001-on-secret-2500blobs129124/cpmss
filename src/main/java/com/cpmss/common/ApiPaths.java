@@ -25,6 +25,8 @@ public final class ApiPaths {
     // Phase 2 — Catalogs
     public static final String DEPARTMENTS = "/api/v1/departments";
     public static final String DEPARTMENTS_BY_ID = "/api/v1/departments/{id}";
+    public static final String DEPARTMENTS_LOCATION_HISTORY = "/api/v1/departments/{id}/location-history";
+    public static final String DEPARTMENTS_MANAGERS = "/api/v1/departments/{id}/managers";
     public static final String ROLES = "/api/v1/roles";
     public static final String ROLES_BY_ID = "/api/v1/roles/{id}";
     public static final String QUALIFICATIONS = "/api/v1/qualifications";
@@ -49,6 +51,8 @@ public final class ApiPaths {
     public static final String UNITS_STATUS_HISTORY = "/api/v1/units/{id}/status-history";
     public static final String FACILITIES = "/api/v1/facilities";
     public static final String FACILITIES_BY_ID = "/api/v1/facilities/{id}";
+    public static final String FACILITIES_HOURS_HISTORY = "/api/v1/facilities/{id}/hours-history";
+    public static final String FACILITIES_MANAGERS = "/api/v1/facilities/{id}/managers";
     public static final String GATES = "/api/v1/gates";
     public static final String GATES_BY_ID = "/api/v1/gates/{id}";
     public static final String VEHICLES = "/api/v1/vehicles";
