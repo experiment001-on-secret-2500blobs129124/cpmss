@@ -96,4 +96,8 @@ public final class ApiPaths {
     // Internal Reports
     public static final String INTERNAL_REPORTS = "/api/v1/internal-reports";
     public static final String INTERNAL_REPORTS_BY_ID = "/api/v1/internal-reports/{id}";
+    public static final String INTERNAL_REPORTS_READ = "/api/v1/internal-reports/{id}/read";
+    public static final String INTERNAL_REPORTS_UNREAD = "/api/v1/internal-reports/{id}/unread";
+    public static final String INTERNAL_REPORTS_RESOLVE = "/api/v1/internal-reports/{id}/resolve";
+    public static final String INTERNAL_REPORTS_UNREAD_COUNT = "/api/v1/internal-reports/unread/count";
 }
