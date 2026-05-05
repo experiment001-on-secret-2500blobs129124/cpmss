@@ -118,4 +118,9 @@ public final class ApiPaths {
     public static final String KPI_RECORDS = "/api/v1/kpi-records";
     public static final String KPI_CLOSE = "/api/v1/kpi/close";
     public static final String KPI_SUMMARIES = "/api/v1/kpi-summaries";
+
+    // Phase C.5 — Polymorphic Payments
+    public static final String PAYMENTS_INSTALLMENT = "/api/v1/payments/installment";
+    public static final String PAYMENTS_WORK_ORDER = "/api/v1/payments/work-order";
+    public static final String PAYMENTS_PAYROLL = "/api/v1/payments/payroll";
 }
