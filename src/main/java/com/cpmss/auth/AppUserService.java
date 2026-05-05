@@ -81,6 +81,20 @@ public class AppUserService {
     }
 
     /**
+     * Finds a user account by email address.
+     *
+     * @param email the login email to search for
+     * @return the matching user response
+     * @throws ResourceNotFoundException if no active user exists with this email
+     */
+    @Transactional(readOnly = true)
+    public AppUserResponse findByEmail(String email) {
+        AppUser user = repository.findByEmailAndActiveTrue(email)
+                .orElseThrow(() -> new ResourceNotFoundException("AppUser", email));
+        return mapper.toResponse(user);
+    }
+
+    /**
      * Creates a new AppUser account with authority validation.
      *
      * <p>The actor's role determines which target roles they can assign.
