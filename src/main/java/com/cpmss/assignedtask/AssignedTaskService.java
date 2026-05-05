@@ -34,6 +34,7 @@ public class AssignedTaskService {
     private final TaskRepository taskRepository;
     private final ShiftAttendanceTypeRepository shiftRepository;
     private final AssignedTaskMapper mapper;
+    private final AssignedTaskRules rules = new AssignedTaskRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -87,6 +88,11 @@ public class AssignedTaskService {
      */
     @Transactional
     public AssignedTaskResponse create(CreateAssignedTaskRequest request) {
+        rules.validateNoDuplicateAssignment(
+                request.staffId(), request.taskId(), request.assignmentDate(),
+                repository.existsByStaffIdAndTaskIdAndAssignmentDate(
+                        request.staffId(), request.taskId(), request.assignmentDate()));
+
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
         Task task = taskRepository.findById(request.taskId())

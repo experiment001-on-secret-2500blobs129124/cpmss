@@ -37,6 +37,7 @@ public class WorkOrderService {
     private final FacilityRepository facilityRepository;
     private final CompanyRepository companyRepository;
     private final WorkOrderMapper mapper;
+    private final WorkOrderRules rules = new WorkOrderRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -90,6 +91,8 @@ public class WorkOrderService {
      */
     @Transactional
     public WorkOrderResponse create(CreateWorkOrderRequest request) {
+        rules.validateCostPositive(request.costAmount());
+
         Person requester = personRepository.findById(request.requesterId())
                 .orElseThrow(() -> new ResourceNotFoundException("Person", request.requesterId()));
 
@@ -122,6 +125,9 @@ public class WorkOrderService {
     @Transactional
     public WorkOrderResponse update(UUID id, UpdateWorkOrderRequest request) {
         WorkOrder workOrder = findOrThrow(id);
+
+        rules.validateCostPositive(request.costAmount());
+        rules.validateStatusTransition(workOrder.getJobStatus(), request.jobStatus());
 
         workOrder.setDateScheduled(request.dateScheduled());
         workOrder.setDateCompleted(request.dateCompleted());

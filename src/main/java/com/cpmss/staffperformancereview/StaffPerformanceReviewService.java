@@ -27,6 +27,7 @@ public class StaffPerformanceReviewService {
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
     private final StaffPerformanceReviewMapper mapper;
+    private final StaffPerformanceReviewRules rules = new StaffPerformanceReviewRules();
 
     public StaffPerformanceReviewService(StaffPerformanceReviewRepository repository,
                                          PersonRepository personRepository,
@@ -50,6 +51,12 @@ public class StaffPerformanceReviewService {
 
     @Transactional
     public StaffPerformanceReviewResponse create(CreateStaffPerformanceReviewRequest request) {
+        rules.validateReviewerIsNotSelf(request.staffId(), request.reviewerId());
+        rules.validatePromotionConsistency(
+                request.overallRating(),
+                request.resultedInPromotion() != null && request.resultedInPromotion(),
+                request.resultedInRaise() != null && request.resultedInRaise());
+
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
         Person reviewer = personRepository.findById(request.reviewerId())

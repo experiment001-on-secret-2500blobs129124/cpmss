@@ -31,6 +31,7 @@ public class InstallmentService {
     private final InstallmentRepository repository;
     private final ContractRepository contractRepository;
     private final InstallmentMapper mapper;
+    private final InstallmentRules rules = new InstallmentRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -79,6 +80,8 @@ public class InstallmentService {
      */
     @Transactional
     public InstallmentResponse create(CreateInstallmentRequest request) {
+        rules.validateAmountPositive(request.amountExpected());
+
         Contract contract = contractRepository.findById(request.contractId())
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", request.contractId()));
 
@@ -107,6 +110,10 @@ public class InstallmentService {
     @Transactional
     public InstallmentResponse update(UUID id, UpdateInstallmentRequest request) {
         Installment installment = findOrThrow(id);
+
+        rules.validateAmountPositive(request.amountExpected());
+        rules.validateStatusTransition(installment.getInstallmentStatus(),
+                request.installmentStatus());
 
         installment.setInstallmentType(request.installmentType());
         installment.setDueDate(request.dueDate());

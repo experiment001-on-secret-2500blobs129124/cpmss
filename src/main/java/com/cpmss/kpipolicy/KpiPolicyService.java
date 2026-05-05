@@ -32,6 +32,7 @@ public class KpiPolicyService {
     private final DepartmentRepository departmentRepository;
     private final PersonRepository personRepository;
     private final KpiPolicyMapper mapper;
+    private final KpiPolicyRules rules = new KpiPolicyRules();
 
     public KpiPolicyService(KpiPolicyRepository repository,
                             DepartmentRepository departmentRepository,
@@ -55,6 +56,8 @@ public class KpiPolicyService {
 
     @Transactional
     public KpiPolicyResponse create(CreateKpiPolicyRequest request) {
+        rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
+
         Department dept = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
         Person approver = personRepository.findById(request.approvedById())
@@ -78,6 +81,9 @@ public class KpiPolicyService {
     @Transactional
     public KpiPolicyResponse update(UUID id, UpdateKpiPolicyRequest request) {
         KpiPolicy policy = findOrThrow(id);
+
+        rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
+
         policy.setTierLabel(request.tierLabel());
         policy.setMinKpiScore(request.minKpiScore());
         policy.setMaxKpiScore(request.maxKpiScore());
