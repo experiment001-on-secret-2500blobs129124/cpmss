@@ -45,6 +45,8 @@ public final class ApiPaths {
     public static final String BUILDINGS_BY_ID = "/api/v1/buildings/{id}";
     public static final String UNITS = "/api/v1/units";
     public static final String UNITS_BY_ID = "/api/v1/units/{id}";
+    public static final String UNITS_PRICING_HISTORY = "/api/v1/units/{id}/pricing-history";
+    public static final String UNITS_STATUS_HISTORY = "/api/v1/units/{id}/status-history";
     public static final String FACILITIES = "/api/v1/facilities";
     public static final String FACILITIES_BY_ID = "/api/v1/facilities/{id}";
     public static final String GATES = "/api/v1/gates";

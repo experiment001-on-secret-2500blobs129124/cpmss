@@ -9,13 +9,13 @@ import java.util.UUID;
  * Spring Data repository for {@link UnitPricingHistory} entities.
  *
  * <p>Provides CRUD via {@link JpaRepository} and custom query
- * methods for SCD Type 2 unit pricing lookups.
+ * methods for SCD Type 2 listing price lookups.
  */
 public interface UnitPricingHistoryRepository
         extends JpaRepository<UnitPricingHistory, UnitPricingHistoryId> {
 
     /**
-     * Finds all pricing history for a unit, ordered by date descending.
+     * Finds all pricing history entries for a unit, ordered by date descending.
      *
      * @param unitId the unit's UUID
      * @return pricing history entries, most recent first

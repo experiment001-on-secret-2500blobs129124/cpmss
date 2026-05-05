@@ -8,8 +8,8 @@ import java.util.UUID;
 /**
  * Spring Data repository for {@link DepartmentManagers} entities.
  *
- * <p>Provides CRUD via {@link JpaRepository} and query methods
- * for department manager assignment lookups.
+ * <p>Provides CRUD via {@link JpaRepository} and custom query
+ * methods for department manager assignment lookups.
  */
 public interface DepartmentManagersRepository
         extends JpaRepository<DepartmentManagers, DepartmentManagersId> {
@@ -20,5 +20,5 @@ public interface DepartmentManagersRepository
      * @param departmentId the department's UUID
      * @return manager assignments, most recent first
      */
-    List<DepartmentManagers> findByDepartmentIdOrderByStartDateDesc(UUID departmentId);
+    List<DepartmentManagers> findByDepartmentIdOrderByManagementStartDateDesc(UUID departmentId);
 }

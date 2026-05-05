@@ -6,6 +6,10 @@ import com.cpmss.common.PagedResponse;
 import com.cpmss.unit.dto.CreateUnitRequest;
 import com.cpmss.unit.dto.UnitResponse;
 import com.cpmss.unit.dto.UpdateUnitRequest;
+import com.cpmss.unitpricinghistory.dto.CreateUnitPricingHistoryRequest;
+import com.cpmss.unitpricinghistory.dto.UnitPricingHistoryResponse;
+import com.cpmss.unitstatushistory.dto.CreateUnitStatusHistoryRequest;
+import com.cpmss.unitstatushistory.dto.UnitStatusHistoryResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -100,5 +105,63 @@ public class UnitApiController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         unitService.delete(id);
         return ResponseEntity.status(204).body(ApiResponse.noContent());
+    }
+
+    // ── Pricing History Sub-Endpoints ────────────────────────────────────
+
+    /**
+     * Adds a pricing history entry to a unit.
+     *
+     * @param id      the unit UUID
+     * @param request the pricing details
+     * @return 201 Created with the new pricing history entry
+     */
+    @PostMapping(ApiPaths.UNITS_PRICING_HISTORY)
+    public ResponseEntity<ApiResponse<UnitPricingHistoryResponse>> addPricingHistory(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateUnitPricingHistoryRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(unitService.addPricingHistory(id, request)));
+    }
+
+    /**
+     * Retrieves all pricing history entries for a unit.
+     *
+     * @param id the unit UUID
+     * @return 200 OK with pricing history list
+     */
+    @GetMapping(ApiPaths.UNITS_PRICING_HISTORY)
+    public ResponseEntity<ApiResponse<List<UnitPricingHistoryResponse>>> getPricingHistory(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(unitService.getPricingHistory(id)));
+    }
+
+    // ── Status History Sub-Endpoints ─────────────────────────────────────
+
+    /**
+     * Adds a status history entry to a unit.
+     *
+     * @param id      the unit UUID
+     * @param request the status details
+     * @return 201 Created with the new status history entry
+     */
+    @PostMapping(ApiPaths.UNITS_STATUS_HISTORY)
+    public ResponseEntity<ApiResponse<UnitStatusHistoryResponse>> addStatusHistory(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateUnitStatusHistoryRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(unitService.addStatusHistory(id, request)));
+    }
+
+    /**
+     * Retrieves all status history entries for a unit.
+     *
+     * @param id the unit UUID
+     * @return 200 OK with status history list
+     */
+    @GetMapping(ApiPaths.UNITS_STATUS_HISTORY)
+    public ResponseEntity<ApiResponse<List<UnitStatusHistoryResponse>>> getStatusHistory(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(unitService.getStatusHistory(id)));
     }
 }

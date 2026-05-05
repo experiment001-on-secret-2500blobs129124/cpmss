@@ -8,13 +8,13 @@ import java.util.UUID;
 /**
  * Spring Data repository for {@link Application} entities.
  *
- * <p>Provides CRUD via {@link JpaRepository}. Custom queries support
- * listing applications by applicant.
+ * <p>Provides CRUD via {@link JpaRepository} and custom query
+ * methods for listing applications by applicant.
  */
 public interface ApplicationRepository extends JpaRepository<Application, ApplicationId> {
 
     /**
-     * Find all applications for a given applicant, ordered by date descending.
+     * Finds all applications for a given applicant, ordered by date descending.
      *
      * @param applicantId the applicant's person UUID
      * @return applications for that person, most recent first

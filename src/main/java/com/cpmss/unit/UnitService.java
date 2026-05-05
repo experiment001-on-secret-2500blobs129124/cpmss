@@ -7,12 +7,21 @@ import com.cpmss.exception.ResourceNotFoundException;
 import com.cpmss.unit.dto.CreateUnitRequest;
 import com.cpmss.unit.dto.UnitResponse;
 import com.cpmss.unit.dto.UpdateUnitRequest;
+import com.cpmss.unitpricinghistory.UnitPricingHistory;
+import com.cpmss.unitpricinghistory.UnitPricingHistoryRepository;
+import com.cpmss.unitpricinghistory.dto.CreateUnitPricingHistoryRequest;
+import com.cpmss.unitpricinghistory.dto.UnitPricingHistoryResponse;
+import com.cpmss.unitstatushistory.UnitStatusHistory;
+import com.cpmss.unitstatushistory.UnitStatusHistoryRepository;
+import com.cpmss.unitstatushistory.dto.CreateUnitStatusHistoryRequest;
+import com.cpmss.unitstatushistory.dto.UnitStatusHistoryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -20,6 +29,7 @@ import java.util.UUID;
  *
  * <p>Units are owned by a {@link Building}. Unit number uniqueness
  * within a building is enforced by {@link UnitRules}.
+ * Also manages SCD Type 2 pricing and status history sub-resources.
  *
  * @see UnitRules
  * @see UnitRepository
@@ -31,21 +41,29 @@ public class UnitService {
 
     private final UnitRepository repository;
     private final BuildingRepository buildingRepository;
+    private final UnitPricingHistoryRepository pricingHistoryRepository;
+    private final UnitStatusHistoryRepository statusHistoryRepository;
     private final UnitMapper mapper;
     private final UnitRules rules = new UnitRules();
 
     /**
      * Constructs the service with required dependencies.
      *
-     * @param repository         unit data access
-     * @param buildingRepository building data access (for FK lookup)
-     * @param mapper             entity-DTO mapper
+     * @param repository               unit data access
+     * @param buildingRepository       building data access (for FK lookup)
+     * @param pricingHistoryRepository pricing history data access
+     * @param statusHistoryRepository  status history data access
+     * @param mapper                   entity-DTO mapper
      */
     public UnitService(UnitRepository repository,
                        BuildingRepository buildingRepository,
+                       UnitPricingHistoryRepository pricingHistoryRepository,
+                       UnitStatusHistoryRepository statusHistoryRepository,
                        UnitMapper mapper) {
         this.repository = repository;
         this.buildingRepository = buildingRepository;
+        this.pricingHistoryRepository = pricingHistoryRepository;
+        this.statusHistoryRepository = statusHistoryRepository;
         this.mapper = mapper;
     }
 
@@ -161,5 +179,97 @@ public class UnitService {
                 .orElseThrow(() -> new ResourceNotFoundException("Unit", id));
         repository.delete(unit);
         log.info("Unit deleted: {}", unit.getUnitNo());
+    }
+
+    // ── Pricing History Sub-Resource ─────────────────────────────────────
+
+    /**
+     * Adds a pricing history entry to a unit.
+     *
+     * @param unitId  the unit's UUID
+     * @param request the pricing details (effective date + listing price)
+     * @return the created pricing history response
+     * @throws ResourceNotFoundException if the unit does not exist
+     */
+    @Transactional
+    public UnitPricingHistoryResponse addPricingHistory(UUID unitId,
+                                                        CreateUnitPricingHistoryRequest request) {
+        Unit unit = repository.findById(unitId)
+                .orElseThrow(() -> new ResourceNotFoundException("Unit", unitId));
+
+        UnitPricingHistory history = new UnitPricingHistory();
+        history.setUnit(unit);
+        history.setEffectiveDate(request.effectiveDate());
+        history.setListingPrice(request.listingPrice());
+        history = pricingHistoryRepository.save(history);
+        log.info("Pricing history added: unit={}, price={}, effective={}",
+                unitId, request.listingPrice(), request.effectiveDate());
+        return new UnitPricingHistoryResponse(
+                unit.getId(), history.getEffectiveDate(), history.getListingPrice());
+    }
+
+    /**
+     * Retrieves all pricing history entries for a unit.
+     *
+     * @param unitId the unit's UUID
+     * @return pricing history entries, most recent first
+     * @throws ResourceNotFoundException if the unit does not exist
+     */
+    @Transactional(readOnly = true)
+    public List<UnitPricingHistoryResponse> getPricingHistory(UUID unitId) {
+        if (!repository.existsById(unitId)) {
+            throw new ResourceNotFoundException("Unit", unitId);
+        }
+        return pricingHistoryRepository.findByUnitIdOrderByEffectiveDateDesc(unitId)
+                .stream()
+                .map(h -> new UnitPricingHistoryResponse(
+                        h.getUnit().getId(), h.getEffectiveDate(), h.getListingPrice()))
+                .toList();
+    }
+
+    // ── Status History Sub-Resource ──────────────────────────────────────
+
+    /**
+     * Adds a status history entry to a unit.
+     *
+     * @param unitId  the unit's UUID
+     * @param request the status details (effective date + status)
+     * @return the created status history response
+     * @throws ResourceNotFoundException if the unit does not exist
+     */
+    @Transactional
+    public UnitStatusHistoryResponse addStatusHistory(UUID unitId,
+                                                      CreateUnitStatusHistoryRequest request) {
+        Unit unit = repository.findById(unitId)
+                .orElseThrow(() -> new ResourceNotFoundException("Unit", unitId));
+
+        UnitStatusHistory history = new UnitStatusHistory();
+        history.setUnit(unit);
+        history.setEffectiveDate(request.effectiveDate());
+        history.setUnitStatus(request.unitStatus());
+        history = statusHistoryRepository.save(history);
+        log.info("Status history added: unit={}, status={}, effective={}",
+                unitId, request.unitStatus(), request.effectiveDate());
+        return new UnitStatusHistoryResponse(
+                unit.getId(), history.getEffectiveDate(), history.getUnitStatus());
+    }
+
+    /**
+     * Retrieves all status history entries for a unit.
+     *
+     * @param unitId the unit's UUID
+     * @return status history entries, most recent first
+     * @throws ResourceNotFoundException if the unit does not exist
+     */
+    @Transactional(readOnly = true)
+    public List<UnitStatusHistoryResponse> getStatusHistory(UUID unitId) {
+        if (!repository.existsById(unitId)) {
+            throw new ResourceNotFoundException("Unit", unitId);
+        }
+        return statusHistoryRepository.findByUnitIdOrderByEffectiveDateDesc(unitId)
+                .stream()
+                .map(h -> new UnitStatusHistoryResponse(
+                        h.getUnit().getId(), h.getEffectiveDate(), h.getUnitStatus()))
+                .toList();
     }
 }

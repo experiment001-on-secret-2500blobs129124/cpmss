@@ -8,8 +8,8 @@ import java.util.UUID;
 /**
  * Spring Data repository for {@link FacilityManager} entities.
  *
- * <p>Provides CRUD via {@link JpaRepository} and query methods
- * for facility manager assignment lookups.
+ * <p>Provides CRUD via {@link JpaRepository} and custom query
+ * methods for facility manager assignment lookups.
  */
 public interface FacilityManagerRepository
         extends JpaRepository<FacilityManager, FacilityManagerId> {

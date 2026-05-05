@@ -9,13 +9,13 @@ import java.util.UUID;
 /**
  * Spring Data repository for {@link Recruitment} entities.
  *
- * <p>Provides CRUD via {@link JpaRepository}. Custom queries support
- * listing interviews by application composite key.
+ * <p>Provides CRUD via {@link JpaRepository} and custom query
+ * methods for listing interviews by application composite key.
  */
 public interface RecruitmentRepository extends JpaRepository<Recruitment, RecruitmentId> {
 
     /**
-     * Find all interviews for a given application (composite FK).
+     * Finds all interviews for a given application (composite FK).
      *
      * @param applicantId     the applicant's person UUID
      * @param positionId      the position UUID

@@ -8,24 +8,43 @@ import java.util.UUID;
 
 /**
  * Spring Data repository for {@link StaffKpiRecord} entities.
+ *
+ * <p>Provides CRUD via {@link JpaRepository} and custom query
+ * methods for daily KPI score lookups by staff, department, and date range.
  */
 public interface StaffKpiRecordRepository
         extends JpaRepository<StaffKpiRecord, StaffKpiRecordId> {
 
     /**
-     * Find all KPI records for a staff member in a department within a date range.
+     * Finds all KPI records for a staff member in a department within a date range.
+     *
+     * @param staffId      the staff member's person UUID
+     * @param departmentId the department UUID
+     * @param from         start date (inclusive)
+     * @param to           end date (inclusive)
+     * @return KPI records matching the criteria
      */
     List<StaffKpiRecord> findByStaffIdAndDepartmentIdAndRecordDateBetween(
             UUID staffId, UUID departmentId, LocalDate from, LocalDate to);
 
     /**
-     * Find all KPI records for a staff member within a date range (any department).
+     * Finds all KPI records for a staff member within a date range (any department).
+     *
+     * @param staffId the staff member's person UUID
+     * @param from    start date (inclusive)
+     * @param to      end date (inclusive)
+     * @return KPI records for that staff member
      */
     List<StaffKpiRecord> findByStaffIdAndRecordDateBetween(
             UUID staffId, LocalDate from, LocalDate to);
 
     /**
-     * Find all KPI records for a department within a date range.
+     * Finds all KPI records for a department within a date range.
+     *
+     * @param departmentId the department UUID
+     * @param from         start date (inclusive)
+     * @param to           end date (inclusive)
+     * @return KPI records for that department
      */
     List<StaffKpiRecord> findByDepartmentIdAndRecordDateBetween(
             UUID departmentId, LocalDate from, LocalDate to);
