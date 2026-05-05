@@ -113,4 +113,9 @@ public final class ApiPaths {
     public static final String PAYROLL_CLOSE = "/api/v1/payroll/close";
     public static final String PAYROLL = "/api/v1/payroll";
     public static final String STAFF_SALARY = "/api/v1/staff-salary";
+
+    // Phase C.4 — KPI Scoring
+    public static final String KPI_RECORDS = "/api/v1/kpi-records";
+    public static final String KPI_CLOSE = "/api/v1/kpi/close";
+    public static final String KPI_SUMMARIES = "/api/v1/kpi-summaries";
 }
