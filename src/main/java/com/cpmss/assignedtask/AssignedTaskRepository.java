@@ -24,4 +24,13 @@ public interface AssignedTaskRepository extends JpaRepository<AssignedTask, UUID
      */
     boolean existsByStaffIdAndTaskIdAndAssignmentDate(UUID staffId, UUID taskId,
                                                       LocalDate assignmentDate);
+
+    /**
+     * Checks whether any task assignment exists for a staff member on a given date.
+     *
+     * @param staffId        the staff member UUID
+     * @param assignmentDate the assignment date
+     * @return true if any assignment exists for that day
+     */
+    boolean existsByStaffIdAndAssignmentDate(UUID staffId, LocalDate assignmentDate);
 }

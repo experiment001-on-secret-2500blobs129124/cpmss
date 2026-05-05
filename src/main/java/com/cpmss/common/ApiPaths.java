@@ -107,4 +107,10 @@ public final class ApiPaths {
     public static final String INTERVIEWS = "/api/v1/interviews";
     public static final String INTERVIEWS_RESULT = "/api/v1/interviews/result";
     public static final String HIRE_AGREEMENTS = "/api/v1/hire-agreements";
+
+    // Phase C.3 — Payroll / Attendance / Salary
+    public static final String ATTENDANCE = "/api/v1/attendance";
+    public static final String PAYROLL_CLOSE = "/api/v1/payroll/close";
+    public static final String PAYROLL = "/api/v1/payroll";
+    public static final String STAFF_SALARY = "/api/v1/staff-salary";
 }
