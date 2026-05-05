@@ -3,7 +3,6 @@ package com.cpmss.auth;
 import com.cpmss.auth.dto.AppUserResponse;
 import com.cpmss.auth.dto.CreateAppUserRequest;
 import com.cpmss.auth.dto.UpdateUserRoleRequest;
-import com.cpmss.auth.dto.UpdateUserStatusRequest;
 import com.cpmss.common.PagedResponse;
 import com.cpmss.exception.ForbiddenException;
 import com.cpmss.exception.ResourceNotFoundException;
@@ -184,29 +183,24 @@ public class AppUserService {
     }
 
     /**
-     * Activates or deactivates a user account.
+     * Deactivates a user account.
      *
      * <p>Enforces: cannot deactivate your own account.
      *
-     * @param userId  the target user's UUID
-     * @param request the new active status
+     * @param userId the target user's UUID
      * @return the updated user response
      * @throws ResourceNotFoundException if no user exists with this ID
      * @throws ForbiddenException if the actor tries to deactivate themselves
      */
     @Transactional
-    public AppUserResponse updateStatus(UUID userId, UpdateUserStatusRequest request) {
+    public AppUserResponse deactivateUser(UUID userId) {
         UUID actorId = getCurrentUserId();
-
-        if (!request.active()) {
-            rules.validateCannotDeactivateSelf(actorId, userId);
-        }
+        rules.validateCannotDeactivateSelf(actorId, userId);
 
         AppUser user = findOrThrow(userId);
-        user.setActive(request.active());
+        user.setActive(false);
         user = repository.save(user);
-        log.info("User {} active status changed to {} by {}",
-                user.getEmail(), user.isActive(), actorId);
+        log.info("User {} deactivated by {}", user.getEmail(), actorId);
         return mapper.toResponse(user);
     }
 

@@ -3,7 +3,6 @@ package com.cpmss.auth;
 import com.cpmss.auth.dto.AppUserResponse;
 import com.cpmss.auth.dto.CreateAppUserRequest;
 import com.cpmss.auth.dto.UpdateUserRoleRequest;
-import com.cpmss.auth.dto.UpdateUserStatusRequest;
 import com.cpmss.common.ApiPaths;
 import com.cpmss.common.ApiResponse;
 import com.cpmss.common.PagedResponse;
@@ -99,17 +98,15 @@ public class AppUserApiController {
     }
 
     /**
-     * Activates or deactivates a user account.
+     * Deactivates a user account.
      *
-     * @param id      the target user UUID
-     * @param request the new active status
-     * @return 200 OK with the updated user
+     * @param id the target user UUID
+     * @return 200 OK with the deactivated user
      */
-    @PutMapping(ApiPaths.USERS_STATUS)
-    public ResponseEntity<ApiResponse<AppUserResponse>> updateStatus(
-            @PathVariable UUID id,
-            @Valid @RequestBody UpdateUserStatusRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(appUserService.updateStatus(id, request)));
+    @PutMapping(ApiPaths.USERS_DEACTIVATE)
+    public ResponseEntity<ApiResponse<AppUserResponse>> deactivate(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(appUserService.deactivateUser(id)));
     }
 
     /**
