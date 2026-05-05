@@ -11,17 +11,20 @@ Flyway runs on application startup and applies any pending files in version orde
 
 ```
 src/main/resources/db/migration/
-  V1__create_initial_tables.sql    ← DDL: all CREATE TABLE statements
-  V2__add_constraints.sql          ← Deferred CHECKs added after Java validation
-  V3__add_auth_tables.sql          ← App_User table (authentication)
-  V4__add_auth_constraints.sql     ← App_User CHECK constraints
-  V5__seed_catalog_data.sql        ← Reference data required for the app to function
-  R__seed_dev_data.sql             ← Dev-only: fixed list of fake records for testing
+  V1__create_initial_tables.sql              ← DDL: all CREATE TABLE statements
+  V2__add_constraints.sql                    ← Deferred CHECKs for V1 tables
+  V3__add_auth_tables.sql                    ← App_User table (authentication)
+  V4__add_auth_constraints.sql               ← App_User CHECK constraints (12 system roles)
+  V5__add_team_name.sql                      ← Adds team_name to Person_Supervision
+  V6__add_internal_report.sql                ← Internal_Report table (ticketing system)
+  V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6 (paired)
+  V8__seed_catalog_data.sql                  ← Reference data required for the app to function
+  R__seed_dev_data.sql                       ← Dev-only: fixed list of fake records for testing
 ```
 
 | File | Runs in prod? | Purpose |
 |---|---|---|
-| `V1`–`V5` | All environments | Schema structure, auth tables, constraints, and required reference data |
+| `V1`–`V8` | All environments | Schema structure, auth tables, constraints, features, and required reference data |
 | `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
 
 **Rules:**
@@ -278,24 +281,27 @@ The schema deliberately separates **two independent role concepts** into differe
 | Axis | Table | Question it answers | Example values |
 |---|---|---|---|
 | **Business role** | `Person_Role` (junction → `Role`) | *"What is this person in the compound?"* | Staff, Tenant, Investor, Visitor |
-| **System role** | `App_User.system_role` | *"What can this person do in the software?"* | ADMIN, MANAGER, STAFF |
+| **System role** | `App_User.system_role` | *"What can this person do in the software?"* | ADMIN, GENERAL_MANAGER, HR_OFFICER, ACCOUNTANT, SECURITY_OFFICER, FACILITY_OFFICER, DEPARTMENT_MANAGER, SUPERVISOR, GATE_GUARD, STAFF, INVESTOR, APPLICANT |
 
 ### Why they cannot be the same thing
 
 A **business role** is a real-world fact: "Ahmed is a staff member who also rents a unit." He has two `Person_Role` rows: Staff + Tenant. This is about *who he is* in the compound.
 
-A **system role** is a software permission: "Ahmed can approve work orders and view payroll." He has one `App_User` row with `system_role = 'MANAGER'`. This is about *what the software lets him do*.
+A **system role** is a software permission: "Ahmed can manage his department's tasks and attendance." He has one `App_User` row with `system_role = 'DEPARTMENT_MANAGER'`. This is about *what the software lets him do*.
 
 These are independent:
 
 | Person | Business roles (Person_Role) | System role (App_User) | Login? |
 |---|---|---|---|
-| HR Manager | Staff | MANAGER | ✅ |
-| Security Guard | Staff | STAFF | ✅ |
+| Compound Owner | Staff | GENERAL_MANAGER | ✅ |
+| HR Manager | Staff | HR_OFFICER | ✅ |
+| Team Lead | Staff | SUPERVISOR | ✅ |
+| Security Guard | Staff | GATE_GUARD | ✅ |
 | System Admin | *(none — no Person record yet)* | ADMIN | ✅ |
+| Investor | Investor | INVESTOR | ✅ |
+| Job Applicant | *(none initially)* | APPLICANT | ✅ |
 | Tenant's child | Tenant *(via parent's contract)* | *(no App_User row)* | ❌ |
 | Visiting plumber | Visitor | *(no App_User row)* | ❌ |
-| Investor who is also a tenant | Investor, Tenant | *(no App_User row)* | ❌ |
 
 ### Why they live in different tables
 
@@ -319,7 +325,7 @@ erDiagram
         string role_name "Staff, Tenant, Investor, Visitor"
     }
     App_User {
-        string system_role "ADMIN, MANAGER, STAFF"
+        string system_role "ADMIN, GENERAL_MANAGER, HR_OFFICER, ..."
         string password_hash
         boolean is_active
     }
