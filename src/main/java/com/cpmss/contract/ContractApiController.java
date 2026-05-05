@@ -6,6 +6,10 @@ import com.cpmss.common.PagedResponse;
 import com.cpmss.contract.dto.ContractResponse;
 import com.cpmss.contract.dto.CreateContractRequest;
 import com.cpmss.contract.dto.UpdateContractRequest;
+import com.cpmss.contractparty.dto.AddContractPartyRequest;
+import com.cpmss.contractparty.dto.ContractPartyResponse;
+import com.cpmss.personresidesunder.dto.AddPersonResidesUnderRequest;
+import com.cpmss.personresidesunder.dto.PersonResidesUnderResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -89,5 +93,63 @@ public class ContractApiController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateContractRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.update(id, request)));
+    }
+
+    // ── Contract Party Sub-Endpoints ────────────────────────────────────
+
+    /**
+     * Adds a party to a contract.
+     *
+     * @param id      the contract UUID
+     * @param request the party details
+     * @return 201 Created with the new contract party
+     */
+    @PostMapping(ApiPaths.CONTRACT_PARTIES)
+    public ResponseEntity<ApiResponse<ContractPartyResponse>> addParty(
+            @PathVariable UUID id,
+            @Valid @RequestBody AddContractPartyRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(contractService.addParty(id, request)));
+    }
+
+    /**
+     * Lists all parties for a contract.
+     *
+     * @param id the contract UUID
+     * @return 200 OK with the party list
+     */
+    @GetMapping(ApiPaths.CONTRACT_PARTIES)
+    public ResponseEntity<ApiResponse<java.util.List<ContractPartyResponse>>> getParties(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.getParties(id)));
+    }
+
+    // ── Resident Sub-Endpoints ──────────────────────────────────────────
+
+    /**
+     * Adds a resident under a contract.
+     *
+     * @param id      the contract UUID
+     * @param request the resident details
+     * @return 201 Created with the new residency record
+     */
+    @PostMapping(ApiPaths.CONTRACT_RESIDENTS)
+    public ResponseEntity<ApiResponse<PersonResidesUnderResponse>> addResident(
+            @PathVariable UUID id,
+            @Valid @RequestBody AddPersonResidesUnderRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(contractService.addResident(id, request)));
+    }
+
+    /**
+     * Lists all residents for a contract.
+     *
+     * @param id the contract UUID
+     * @return 200 OK with the resident list
+     */
+    @GetMapping(ApiPaths.CONTRACT_RESIDENTS)
+    public ResponseEntity<ApiResponse<java.util.List<PersonResidesUnderResponse>>> getResidents(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.getResidents(id)));
     }
 }

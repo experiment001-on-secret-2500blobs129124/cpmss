@@ -63,6 +63,8 @@ public final class ApiPaths {
     // Phase 5 — Contracts & Occupancy
     public static final String CONTRACTS = "/api/v1/contracts";
     public static final String CONTRACTS_BY_ID = "/api/v1/contracts/{id}";
+    public static final String CONTRACT_PARTIES = "/api/v1/contracts/{id}/parties";
+    public static final String CONTRACT_RESIDENTS = "/api/v1/contracts/{id}/residents";
     public static final String INSTALLMENTS = "/api/v1/installments";
     public static final String INSTALLMENTS_BY_ID = "/api/v1/installments/{id}";
 
