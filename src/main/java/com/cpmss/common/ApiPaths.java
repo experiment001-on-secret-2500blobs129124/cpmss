@@ -15,6 +15,13 @@ public final class ApiPaths {
     public static final String AUTH_LOGIN = "/api/v1/auth/login";
     public static final String AUTH_REFRESH = "/api/v1/auth/refresh";
 
+    // Phase A — User Management
+    public static final String USERS = "/api/v1/users";
+    public static final String USERS_BY_ID = "/api/v1/users/{id}";
+    public static final String USERS_ROLE = "/api/v1/users/{id}/role";
+    public static final String USERS_STATUS = "/api/v1/users/{id}/status";
+    public static final String REGISTER = "/register";
+
     // Phase 2 — Catalogs
     public static final String DEPARTMENTS = "/api/v1/departments";
     public static final String DEPARTMENTS_BY_ID = "/api/v1/departments/{id}";
@@ -85,4 +92,8 @@ public final class ApiPaths {
     // Phase 10 — Payments
     public static final String PAYMENTS = "/api/v1/payments";
     public static final String PAYMENTS_BY_ID = "/api/v1/payments/{id}";
+
+    // Internal Reports
+    public static final String INTERNAL_REPORTS = "/api/v1/internal-reports";
+    public static final String INTERNAL_REPORTS_BY_ID = "/api/v1/internal-reports/{id}";
 }
