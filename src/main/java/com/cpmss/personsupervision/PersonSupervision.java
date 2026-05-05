@@ -54,4 +54,8 @@ public class PersonSupervision extends BaseAuditEntity {
     /** The date this supervision ended ({@code null} = still active). */
     @Column(name = "supervision_end_date")
     private LocalDate supervisionEndDate;
+
+    /** Optional team name grouping supervisees (e.g. "Alpha Team", "Night Shift"). */
+    @Column(name = "team_name", length = 100)
+    private String teamName;
 }

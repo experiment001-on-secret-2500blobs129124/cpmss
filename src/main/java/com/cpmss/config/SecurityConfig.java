@@ -62,11 +62,14 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/setup",
+                    "/register",
                     "/api/v1/auth/**",
                     "/actuator/health",
                     "/swagger-ui/**",
                     "/v3/api-docs/**"
                 ).permitAll()
+                // TODO: Add role-based path matchers per REQUIREMENTS.md § 4
+                //       when Services are built (e.g. .hasRole("HR_OFFICER"))
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter,
