@@ -102,4 +102,9 @@ public final class ApiPaths {
     public static final String INTERNAL_REPORTS_UNREAD = "/api/v1/internal-reports/{id}/unread";
     public static final String INTERNAL_REPORTS_RESOLVE = "/api/v1/internal-reports/{id}/resolve";
     public static final String INTERNAL_REPORTS_UNREAD_COUNT = "/api/v1/internal-reports/unread/count";
+
+    // Phase C.2 — Recruitment / Hiring Pipeline
+    public static final String INTERVIEWS = "/api/v1/interviews";
+    public static final String INTERVIEWS_RESULT = "/api/v1/interviews/result";
+    public static final String HIRE_AGREEMENTS = "/api/v1/hire-agreements";
 }
