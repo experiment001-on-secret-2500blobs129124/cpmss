@@ -1,0 +1,104 @@
+package com.cpmss.gateguardassignment;
+
+import com.cpmss.assignedtask.AssignedTask;
+import com.cpmss.assignedtask.AssignedTaskRepository;
+import com.cpmss.common.PagedResponse;
+import com.cpmss.exception.ResourceNotFoundException;
+import com.cpmss.gate.Gate;
+import com.cpmss.gate.GateRepository;
+import com.cpmss.gateguardassignment.dto.CreateGateGuardAssignmentRequest;
+import com.cpmss.gateguardassignment.dto.GateGuardAssignmentResponse;
+import com.cpmss.gateguardassignment.dto.UpdateGateGuardAssignmentRequest;
+import com.cpmss.person.Person;
+import com.cpmss.person.PersonRepository;
+import com.cpmss.shiftattendancetype.ShiftAttendanceType;
+import com.cpmss.shiftattendancetype.ShiftAttendanceTypeRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+/** Orchestrates gate guard assignment operations. */
+@Service
+public class GateGuardAssignmentService {
+
+    private static final Logger log = LoggerFactory.getLogger(GateGuardAssignmentService.class);
+
+    private final GateGuardAssignmentRepository repository;
+    private final PersonRepository personRepository;
+    private final GateRepository gateRepository;
+    private final AssignedTaskRepository assignedTaskRepository;
+    private final ShiftAttendanceTypeRepository shiftRepository;
+    private final GateGuardAssignmentMapper mapper;
+
+    public GateGuardAssignmentService(GateGuardAssignmentRepository repository,
+                                       PersonRepository personRepository,
+                                       GateRepository gateRepository,
+                                       AssignedTaskRepository assignedTaskRepository,
+                                       ShiftAttendanceTypeRepository shiftRepository,
+                                       GateGuardAssignmentMapper mapper) {
+        this.repository = repository;
+        this.personRepository = personRepository;
+        this.gateRepository = gateRepository;
+        this.assignedTaskRepository = assignedTaskRepository;
+        this.shiftRepository = shiftRepository;
+        this.mapper = mapper;
+    }
+
+    @Transactional(readOnly = true)
+    public GateGuardAssignmentResponse getById(UUID id) {
+        return mapper.toResponse(findOrThrow(id));
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<GateGuardAssignmentResponse> listAll(Pageable pageable) {
+        return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+    }
+
+    @Transactional
+    public GateGuardAssignmentResponse create(CreateGateGuardAssignmentRequest request) {
+        Person guard = personRepository.findById(request.guardId())
+                .orElseThrow(() -> new ResourceNotFoundException("Person", request.guardId()));
+        Gate gate = gateRepository.findById(request.gateId())
+                .orElseThrow(() -> new ResourceNotFoundException("Gate", request.gateId()));
+        AssignedTask task = assignedTaskRepository.findById(request.taskAssignmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("AssignedTask", request.taskAssignmentId()));
+
+        GateGuardAssignment assignment = GateGuardAssignment.builder()
+                .guard(guard)
+                .gate(gate)
+                .taskAssignment(task)
+                .shiftType(resolveShift(request.shiftTypeId()))
+                .shiftStart(request.shiftStart())
+                .shiftEnd(request.shiftEnd())
+                .build();
+        assignment = repository.save(assignment);
+        log.info("Gate guard assignment created: guard {} at gate {}", request.guardId(), request.gateId());
+        return mapper.toResponse(assignment);
+    }
+
+    @Transactional
+    public GateGuardAssignmentResponse update(UUID id, UpdateGateGuardAssignmentRequest request) {
+        GateGuardAssignment assignment = findOrThrow(id);
+        assignment.setShiftEnd(request.shiftEnd());
+        assignment = repository.save(assignment);
+        log.info("Gate guard assignment updated (shift ended): {}", assignment.getId());
+        return mapper.toResponse(assignment);
+    }
+
+    private GateGuardAssignment findOrThrow(UUID id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("GateGuardAssignment", id));
+    }
+
+    private ShiftAttendanceType resolveShift(UUID id) {
+        if (id == null) {
+            return null;
+        }
+        return shiftRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ShiftAttendanceType", id));
+    }
+}
