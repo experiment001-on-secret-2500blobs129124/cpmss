@@ -13,6 +13,7 @@ import com.cpmss.performance.staffkpimonthlysummary.StaffKpiMonthlySummaryRules;
 import com.cpmss.performance.staffkpimonthlysummary.dto.StaffKpiMonthlySummaryResponse;
 import com.cpmss.performance.staffkpirecord.dto.CreateStaffKpiRecordRequest;
 import com.cpmss.performance.staffkpirecord.dto.StaffKpiRecordResponse;
+import com.cpmss.platform.common.value.YearMonthPeriod;
 import com.cpmss.platform.util.AuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,8 +106,9 @@ public class KpiService {
      */
     @Transactional(readOnly = true)
     public List<StaffKpiRecordResponse> getKpiByStaff(UUID staffId, int year, int month) {
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
         return kpiRecordRepository.findByStaffIdAndRecordDateBetween(staffId, from, to)
                 .stream().map(this::toKpiRecordResponse).toList();
     }
@@ -127,14 +129,15 @@ public class KpiService {
             UUID departmentId, int year, int month, UUID closedById) {
 
         summaryRules.validateCloserProvided(closedById != null);
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
 
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
         Person closedBy = personRepository.findById(closedById)
                 .orElseThrow(() -> new ResourceNotFoundException("Person", closedById));
 
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
 
         List<StaffKpiRecord> records = kpiRecordRepository
                 .findByDepartmentIdAndRecordDateBetween(departmentId, from, to);
@@ -161,8 +164,8 @@ public class KpiService {
             StaffKpiMonthlySummary summary = new StaffKpiMonthlySummary();
             summary.setStaff(sample.getStaff());
             summary.setDepartment(department);
-            summary.setYear(year);
-            summary.setMonth(month);
+            summary.setYear(period.year());
+            summary.setMonth(period.month());
             summary.setAvgKpiScore(avgScore);
             summary.setTotalKpiScore(totalScore);
             summary.setDaysScored(daysScored);

@@ -18,6 +18,7 @@ import com.cpmss.hr.staffsalaryhistory.dto.StaffSalaryHistoryResponse;
 import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalary;
 import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalaryRepository;
 import com.cpmss.workforce.taskmonthlysalary.dto.TaskMonthlySalaryResponse;
+import com.cpmss.platform.common.value.YearMonthPeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -125,8 +126,9 @@ public class PayrollService {
      */
     @Transactional(readOnly = true)
     public List<AttendsResponse> getAttendanceByStaff(UUID staffId, int year, int month) {
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
         return attendsRepository.findByStaffIdAndDateBetween(staffId, from, to)
                 .stream().map(this::toAttendsResponse).toList();
     }
@@ -148,11 +150,12 @@ public class PayrollService {
      */
     @Transactional
     public List<TaskMonthlySalaryResponse> closeMonthlyPayroll(UUID departmentId, int year, int month) {
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
 
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
 
         // Get all attendance in the period — group by staff
         // For simplicity, get all and aggregate in memory
@@ -188,8 +191,8 @@ public class PayrollService {
             monthly.setStaff(sample.getStaff());
             monthly.setDepartment(department);
             monthly.setShift(sample.getShift());
-            monthly.setYear(year);
-            monthly.setMonth(month);
+            monthly.setYear(period.year());
+            monthly.setMonth(period.month());
             monthly.setMonthlySalary(totalSalary);
             monthly.setMonthlyBonus(totalBonus);
             monthly.setMonthlyDeduction(totalDeduction);
