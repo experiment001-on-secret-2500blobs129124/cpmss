@@ -47,8 +47,9 @@ import java.time.Instant;
 public class Payment extends BaseEntity {
 
     /** System-unique payment number. */
+    @Convert(converter = PaymentNumberConverter.class)
     @Column(name = "payment_no", nullable = false, unique = true, length = 20)
-    private String paymentNo;
+    private PaymentNumber paymentNo;
 
     /** Timestamp of the payment. */
     @Column(name = "paid_at", nullable = false)
@@ -84,8 +85,9 @@ public class Payment extends BaseEntity {
     private PaymentDirection direction;
 
     /** External reference number. */
+    @Convert(converter = PaymentReferenceConverter.class)
     @Column(name = "reference_no", length = 100)
-    private String referenceNo;
+    private PaymentReference referenceNo;
 
     /** Reconciliation status (Pending, Reconciled, Disputed). */
     @Convert(converter = ReconciliationStatusConverter.class)

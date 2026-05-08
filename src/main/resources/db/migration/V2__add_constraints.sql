@@ -56,6 +56,25 @@ ALTER TABLE Bank_Account
         (company_id IS NOT NULL)::int = 1
     );
 
+-- Structural check: bank account names cannot be blank.
+ALTER TABLE Bank_Account
+    ADD CONSTRAINT chk_bank_name_not_blank CHECK (
+        BTRIM(bank_name) <> ''
+    );
+
+-- Structural check: IBAN must use a normalized ISO-style shape when present.
+-- Full IBAN checksum validation lives in the Iban value object.
+ALTER TABLE Bank_Account
+    ADD CONSTRAINT chk_bank_iban_format CHECK (
+        iban IS NULL OR iban ~ '^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$'
+    );
+
+-- Structural check: SWIFT/BIC must be an 8- or 11-character normalized code.
+ALTER TABLE Bank_Account
+    ADD CONSTRAINT chk_bank_swift_format CHECK (
+        swift_code IS NULL OR swift_code ~ '^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$'
+    );
+
 -- Structural check: maximum salary must be positive.
 ALTER TABLE Position_Salary_History
     ADD CONSTRAINT chk_max_salary_positive CHECK (
@@ -531,6 +550,18 @@ ALTER TABLE Gate_Guard_Assignment
 -- Structural check: payment amount must be positive.
 ALTER TABLE Payment
     ADD CONSTRAINT chk_payment_amount CHECK (amount > 0);
+
+-- Structural check: payment numbers must be non-blank normalized identifiers.
+ALTER TABLE Payment
+    ADD CONSTRAINT chk_payment_no_format CHECK (
+        payment_no ~ '^[A-Z0-9][A-Z0-9._/-]*$'
+    );
+
+-- Structural check: optional external references cannot be blank.
+ALTER TABLE Payment
+    ADD CONSTRAINT chk_payment_reference_not_blank CHECK (
+        reference_no IS NULL OR BTRIM(reference_no) <> ''
+    );
 
 -- Structural check: payment money must carry an explicit ISO-style currency code.
 ALTER TABLE Payment
