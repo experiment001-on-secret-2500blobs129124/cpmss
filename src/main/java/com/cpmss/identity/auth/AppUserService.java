@@ -3,6 +3,7 @@ package com.cpmss.identity.auth;
 import com.cpmss.identity.auth.dto.AppUserResponse;
 import com.cpmss.identity.auth.dto.CreateAppUserRequest;
 import com.cpmss.identity.auth.dto.UpdateUserRoleRequest;
+import com.cpmss.people.common.EmailAddress;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ForbiddenException;
 import com.cpmss.platform.exception.ResourceNotFoundException;
@@ -88,8 +89,9 @@ public class AppUserService {
      */
     @Transactional(readOnly = true)
     public AppUserResponse findByEmail(String email) {
-        AppUser user = repository.findByEmailAndActiveTrue(email)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", email));
+        EmailAddress loginEmail = EmailAddress.of(email);
+        AppUser user = repository.findByEmailAndActiveTrue(loginEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
         return mapper.toResponse(user);
     }
 
@@ -107,14 +109,14 @@ public class AppUserService {
     @Transactional
     public AppUserResponse create(CreateAppUserRequest request) {
         SystemRole actorRole = getCurrentUserRole();
+        EmailAddress loginEmail = EmailAddress.of(request.email());
 
-        rules.validateEmailUnique(request.email(),
-                repository.existsByEmailIgnoreCase(request.email()));
+        rules.validateEmailUnique(loginEmail.value(), repository.existsByEmail(loginEmail));
         rules.validateAuthorityLevel(actorRole, request.systemRole());
         rules.validateDeptManagerCanOnlyCreateStaffOrGuard(actorRole, request.systemRole());
 
         AppUser user = AppUser.builder()
-                .email(request.email())
+                .email(loginEmail)
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .systemRole(request.systemRole())
                 .active(true)
@@ -138,11 +140,11 @@ public class AppUserService {
      */
     @Transactional
     public AppUserResponse register(CreateAppUserRequest request) {
-        rules.validateEmailUnique(request.email(),
-                repository.existsByEmailIgnoreCase(request.email()));
+        EmailAddress loginEmail = EmailAddress.of(request.email());
+        rules.validateEmailUnique(loginEmail.value(), repository.existsByEmail(loginEmail));
 
         AppUser user = AppUser.builder()
-                .email(request.email())
+                .email(loginEmail)
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .systemRole(SystemRole.APPLICANT)
                 .active(true)
@@ -224,8 +226,9 @@ public class AppUserService {
     private UUID getCurrentUserId() {
         String email = AuthUtils.getCurrentUserEmail()
                 .orElseThrow(() -> new ForbiddenException("No authenticated user"));
-        AppUser actor = repository.findByEmailAndActiveTrue(email)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", email));
+        EmailAddress loginEmail = EmailAddress.of(email);
+        AppUser actor = repository.findByEmailAndActiveTrue(loginEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
         return actor.getId();
     }
 

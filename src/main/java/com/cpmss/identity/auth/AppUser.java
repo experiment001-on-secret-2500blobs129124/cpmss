@@ -1,6 +1,9 @@
 package com.cpmss.identity.auth;
 
+import com.cpmss.people.common.EmailAddress;
+import com.cpmss.people.common.EmailAddressConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -49,8 +52,11 @@ public class AppUser {
     @Column(name = "user_id")
     private UUID id;
 
+    /** Login email, independent from Person_Email contact addresses. */
+    @Convert(converter = EmailAddressConverter.class)
     @Column(nullable = false, unique = true)
-    private String email;
+    @Setter(lombok.AccessLevel.NONE)
+    private EmailAddress email;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
@@ -98,5 +104,48 @@ public class AppUser {
     @Override
     public int hashCode() {
         return getClass().hashCode();
+    }
+
+    /**
+     * Returns the login email for DTO, JWT, and repository compatibility.
+     *
+     * @return the normalized login email, or {@code null} when unset
+     */
+    public String getEmail() {
+        return email != null ? email.value() : null;
+    }
+
+    /**
+     * Returns the typed login email for domain logic.
+     *
+     * @return the typed login email, or {@code null} when unset
+     */
+    public EmailAddress getEmailValue() {
+        return email;
+    }
+
+    /**
+     * Assigns the login email from a raw string.
+     *
+     * @param email the raw login email
+     * @throws com.cpmss.platform.exception.BusinessException if the email is
+     *                                                        missing, too long,
+     *                                                        or invalid
+     */
+    public void setEmail(String email) {
+        this.email = EmailAddress.of(email);
+    }
+
+    /**
+     * Assigns the typed login email.
+     *
+     * @param email the typed login email
+     * @throws IllegalArgumentException if the email is missing
+     */
+    public void setEmail(EmailAddress email) {
+        if (email == null) {
+            throw new IllegalArgumentException("Login email is required");
+        }
+        this.email = email;
     }
 }

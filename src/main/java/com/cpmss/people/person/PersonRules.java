@@ -1,10 +1,12 @@
 package com.cpmss.people.person;
 
+import com.cpmss.people.common.EgyptianNationalId;
+import com.cpmss.people.common.Gender;
+import com.cpmss.people.common.PassportNumber;
 import com.cpmss.platform.exception.BusinessException;
 import com.cpmss.platform.exception.ConflictException;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -13,8 +15,6 @@ import java.util.UUID;
  * <p>Stateless — all data is loaded by the service and passed in.
  */
 public class PersonRules {
-
-    private static final Set<String> VALID_GENDERS = Set.of("Male", "Female");
 
     /**
      * Validates that at least one role ID is provided.
@@ -32,12 +32,11 @@ public class PersonRules {
      * Validates gender value against the allowed vocabulary.
      *
      * @param gender the gender string
+     * @return the typed gender, or {@code null} when absent
      * @throws BusinessException if invalid
      */
-    public void validateGender(String gender) {
-        if (gender != null && !VALID_GENDERS.contains(gender)) {
-            throw new BusinessException("Gender must be one of: " + VALID_GENDERS);
-        }
+    public Gender validateGender(String gender) {
+        return Gender.fromNullableLabel(gender);
     }
 
     /**
@@ -45,12 +44,11 @@ public class PersonRules {
      *
      * @param nationality        the person's nationality
      * @param egyptianNationalId the national ID
-     * @throws BusinessException if an Egyptian person has no national ID
+     * @return the typed national ID, or {@code null} when not required
+     * @throws BusinessException if an Egyptian person has no valid national ID
      */
-    public void validateEgyptianNationalId(String nationality, String egyptianNationalId) {
-        if ("Egyptian".equalsIgnoreCase(nationality) && (egyptianNationalId == null || egyptianNationalId.isBlank())) {
-            throw new BusinessException("Egyptian nationals must provide a national ID");
-        }
+    public EgyptianNationalId validateEgyptianNationalId(String nationality, String egyptianNationalId) {
+        return EgyptianNationalId.forNationality(nationality, egyptianNationalId);
     }
 
     /**
@@ -60,9 +58,9 @@ public class PersonRules {
      * @param exists     whether a person with this passport already exists
      * @throws ConflictException if duplicate
      */
-    public void validatePassportUnique(String passportNo, boolean exists) {
+    public void validatePassportUnique(PassportNumber passportNo, boolean exists) {
         if (exists) {
-            throw new ConflictException("Passport number '" + passportNo + "' is already registered");
+            throw new ConflictException("Passport number '" + passportNo.value() + "' is already registered");
         }
     }
 }

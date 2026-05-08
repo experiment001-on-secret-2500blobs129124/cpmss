@@ -1,5 +1,7 @@
 package com.cpmss.people.person;
 
+import com.cpmss.people.common.EgyptianNationalId;
+import com.cpmss.people.common.PassportNumber;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
@@ -18,7 +20,7 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {
      * @param passportNo the passport number to check
      * @return true if a matching person exists
      */
-    boolean existsByPassportNo(String passportNo);
+    boolean existsByPassportNo(PassportNumber passportNo);
 
     /**
      * Checks whether a person with the given Egyptian national ID exists.
@@ -26,5 +28,5 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {
      * @param egyptianNationalId the 14-digit national ID to check
      * @return true if a matching person exists
      */
-    boolean existsByEgyptianNationalId(String egyptianNationalId);
+    boolean existsByEgyptianNationalId(EgyptianNationalId egyptianNationalId);
 }

@@ -1,5 +1,6 @@
 package com.cpmss.identity.auth;
 
+import com.cpmss.people.common.EmailAddress;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -16,15 +17,16 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
     /**
      * Finds an active user by email.
      *
-     * @param email the login email
+     * @param email the normalized login email
      * @return the matching user, or empty
      */
-    Optional<AppUser> findByEmailAndActiveTrue(String email);
+    Optional<AppUser> findByEmailAndActiveTrue(EmailAddress email);
 
     /**
-     * Checks whether any user exists in the system.
+     * Checks whether a user exists by normalized login email.
      *
-     * @return true if at least one user row exists
+     * @param email the normalized login email
+     * @return true if a matching user exists
      */
-    boolean existsByEmailIgnoreCase(String email);
+    boolean existsByEmail(EmailAddress email);
 }
