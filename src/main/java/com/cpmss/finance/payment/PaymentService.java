@@ -124,7 +124,7 @@ public class PaymentService {
      */
     @Transactional
     public PaymentResponse createInstallmentPayment(CreateInstallmentPaymentRequest request) {
-        Payment payment = createParentPayment(request.payment(), "Installment");
+        Payment payment = createParentPayment(request.payment(), PaymentType.INSTALLMENT);
 
         Installment installment = installmentRepository.findById(request.installmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Installment", request.installmentId()));
@@ -160,7 +160,7 @@ public class PaymentService {
      */
     @Transactional
     public PaymentResponse createWorkOrderPayment(CreateWorkOrderPaymentRequest request) {
-        Payment payment = createParentPayment(request.payment(), "WorkOrder");
+        Payment payment = createParentPayment(request.payment(), PaymentType.WORK_ORDER);
 
         WorkOrder workOrder = workOrderRepository.findById(request.workOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("WorkOrder", request.workOrderId()));
@@ -196,7 +196,7 @@ public class PaymentService {
      */
     @Transactional
     public PaymentResponse createPayrollPayment(CreatePayrollPaymentRequest request) {
-        Payment payment = createParentPayment(request.payment(), "Payroll");
+        Payment payment = createParentPayment(request.payment(), PaymentType.PAYROLL);
 
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
@@ -245,8 +245,9 @@ public class PaymentService {
 
     // ── Private helpers ─────────────────────────────────────────────────
 
-    private Payment createParentPayment(CreatePaymentRequest req, String enforceType) {
-        rules.validateDirection(req.direction());
+    private Payment createParentPayment(CreatePaymentRequest req, PaymentType enforceType) {
+        PaymentDirection direction = rules.validateDirection(req.direction());
+        PaymentMethod method = rules.validateMethod(req.method());
         Money money = Money.positiveOrDefaultCurrency(req.amount(), req.currency());
 
         BankAccount bankAccount = bankAccountRepository.findById(req.bankAccountId())
@@ -261,8 +262,8 @@ public class PaymentService {
                 .paidAt(Instant.now())
                 .money(money)
                 .paymentType(enforceType)
-                .method(req.method())
-                .direction(req.direction())
+                .method(method)
+                .direction(direction)
                 .referenceNo(req.referenceNo())
                 .bankAccount(bankAccount)
                 .processedBy(processedBy)

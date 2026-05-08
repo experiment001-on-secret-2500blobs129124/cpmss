@@ -7,6 +7,7 @@ import com.cpmss.people.person.Person;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -68,25 +69,33 @@ public class Payment extends BaseEntity {
     private Money money;
 
     /** Payment type discriminator (Installment, WorkOrder, Payroll). */
+    @Convert(converter = PaymentTypeConverter.class)
     @Column(name = "payment_type", nullable = false, length = 20)
-    private String paymentType;
+    @Setter(AccessLevel.NONE)
+    private PaymentType paymentType;
 
     /** Payment method (Cash, Bank Transfer, Cheque, Card, Other). */
+    @Convert(converter = PaymentMethodConverter.class)
     @Column(name = "method", length = 50)
-    private String method;
+    @Setter(AccessLevel.NONE)
+    private PaymentMethod method;
 
     /** Direction of payment (Inbound, Outbound). */
+    @Convert(converter = PaymentDirectionConverter.class)
     @Column(name = "direction", nullable = false, length = 20)
-    private String direction;
+    @Setter(AccessLevel.NONE)
+    private PaymentDirection direction;
 
     /** External reference number. */
     @Column(name = "reference_no", length = 100)
     private String referenceNo;
 
     /** Reconciliation status (Pending, Reconciled, Disputed). */
+    @Convert(converter = ReconciliationStatusConverter.class)
     @Column(name = "reconciliation_status", nullable = false, length = 50)
     @Builder.Default
-    private String reconciliationStatus = "Pending";
+    @Setter(AccessLevel.NONE)
+    private ReconciliationStatus reconciliationStatus = ReconciliationStatus.PENDING;
 
     /** The bank account used for this transaction. */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -127,6 +136,79 @@ public class Payment extends BaseEntity {
     }
 
     /**
+     * Returns the payment type label for DTO compatibility.
+     *
+     * @return the database/API payment type label, or {@code null} when unset
+     */
+    public String getPaymentType() {
+        return paymentType != null ? paymentType.label() : null;
+    }
+
+    /**
+     * Returns the typed payment discriminator for domain logic.
+     *
+     * @return the typed payment discriminator, or {@code null} when unset
+     */
+    public PaymentType getPaymentTypeValue() {
+        return paymentType;
+    }
+
+    /**
+     * Returns the payment method label for DTO compatibility.
+     *
+     * @return the database/API payment method label, or {@code null} when unset
+     */
+    public String getMethod() {
+        return method != null ? method.label() : null;
+    }
+
+    /**
+     * Returns the typed payment method for domain logic.
+     *
+     * @return the typed payment method, or {@code null} when unset
+     */
+    public PaymentMethod getMethodValue() {
+        return method;
+    }
+
+    /**
+     * Returns the payment direction label for DTO compatibility.
+     *
+     * @return the database/API payment direction label, or {@code null} when
+     *         unset
+     */
+    public String getDirection() {
+        return direction != null ? direction.label() : null;
+    }
+
+    /**
+     * Returns the typed payment direction for domain logic.
+     *
+     * @return the typed payment direction, or {@code null} when unset
+     */
+    public PaymentDirection getDirectionValue() {
+        return direction;
+    }
+
+    /**
+     * Returns the reconciliation status label for DTO compatibility.
+     *
+     * @return the database/API reconciliation label, or {@code null} when unset
+     */
+    public String getReconciliationStatus() {
+        return reconciliationStatus != null ? reconciliationStatus.label() : null;
+    }
+
+    /**
+     * Returns the typed reconciliation status for domain logic.
+     *
+     * @return the typed reconciliation status, or {@code null} when unset
+     */
+    public ReconciliationStatus getReconciliationStatusValue() {
+        return reconciliationStatus;
+    }
+
+    /**
      * Assigns a strictly positive money value to the payment.
      *
      * <p>Payments are ledger movements, so zero-value money is rejected even
@@ -144,5 +226,53 @@ public class Payment extends BaseEntity {
             throw new IllegalArgumentException("Payment amount must be positive");
         }
         this.money = money;
+    }
+
+    /**
+     * Assigns the typed payment discriminator.
+     *
+     * @param paymentType the payment discriminator
+     * @throws IllegalArgumentException if the payment type is missing
+     */
+    public void setPaymentType(PaymentType paymentType) {
+        if (paymentType == null) {
+            throw new IllegalArgumentException("Payment type is required");
+        }
+        this.paymentType = paymentType;
+    }
+
+    /**
+     * Assigns the optional typed payment method.
+     *
+     * @param method the optional payment method
+     */
+    public void setMethod(PaymentMethod method) {
+        this.method = method;
+    }
+
+    /**
+     * Assigns the typed payment direction.
+     *
+     * @param direction the payment direction
+     * @throws IllegalArgumentException if the direction is missing
+     */
+    public void setDirection(PaymentDirection direction) {
+        if (direction == null) {
+            throw new IllegalArgumentException("Payment direction is required");
+        }
+        this.direction = direction;
+    }
+
+    /**
+     * Assigns the typed reconciliation status.
+     *
+     * @param reconciliationStatus the reconciliation status
+     * @throws IllegalArgumentException if the status is missing
+     */
+    public void setReconciliationStatus(ReconciliationStatus reconciliationStatus) {
+        if (reconciliationStatus == null) {
+            throw new IllegalArgumentException("Reconciliation status is required");
+        }
+        this.reconciliationStatus = reconciliationStatus;
     }
 }
