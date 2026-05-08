@@ -108,50 +108,105 @@ flowchart LR
 
 ---
 
-## Code Structure (Feature-Based)
+## Code Structure (DDD-Lite Bounded Contexts)
 
-Feature-based over layer-based. Every feature is self-contained.
+The source tree is organized by business context first, then by feature. Each
+feature keeps the existing Spring MVCS shape internally: entity, repository,
+service, rules, controller, mapper, and DTOs stay together. This keeps the
+current implementation pattern while making the package boundaries easier to
+scan as the system grows.
 
 ```
 src/main/java/com/cpmss/
   │
-  ├── config/
-  │     SecurityConfig.java
-  │     CorsConfig.java
-  │     CacheConfig.java             ← Redis (future)
-  │
-  ├── common/
-  │     BaseEntity.java              ← id, createdAt, updatedAt, createdBy, updatedBy
-  │     GlobalExceptionHandler.java  ← @RestControllerAdvice
-  │     ApiPaths.java                ← All route constants
-  │     ApiResponse.java             ← Standard response envelope + PagedResponse<T>
-  │
-  ├── exception/
-  │     BusinessException.java       ← 422
-  │     ResourceNotFoundException.java ← 404
-  │     ForbiddenException.java      ← 403
-  │     ConflictException.java       ← 409
-  │
-  ├── util/
-  │     DateUtils.java
-  │     SlugUtils.java               ← Generate URL-friendly slugs from names
-  │     MaskingUtils.java            ← National ID masking, bank account masking
-  │     AuthUtils.java               ← Extract current user from security context
-  │
-  ├── {feature}/
-  │     {Feature}.java               ← JPA Entity
-  │     {Feature}Repository.java     ← Spring Data JPA interface (DAL)
-  │     {Feature}Service.java        ← Orchestration + @Transactional
-  │     {Feature}Rules.java          ← Business rules (explicit, testable)
-  │     {Feature}Controller.java     ← Thymeleaf web controller
-  │     {Feature}ApiController.java  ← REST controller
-  │     {Feature}Mapper.java         ← MapStruct mapper
-  │     dto/
-  │       Create{Feature}Request.java
-  │       Update{Feature}Request.java
-  │       {Feature}Response.java
-  │
+  ├── communication/
+  │     internalreport/
+  ├── finance/
+  │     bankaccount/
+  │     installmentpayment/
+  │     payment/
+  │     payrollpayment/
+  │     personinvestsincompound/
+  │     workorderpayment/
+  ├── hr/
+  │     application/
+  │     hireagreement/
+  │     lawofshiftattendance/
+  │     recruitment/
+  │     staffposition/
+  │     staffpositionhistory/
+  │     staffprofile/
+  │     staffsalaryhistory/
+  ├── identity/
+  │     auth/
+  ├── leasing/
+  │     contract/
+  │     contractparty/
+  │     installment/
+  │     personresidesunder/
+  ├── maintenance/
+  │     company/
+  │     personworksforcompany/
+  │     workorder/
+  │     workorderassignedto/
+  ├── organization/
+  │     department/
+  │     departmentlocationhistory/
+  │     departmentmanagers/
+  │     personsupervision/
+  ├── people/
+  │     person/
+  │     qualification/
+  │     role/
+  ├── performance/
+  │     kpipolicy/
+  │     staffkpimonthlysummary/
+  │     staffkpirecord/
+  │     staffperformancereview/
+  ├── platform/
+  │     common/                     ← base entities, API envelope, route constants
+  │     config/                     ← Spring Security, JWT, auditing
+  │       CacheConfig.java          ← Redis (future)
+  │     exception/                  ← application exception hierarchy
+  │     util/                       ← date, auth, slug, and masking helpers
+  ├── property/
+  │     building/
+  │     compound/
+  │     facility/
+  │     facilityhourshistory/
+  │     facilitymanager/
+  │     unit/
+  │     unitpricinghistory/
+  │     unitstatushistory/
+  ├── security/
+  │     accesspermit/
+  │     entersat/
+  │     gate/
+  │     gateguardassignment/
+  │     vehicle/
+  ├── workforce/
+  │     assignedtask/
+  │     attends/
+  │     shiftattendancetype/
+  │     task/
+  │     taskmonthlysalary/
   └── CpmssApplication.java
+```
+
+Feature packages follow this shape where the feature needs each component:
+
+```
+src/main/java/com/cpmss/{context}/{feature}/
+  {Feature}.java                   ← JPA Entity
+  {Feature}Repository.java         ← Spring Data JPA interface (DAL)
+  {Feature}Service.java            ← Orchestration + @Transactional
+  {Feature}Rules.java              ← Business rules (explicit, testable)
+  {Feature}ApiController.java      ← REST controller
+  {Feature}Mapper.java             ← MapStruct mapper
+  dto/
+    Create{Feature}Request.java
+    Update{Feature}Request.java
+    {Feature}Response.java
 ```
 
 See [`CONVENTIONS.md`](./CONVENTIONS.md) for implementation patterns: `BaseEntity`,

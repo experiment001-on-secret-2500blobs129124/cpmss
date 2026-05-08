@@ -12,10 +12,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  * {@code createdAt}, {@code updatedAt}, {@code createdBy}, and
  * {@code updatedBy} are populated automatically on every save.
  * The auditor identity is supplied by
- * {@link com.cpmss.config.SecurityAuditorAware}.
+ * {@link com.cpmss.platform.config.SecurityAuditorAware}.
  *
  * <p>{@code @ConfigurationPropertiesScan} enables auto-binding of
- * {@link com.cpmss.config.JwtProperties} from {@code application.yml}.
+ * {@link com.cpmss.platform.config.JwtProperties} from {@code application.yml}.
  */
 @SpringBootApplication
 @EnableJpaAuditing
