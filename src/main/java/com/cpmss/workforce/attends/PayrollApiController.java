@@ -28,6 +28,11 @@ public class PayrollApiController {
 
     private final PayrollService payrollService;
 
+    /**
+     * Constructs the controller with the payroll workflow service.
+     *
+     * @param payrollService service that owns attendance and payroll actions
+     */
     public PayrollApiController(PayrollService payrollService) {
         this.payrollService = payrollService;
     }
@@ -68,16 +73,18 @@ public class PayrollApiController {
      * @param departmentId the department UUID
      * @param year         the payroll year
      * @param month        the payroll month
+     * @param currency     ISO-4217 currency for payroll snapshots
      * @return 201 Created with the monthly salary records
      */
     @PostMapping(ApiPaths.PAYROLL_CLOSE)
     public ResponseEntity<ApiResponse<List<TaskMonthlySalaryResponse>>> closePayroll(
             @RequestParam UUID departmentId,
             @RequestParam int year,
-            @RequestParam int month) {
+            @RequestParam int month,
+            @RequestParam String currency) {
         return ResponseEntity.status(201)
                 .body(ApiResponse.created(
-                        payrollService.closeMonthlyPayroll(departmentId, year, month)));
+                        payrollService.closeMonthlyPayroll(departmentId, year, month, currency)));
     }
 
     /**

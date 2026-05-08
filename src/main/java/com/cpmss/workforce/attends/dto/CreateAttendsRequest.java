@@ -1,10 +1,11 @@
 package com.cpmss.workforce.attends.dto;
 
+import com.cpmss.workforce.common.AttendanceTimeWindow;
+import com.cpmss.workforce.common.HourDelta;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.UUID;
 
 /**
@@ -14,8 +15,7 @@ import java.util.UUID;
  * @param shiftId      the shift type UUID
  * @param date         the attendance date
  * @param isAbsent     whether the staff member was absent
- * @param checkInTime  check-in time (null if absent)
- * @param checkOutTime check-out time (null if absent)
+ * @param attendanceWindow actual check-in/check-out window (null if absent)
  * @param periodOutIn  period out-in description
  * @param diffHour     hours difference from expected
  */
@@ -24,8 +24,7 @@ public record CreateAttendsRequest(
         @NotNull UUID shiftId,
         @NotNull LocalDate date,
         @NotNull Boolean isAbsent,
-        LocalTime checkInTime,
-        LocalTime checkOutTime,
+        @Valid AttendanceTimeWindow attendanceWindow,
         String periodOutIn,
-        BigDecimal diffHour
+        HourDelta diffHour
 ) {}

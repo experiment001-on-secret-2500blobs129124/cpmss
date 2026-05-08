@@ -340,6 +340,134 @@ ALTER TABLE Hire_Agreement
         offered_maximum_salary IS NULL OR offered_maximum_salary > 0
     );
 
+-- Structural check: shift-law windows and expected hours must be positive.
+ALTER TABLE Law_of_Shift_Attendance
+    ADD CONSTRAINT chk_shift_law_time_and_hours CHECK (
+        end_time > start_time AND expected_hours > 0
+    );
+
+-- Structural check: hourly bonus/deduction rates must carry explicit currency when present.
+ALTER TABLE Law_of_Shift_Attendance
+    ADD CONSTRAINT chk_shift_law_money_rates CHECK (
+        (
+            (one_hour_extra_bonus IS NULL AND one_hour_extra_bonus_currency IS NULL)
+            OR (
+                one_hour_extra_bonus IS NOT NULL
+                AND one_hour_extra_bonus >= 0
+                AND one_hour_extra_bonus_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (one_hour_diff_discount IS NULL AND one_hour_diff_discount_currency IS NULL)
+            OR (
+                one_hour_diff_discount IS NOT NULL
+                AND one_hour_diff_discount >= 0
+                AND one_hour_diff_discount_currency ~ '^[A-Z]{3}$'
+            )
+        )
+    );
+
+-- Structural check: attendance windows are either absent or ordered.
+ALTER TABLE Attends
+    ADD CONSTRAINT chk_attends_time_window CHECK (
+        (check_in_time IS NULL AND check_out_time IS NULL)
+        OR (check_in_time IS NOT NULL AND check_out_time IS NOT NULL AND check_out_time > check_in_time)
+    );
+
+-- Structural check: daily payroll snapshots use non-negative money pairs.
+ALTER TABLE Attends
+    ADD CONSTRAINT chk_attends_daily_money CHECK (
+        (
+            (daily_bonus IS NULL AND daily_bonus_currency IS NULL)
+            OR (
+                daily_bonus IS NOT NULL
+                AND daily_bonus >= 0
+                AND daily_bonus_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (daily_deduction IS NULL AND daily_deduction_currency IS NULL)
+            OR (
+                daily_deduction IS NOT NULL
+                AND daily_deduction >= 0
+                AND daily_deduction_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (daily_salary IS NULL AND daily_salary_currency IS NULL)
+            OR (
+                daily_salary IS NOT NULL
+                AND daily_salary >= 0
+                AND daily_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (daily_net_salary IS NULL AND daily_net_salary_currency IS NULL)
+            OR (
+                daily_net_salary IS NOT NULL
+                AND daily_net_salary >= 0
+                AND daily_net_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+    );
+
+-- Structural check: payroll periods must be valid calendar month keys.
+ALTER TABLE Task_Monthly_Salary
+    ADD CONSTRAINT chk_task_monthly_salary_period CHECK (
+        year > 0 AND month BETWEEN 1 AND 12
+    );
+
+-- Structural check: monthly payroll snapshots use non-negative money pairs.
+ALTER TABLE Task_Monthly_Salary
+    ADD CONSTRAINT chk_task_monthly_salary_money CHECK (
+        (
+            (monthly_deduction IS NULL AND monthly_deduction_currency IS NULL)
+            OR (
+                monthly_deduction IS NOT NULL
+                AND monthly_deduction >= 0
+                AND monthly_deduction_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (monthly_bonus IS NULL AND monthly_bonus_currency IS NULL)
+            OR (
+                monthly_bonus IS NOT NULL
+                AND monthly_bonus >= 0
+                AND monthly_bonus_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (tax IS NULL AND tax_currency IS NULL)
+            OR (
+                tax IS NOT NULL
+                AND tax >= 0
+                AND tax_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (monthly_salary IS NULL AND monthly_salary_currency IS NULL)
+            OR (
+                monthly_salary IS NOT NULL
+                AND monthly_salary >= 0
+                AND monthly_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (monthly_net_salary IS NULL AND monthly_net_salary_currency IS NULL)
+            OR (
+                monthly_net_salary IS NOT NULL
+                AND monthly_net_salary >= 0
+                AND monthly_net_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+    );
+
+-- Structural check: payroll payment periods must be valid calendar month keys.
+ALTER TABLE Payroll_Payment
+    ADD CONSTRAINT chk_payroll_payment_period CHECK (
+        year > 0 AND month BETWEEN 1 AND 12
+    );
+
 -- ============================================================================
 -- COMPENSATION HISTORY & KPI
 -- ============================================================================

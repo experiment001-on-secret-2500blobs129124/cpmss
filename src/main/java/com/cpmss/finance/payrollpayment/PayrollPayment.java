@@ -1,9 +1,11 @@
 package com.cpmss.finance.payrollpayment;
 
 import com.cpmss.platform.common.BaseAuditEntity;
+import com.cpmss.platform.common.value.YearMonthPeriod;
 import com.cpmss.organization.department.Department;
 import com.cpmss.finance.payment.Payment;
 import com.cpmss.people.person.Person;
+import com.cpmss.platform.exception.BusinessException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -63,4 +65,27 @@ public class PayrollPayment extends BaseAuditEntity {
     /** The payroll month. */
     @Column(name = "month", nullable = false)
     private Integer month;
+
+    /**
+     * Returns the payroll period for domain logic.
+     *
+     * @return the payroll period
+     */
+    public YearMonthPeriod getPayrollPeriod() {
+        return YearMonthPeriod.of(year, month);
+    }
+
+    /**
+     * Assigns the payroll period from a validated value object.
+     *
+     * @param payrollPeriod the payroll period
+     * @throws BusinessException if the period is missing
+     */
+    public void setPayrollPeriod(YearMonthPeriod payrollPeriod) {
+        if (payrollPeriod == null) {
+            throw new BusinessException("Payroll period is required");
+        }
+        this.year = payrollPeriod.year();
+        this.month = payrollPeriod.month();
+    }
 }

@@ -206,12 +206,12 @@ public class PaymentService {
         child.setPayment(payment);
         child.setStaff(staff);
         child.setDepartment(department);
-        child.setYear(request.year());
-        child.setMonth(request.month());
+        child.setPayrollPeriod(request.payrollPeriod());
         payrollPaymentRepository.save(child);
 
         log.info("Payroll payment created: paymentNo={}, staffId={}, period={}-{}",
-                payment.getPaymentNo(), request.staffId(), request.year(), request.month());
+                payment.getPaymentNo(), request.staffId(),
+                request.payrollPeriod().year(), request.payrollPeriod().month());
         return toResponse(payment);
     }
 
