@@ -1,8 +1,8 @@
 package com.cpmss.leasing.installment;
 
+import com.cpmss.finance.money.Money;
+import com.cpmss.leasing.common.InstallmentStatus;
 import com.cpmss.platform.exception.BusinessException;
-
-import java.math.BigDecimal;
 
 /**
  * Business rules for {@link Installment} operations.
@@ -16,11 +16,11 @@ public class InstallmentRules {
     /**
      * Validates that the expected amount is positive.
      *
-     * @param amountExpected the expected payment amount
+     * @param amountExpected the expected payment money
      * @throws BusinessException if the amount is not positive
      */
-    public void validateAmountPositive(BigDecimal amountExpected) {
-        if (amountExpected == null || amountExpected.compareTo(BigDecimal.ZERO) <= 0) {
+    public void validateAmountPositive(Money amountExpected) {
+        if (amountExpected == null || amountExpected.getAmount().signum() <= 0) {
             throw new BusinessException("Installment amount must be positive");
         }
     }
@@ -38,28 +38,17 @@ public class InstallmentRules {
      * </ul>
      *
      * @param currentStatus the current lifecycle status
-     * @param newStatus     the requested new status
+     * @param newStatus the requested new status
      * @throws BusinessException if the transition is invalid
      */
-    public void validateStatusTransition(String currentStatus, String newStatus) {
-        if (currentStatus.equals(newStatus)) {
-            return;
-        }
-        boolean valid = switch (currentStatus) {
-            case "Pending" -> "Partially Paid".equals(newStatus)
-                    || "Paid".equals(newStatus)
-                    || "Overdue".equals(newStatus)
-                    || "Cancelled".equals(newStatus);
-            case "Partially Paid" -> "Paid".equals(newStatus)
-                    || "Overdue".equals(newStatus);
-            case "Overdue" -> "Partially Paid".equals(newStatus)
-                    || "Paid".equals(newStatus)
-                    || "Cancelled".equals(newStatus);
-            default -> false; // Paid and Cancelled are terminal
-        };
-        if (!valid) {
+    public void validateStatusTransition(InstallmentStatus currentStatus, InstallmentStatus newStatus) {
+        if (currentStatus == null || newStatus == null || !currentStatus.canTransitionTo(newStatus)) {
             throw new BusinessException(
-                    "Invalid status transition: " + currentStatus + " → " + newStatus);
+                    "Invalid status transition: " + label(currentStatus) + " → " + label(newStatus));
         }
+    }
+
+    private String label(InstallmentStatus status) {
+        return status != null ? status.label() : "null";
     }
 }

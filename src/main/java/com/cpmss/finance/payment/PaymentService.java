@@ -39,9 +39,8 @@ import java.util.UUID;
  *
  * <p>Each create method is @Transactional, creating a parent Payment
  * record and exactly one child record (InstallmentPayment,
- * WorkOrderPayment, or PayrollPayment). Parent payment amount and currency
- * are normalized through {@link Money} before the row is persisted, while
- * request and response DTOs keep their existing primitive shape.
+ * WorkOrderPayment, or PayrollPayment). Parent payment money is validated as
+ * one explicit {@link Money} value before the row is persisted.
  *
  * @see Money
  * @see PaymentRules
@@ -132,7 +131,7 @@ public class PaymentService {
         InstallmentPayment child = new InstallmentPayment();
         child.setPayment(payment);
         child.setInstallment(installment);
-        child.setLateFeeAmount(request.lateFeeAmount());
+        child.setLateFee(request.lateFee());
         installmentPaymentRepository.save(child);
 
         log.info("Installment payment created: paymentNo={}, installmentId={}",
@@ -248,7 +247,7 @@ public class PaymentService {
     private Payment createParentPayment(CreatePaymentRequest req, PaymentType enforceType) {
         PaymentDirection direction = rules.validateDirection(req.direction());
         PaymentMethod method = rules.validateMethod(req.method());
-        Money money = Money.positiveOrDefaultCurrency(req.amount(), req.currency());
+        Money money = Money.positive(req.money().getAmount(), req.money().getCurrency());
 
         BankAccount bankAccount = bankAccountRepository.findById(req.bankAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("BankAccount", req.bankAccountId()));
@@ -274,7 +273,7 @@ public class PaymentService {
     private PaymentResponse toResponse(Payment p) {
         return new PaymentResponse(
                 p.getId(), p.getPaymentNo(), p.getPaidAt(),
-                p.getAmount(), p.getCurrency(), p.getPaymentType(),
+                p.getMoney(), p.getPaymentType(),
                 p.getMethod(), p.getDirection(), p.getReferenceNo(),
                 p.getReconciliationStatus(),
                 p.getBankAccount().getId(),

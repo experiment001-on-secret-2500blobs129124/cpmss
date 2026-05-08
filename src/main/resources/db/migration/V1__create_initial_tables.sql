@@ -544,8 +544,10 @@ CREATE TABLE Contract (
     contract_type           VARCHAR(50)   NOT NULL,
     contract_status         VARCHAR(50)   NOT NULL,
     payment_frequency       VARCHAR(50),
-    final_price             DECIMAL(12, 2),
-    security_deposit_amount DECIMAL(12, 2),
+    final_price               DECIMAL(12, 2),
+    final_price_currency      VARCHAR(10),
+    security_deposit_amount   DECIMAL(12, 2),
+    security_deposit_currency VARCHAR(10),
     renewal_terms           TEXT,
     unit_id                 UUID          REFERENCES Unit(unit_id)         ON DELETE RESTRICT,
     facility_id             UUID          REFERENCES Facility(facility_id) ON DELETE RESTRICT,
@@ -560,12 +562,13 @@ CREATE TABLE Contract (
 -- Installments are permanent financial records — they cannot be deleted and belong to exactly one contract.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Installment (
-    installment_id     UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    installment_type   VARCHAR(50)   NOT NULL,
-    due_date           DATE          NOT NULL,
-    installment_status VARCHAR(50)   NOT NULL,
-    amount_expected    DECIMAL(12, 2) NOT NULL,
-    contract_id        UUID          NOT NULL REFERENCES Contract(contract_id) ON DELETE RESTRICT,
+    installment_id             UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
+    installment_type           VARCHAR(50)    NOT NULL,
+    due_date                   DATE           NOT NULL,
+    installment_status         VARCHAR(50)    NOT NULL,
+    amount_expected            DECIMAL(12, 2) NOT NULL,
+    amount_expected_currency   VARCHAR(10)    NOT NULL,
+    contract_id                UUID           NOT NULL REFERENCES Contract(contract_id) ON DELETE RESTRICT,
     -- Audit columns (mapped to BaseEntity)
     created_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
@@ -1046,7 +1049,7 @@ CREATE TABLE Payment (
     payment_no            VARCHAR(20)    NOT NULL UNIQUE,
     paid_at               TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     amount                DECIMAL(12, 2) NOT NULL,
-    currency              VARCHAR(10)    NOT NULL DEFAULT 'USD',
+    currency              VARCHAR(10)    NOT NULL,
     payment_type          VARCHAR(20)    NOT NULL,
     method                VARCHAR(50),
     direction             VARCHAR(20)    NOT NULL,
@@ -1065,9 +1068,10 @@ CREATE TABLE Payment (
 -- Note: payer is derivable via installment_id → Installment → Contract → Contract_Party — not stored redundantly here.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Installment_Payment (
-    payment_id       UUID           PRIMARY KEY REFERENCES Payment(payment_id)      ON DELETE CASCADE,
-    installment_id   UUID           NOT NULL REFERENCES Installment(installment_id) ON DELETE RESTRICT,
-    late_fee_amount  DECIMAL(12, 2),
+    payment_id        UUID           PRIMARY KEY REFERENCES Payment(payment_id)      ON DELETE CASCADE,
+    installment_id    UUID           NOT NULL REFERENCES Installment(installment_id) ON DELETE RESTRICT,
+    late_fee_amount   DECIMAL(12, 2),
+    late_fee_currency VARCHAR(10),
     -- Audit columns (mapped to BaseEntity)
     created_at       TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ    NOT NULL DEFAULT NOW(),

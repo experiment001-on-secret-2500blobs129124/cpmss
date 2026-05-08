@@ -1,5 +1,7 @@
 package com.cpmss.finance.money;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.cpmss.platform.exception.BusinessException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -19,8 +21,7 @@ import java.util.Locale;
  * <p>Centralizes the low-level money invariants used by finance workflows:
  * the amount must be present, the currency must be a real ISO-4217 code, and
  * arithmetic is only allowed between values with the same currency. Entities
- * can embed this type without changing the existing {@code amount} and
- * {@code currency} table columns.
+ * embed this type over explicit amount and currency column pairs.
  *
  * @see com.cpmss.finance.payment.Payment
  */
@@ -29,9 +30,6 @@ import java.util.Locale;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Money implements Serializable {
-
-    /** Currency used when a legacy request omits the currency value. */
-    public static final String DEFAULT_CURRENCY = "USD";
 
     private static final long serialVersionUID = 1L;
 
@@ -56,7 +54,9 @@ public class Money implements Serializable {
      * @throws BusinessException if the amount is missing or negative, or if
      *                           the currency is missing or invalid
      */
-    public Money(BigDecimal amount, String currency) {
+    @JsonCreator
+    public Money(@JsonProperty("amount") BigDecimal amount,
+                 @JsonProperty("currency") String currency) {
         if (amount == null) {
             throw new BusinessException("Money amount is required");
         }
@@ -85,23 +85,6 @@ public class Money implements Serializable {
             throw new BusinessException("Money amount must be positive");
         }
         return money;
-    }
-
-    /**
-     * Creates positive money while preserving the legacy default currency.
-     *
-     * <p>Existing payment requests allow {@code currency} to be omitted. This
-     * factory keeps that API shape stable by substituting
-     * {@link #DEFAULT_CURRENCY} only when the request value is {@code null}.
-     *
-     * @param amount the monetary amount; must be greater than zero
-     * @param currency the optional ISO-4217 currency code
-     * @return a normalized positive money value
-     * @throws BusinessException if the amount is missing, zero, or negative,
-     *                           or if the currency is blank or invalid
-     */
-    public static Money positiveOrDefaultCurrency(BigDecimal amount, String currency) {
-        return positive(amount, currency != null ? currency : DEFAULT_CURRENCY);
     }
 
     /**

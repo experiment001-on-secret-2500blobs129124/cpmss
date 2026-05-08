@@ -1,9 +1,12 @@
 package com.cpmss.leasing.contractparty;
 
+import com.cpmss.leasing.common.ContractPartyRole;
+import com.cpmss.leasing.common.ContractPartyRoleConverter;
 import com.cpmss.platform.common.BaseAuditEntity;
 import com.cpmss.leasing.contract.Contract;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -49,8 +52,9 @@ public class ContractParty extends BaseAuditEntity {
 
     /** The person's role in the contract (part of composite PK). */
     @Id
+    @Convert(converter = ContractPartyRoleConverter.class)
     @Column(name = "role", length = 50)
-    private String role;
+    private ContractPartyRole role;
 
     /** Date and time the party signed the contract ({@code null} = not yet signed). */
     @Column(name = "date_signed")

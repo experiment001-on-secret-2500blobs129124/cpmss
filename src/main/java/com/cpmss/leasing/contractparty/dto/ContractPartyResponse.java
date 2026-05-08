@@ -1,5 +1,7 @@
 package com.cpmss.leasing.contractparty.dto;
 
+import com.cpmss.leasing.common.ContractPartyRole;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -14,6 +16,6 @@ import java.util.UUID;
 public record ContractPartyResponse(
         UUID personId,
         UUID contractId,
-        String role,
+        ContractPartyRole role,
         Instant dateSigned
 ) {}

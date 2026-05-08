@@ -19,10 +19,10 @@ class MoneyTest {
     }
 
     @Test
-    void defaultsMissingCurrencyForPositiveMoney() {
-        Money money = Money.positiveOrDefaultCurrency(new BigDecimal("10.00"), null);
-
-        assertThat(money.getCurrency()).isEqualTo(Money.DEFAULT_CURRENCY);
+    void requiresCurrencyForPositiveMoney() {
+        assertThatThrownBy(() -> Money.positive(new BigDecimal("10.00"), null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Money currency is required");
     }
 
     @Test

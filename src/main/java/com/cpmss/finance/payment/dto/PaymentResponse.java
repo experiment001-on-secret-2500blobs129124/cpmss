@@ -1,6 +1,7 @@
 package com.cpmss.finance.payment.dto;
 
-import java.math.BigDecimal;
+import com.cpmss.finance.money.Money;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -10,8 +11,7 @@ import java.util.UUID;
  * @param paymentId            the payment UUID
  * @param paymentNo            system-unique payment number
  * @param paidAt               timestamp of the payment
- * @param amount               payment amount
- * @param currency             currency code
+ * @param money                payment money with explicit amount and currency
  * @param paymentType          discriminator (Installment, WorkOrder, Payroll)
  * @param method               payment method (Cash, Bank Transfer, Cheque, Card, Other)
  * @param direction            direction (Inbound, Outbound)
@@ -24,8 +24,7 @@ public record PaymentResponse(
         UUID paymentId,
         String paymentNo,
         Instant paidAt,
-        BigDecimal amount,
-        String currency,
+        Money money,
         String paymentType,
         String method,
         String direction,

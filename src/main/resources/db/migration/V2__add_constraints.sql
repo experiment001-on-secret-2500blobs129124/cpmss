@@ -101,6 +101,24 @@ ALTER TABLE Contract
         end_date IS NULL OR end_date > start_date
     );
 
+-- Structural check: money values must carry currency when present and cannot be negative.
+ALTER TABLE Contract
+    ADD CONSTRAINT chk_contract_final_price_money CHECK (
+        (final_price IS NULL AND final_price_currency IS NULL)
+        OR (final_price IS NOT NULL AND final_price >= 0 AND final_price_currency ~ '^[A-Z]{3}$')
+    );
+
+-- Structural check: security deposit money must carry currency when present and cannot be negative.
+ALTER TABLE Contract
+    ADD CONSTRAINT chk_contract_security_deposit_money CHECK (
+        (security_deposit_amount IS NULL AND security_deposit_currency IS NULL)
+        OR (
+            security_deposit_amount IS NOT NULL
+            AND security_deposit_amount >= 0
+            AND security_deposit_currency ~ '^[A-Z]{3}$'
+        )
+    );
+
 -- Business rule: contract type determines whether the target is a unit (Residential) or a facility (Commercial).
 ALTER TABLE Contract
     ADD CONSTRAINT chk_contract_type CHECK (
@@ -136,6 +154,12 @@ ALTER TABLE Installment
 ALTER TABLE Installment
     ADD CONSTRAINT chk_installment_amount CHECK (
         amount_expected > 0
+    );
+
+-- Structural check: installment money must carry an explicit ISO-style currency code.
+ALTER TABLE Installment
+    ADD CONSTRAINT chk_installment_amount_currency CHECK (
+        amount_expected_currency ~ '^[A-Z]{3}$'
     );
 
 -- Business rule: a party's role must be one of the recognized contract party designations.
@@ -343,6 +367,10 @@ ALTER TABLE Gate_Guard_Assignment
 ALTER TABLE Payment
     ADD CONSTRAINT chk_payment_amount CHECK (amount > 0);
 
+-- Structural check: payment money must carry an explicit ISO-style currency code.
+ALTER TABLE Payment
+    ADD CONSTRAINT chk_payment_currency CHECK (currency ~ '^[A-Z]{3}$');
+
 -- Business rule: payment_type must be one of the three recognized payment categories.
 ALTER TABLE Payment
     ADD CONSTRAINT chk_payment_type CHECK (
@@ -371,4 +399,10 @@ ALTER TABLE Payment
 ALTER TABLE Installment_Payment
     ADD CONSTRAINT chk_late_fee_positive CHECK (
         late_fee_amount IS NULL OR late_fee_amount >= 0
+    );
+
+ALTER TABLE Installment_Payment
+    ADD CONSTRAINT chk_late_fee_money CHECK (
+        (late_fee_amount IS NULL AND late_fee_currency IS NULL)
+        OR (late_fee_amount IS NOT NULL AND late_fee_currency ~ '^[A-Z]{3}$')
     );

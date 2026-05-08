@@ -1,9 +1,13 @@
 package com.cpmss.leasing.personresidesunder;
 
+import com.cpmss.leasing.common.HouseholdRelationship;
+import com.cpmss.leasing.common.HouseholdRelationshipConverter;
+import com.cpmss.leasing.common.ResidencyPeriod;
 import com.cpmss.platform.common.BaseAuditEntity;
 import com.cpmss.leasing.contract.Contract;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -56,6 +60,30 @@ public class PersonResidesUnder extends BaseAuditEntity {
     private LocalDate moveOutDate;
 
     /** Relationship to the primary contract holder. */
+    @Convert(converter = HouseholdRelationshipConverter.class)
     @Column(name = "household_relationship", nullable = false, length = 50)
-    private String householdRelationship;
+    private HouseholdRelationship householdRelationship;
+
+    /**
+     * Returns the residency period for domain logic and DTO mapping.
+     *
+     * @return the validated residency period
+     */
+    public ResidencyPeriod getResidencyPeriod() {
+        return new ResidencyPeriod(moveInDate, moveOutDate);
+    }
+
+    /**
+     * Assigns the move-in and move-out dates from a residency period.
+     *
+     * @param residencyPeriod the residency period
+     * @throws IllegalArgumentException if the period is missing
+     */
+    public void setResidencyPeriod(ResidencyPeriod residencyPeriod) {
+        if (residencyPeriod == null) {
+            throw new IllegalArgumentException("Residency period is required");
+        }
+        this.moveInDate = residencyPeriod.moveInDate();
+        this.moveOutDate = residencyPeriod.moveOutDate();
+    }
 }

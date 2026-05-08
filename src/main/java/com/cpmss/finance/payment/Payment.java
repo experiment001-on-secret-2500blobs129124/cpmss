@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
@@ -31,10 +30,8 @@ import java.time.Instant;
  * (Installment_Payment, Work_Order_Payment, or Payroll_Payment)
  * exists per row. Enforced in {@code PaymentRules}.
  *
- * <p>The amount and currency columns are exposed as a {@link Money} value
- * object inside the entity. DTOs still expose primitive JSON fields so
- * existing API payloads remain stable while domain code works with a single
- * validated monetary concept.
+ * <p>The amount and currency columns are exposed as a single {@link Money}
+ * value object so payment workflows cannot separate amount from currency.
  *
  * @see Money
  * @see PaymentRules
@@ -106,34 +103,6 @@ public class Payment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "processed_by_id")
     private Person processedBy;
-
-    /**
-     * Returns the payment amount for DTO compatibility.
-     *
-     * <p>Domain logic should prefer {@link #getMoney()} when both amount and
-     * currency are needed together. This method keeps existing response
-     * mapping code stable after embedding {@link Money}.
-     *
-     * @return the payment amount, or {@code null} if the embedded money value
-     *         has not been initialized
-     */
-    public BigDecimal getAmount() {
-        return money != null ? money.getAmount() : null;
-    }
-
-    /**
-     * Returns the payment currency for DTO compatibility.
-     *
-     * <p>Domain logic should prefer {@link #getMoney()} when both amount and
-     * currency are needed together. This method keeps existing response
-     * mapping code stable after embedding {@link Money}.
-     *
-     * @return the ISO-4217 payment currency, or {@code null} if the embedded
-     *         money value has not been initialized
-     */
-    public String getCurrency() {
-        return money != null ? money.getCurrency() : null;
-    }
 
     /**
      * Returns the payment type label for DTO compatibility.
