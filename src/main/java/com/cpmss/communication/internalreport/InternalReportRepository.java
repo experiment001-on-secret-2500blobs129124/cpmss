@@ -1,5 +1,6 @@
 package com.cpmss.communication.internalreport;
 
+import com.cpmss.identity.auth.SystemRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -16,10 +17,10 @@ public interface InternalReportRepository extends JpaRepository<InternalReport, 
     /**
      * Find all reports assigned to a specific system role.
      *
-     * @param assignedToRole the target role (e.g. "HR_OFFICER")
+     * @param assignedToRole the target role
      * @return reports for that role, ordered by creation date (newest first via default)
      */
-    List<InternalReport> findByAssignedToRoleOrderByCreatedAtDesc(String assignedToRole);
+    List<InternalReport> findByAssignedToRoleOrderByCreatedAtDesc(SystemRole assignedToRole);
 
     /**
      * Find all reports filed by a specific person.
@@ -35,5 +36,5 @@ public interface InternalReportRepository extends JpaRepository<InternalReport, 
      * @param assignedToRole the target role
      * @return number of unread reports
      */
-    long countByAssignedToRoleAndIsReadFalse(String assignedToRole);
+    long countByAssignedToRoleAndIsReadFalse(SystemRole assignedToRole);
 }

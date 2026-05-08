@@ -1,8 +1,12 @@
 package com.cpmss.property.facilityhourshistory;
 
 import com.cpmss.platform.common.BaseAuditEntity;
+import com.cpmss.property.common.OperatingHours;
 import com.cpmss.property.facility.Facility;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -16,8 +20,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-
 /**
  * SCD Type 2 entity tracking opening hours of a facility over time.
  *
@@ -44,13 +46,15 @@ public class FacilityHoursHistory extends BaseAuditEntity {
     @Column(name = "effective_date")
     private LocalDate effectiveDate;
 
-    /** Opening time of the facility. */
-    @Column(name = "opening_time")
-    private LocalTime openingTime;
-
-    /** Closing time of the facility. */
-    @Column(name = "closing_time")
-    private LocalTime closingTime;
+    /** Optional same-day opening and closing window. */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "openingTime",
+                    column = @Column(name = "opening_time")),
+            @AttributeOverride(name = "closingTime",
+                    column = @Column(name = "closing_time"))
+    })
+    private OperatingHours operatingWindow;
 
     /** Human-readable operating hours description (e.g. "6AM-10PM"). */
     @Column(name = "operating_hours", length = 50)

@@ -5,6 +5,7 @@ import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.communication.internalreport.dto.CreateInternalReportRequest;
 import com.cpmss.communication.internalreport.dto.InternalReportResponse;
 import com.cpmss.communication.internalreport.dto.UpdateInternalReportRequest;
+import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import org.slf4j.Logger;
@@ -81,7 +82,8 @@ public class InternalReportService {
      * @return reports for that role, newest first
      */
     @Transactional(readOnly = true)
-    public List<InternalReportResponse> listByRole(String assignedToRole) {
+    public List<InternalReportResponse> listByRole(SystemRole assignedToRole) {
+        rules.validateAssignedToRole(assignedToRole);
         return repository.findByAssignedToRoleOrderByCreatedAtDesc(assignedToRole)
                 .stream().map(mapper::toResponse).toList();
     }
@@ -105,7 +107,8 @@ public class InternalReportService {
      * @return number of unread reports
      */
     @Transactional(readOnly = true)
-    public long countUnreadByRole(String assignedToRole) {
+    public long countUnreadByRole(SystemRole assignedToRole) {
+        rules.validateAssignedToRole(assignedToRole);
         return repository.countByAssignedToRoleAndIsReadFalse(assignedToRole);
     }
 
@@ -129,8 +132,8 @@ public class InternalReportService {
                 .subject(request.subject())
                 .body(request.body())
                 .reportCategory(request.reportCategory())
-                .priority(request.priority() != null ? request.priority() : "Normal")
-                .reportStatus("Open")
+                .priority(request.priority() != null ? request.priority() : ReportPriority.NORMAL)
+                .reportStatus(ReportStatus.OPEN)
                 .isRead(false)
                 .build();
         report = repository.save(report);
@@ -218,7 +221,7 @@ public class InternalReportService {
         InternalReport report = findOrThrow(id);
         Person resolver = personRepository.findById(resolvedById)
                 .orElseThrow(() -> new ResourceNotFoundException("Person", resolvedById));
-        report.setReportStatus("Resolved");
+        report.setReportStatus(ReportStatus.RESOLVED);
         report.setResolvedBy(resolver);
         report.setResolvedAt(OffsetDateTime.now());
         report.setResolutionNote(resolutionNote);

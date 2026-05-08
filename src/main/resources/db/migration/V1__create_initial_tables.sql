@@ -442,15 +442,16 @@ CREATE TABLE Unit (
 -- ORDER BY effective_date DESC LIMIT 1 = current listing price.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Unit_Pricing_History (
-    unit_id        UUID           NOT NULL REFERENCES Unit(unit_id) ON DELETE RESTRICT,
-    effective_date DATE           NOT NULL,
-    listing_price  DECIMAL(12, 2) NOT NULL,
+    unit_id                UUID           NOT NULL REFERENCES Unit(unit_id) ON DELETE RESTRICT,
+    effective_date         DATE           NOT NULL,
+    listing_price          DECIMAL(12, 2) NOT NULL,
+    listing_price_currency VARCHAR(10)    NOT NULL,
     PRIMARY KEY (unit_id, effective_date),
     -- Audit columns (mapped to BaseEntity)
-    created_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-    updated_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-    created_by     VARCHAR(255),
-    updated_by     VARCHAR(255)
+    created_at             TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at             TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    created_by             VARCHAR(255),
+    updated_by             VARCHAR(255)
 );
 
 -- Detail-History table: tracks occupancy status of a Unit over time (SCD Type 2).
@@ -642,6 +643,7 @@ CREATE TABLE Work_Order (
     date_scheduled   DATE,
     date_completed   DATE,
     cost_amount      DECIMAL(12, 2),
+    cost_currency    VARCHAR(10),
     job_status       VARCHAR(50)   NOT NULL,
     description      TEXT,
     priority         VARCHAR(20),

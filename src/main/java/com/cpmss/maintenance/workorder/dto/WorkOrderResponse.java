@@ -1,8 +1,12 @@
 package com.cpmss.maintenance.workorder.dto;
 
-import java.math.BigDecimal;
+import com.cpmss.finance.money.Money;
+import com.cpmss.maintenance.workorder.ServiceCategory;
+import com.cpmss.maintenance.workorder.WorkOrderPriority;
+import com.cpmss.maintenance.workorder.WorkOrderSchedule;
+import com.cpmss.maintenance.workorder.WorkOrderStatus;
+
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -10,9 +14,8 @@ import java.util.UUID;
  *
  * @param id              the work order's UUID primary key
  * @param workOrderNo     system-unique work order number
- * @param dateScheduled   scheduled date (may be {@code null})
- * @param dateCompleted   completion date (may be {@code null})
- * @param costAmount      cost (may be {@code null})
+ * @param schedule        optional scheduled/completed date pair
+ * @param cost            cost money (may be {@code null})
  * @param jobStatus       lifecycle status
  * @param description     description (may be {@code null})
  * @param priority        priority level (may be {@code null})
@@ -26,13 +29,12 @@ import java.util.UUID;
 public record WorkOrderResponse(
         UUID id,
         String workOrderNo,
-        LocalDate dateScheduled,
-        LocalDate dateCompleted,
-        BigDecimal costAmount,
-        String jobStatus,
+        WorkOrderSchedule schedule,
+        Money cost,
+        WorkOrderStatus jobStatus,
         String description,
-        String priority,
-        String serviceCategory,
+        WorkOrderPriority priority,
+        ServiceCategory serviceCategory,
         UUID requesterId,
         UUID facilityId,
         UUID companyId,

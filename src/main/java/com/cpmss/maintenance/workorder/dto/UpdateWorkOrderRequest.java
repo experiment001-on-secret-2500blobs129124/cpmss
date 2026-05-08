@@ -1,18 +1,20 @@
 package com.cpmss.maintenance.workorder.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import com.cpmss.finance.money.Money;
+import com.cpmss.maintenance.workorder.ServiceCategory;
+import com.cpmss.maintenance.workorder.WorkOrderPriority;
+import com.cpmss.maintenance.workorder.WorkOrderSchedule;
+import com.cpmss.maintenance.workorder.WorkOrderStatus;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.UUID;
 
 /**
  * Request payload for updating an existing work order.
  *
- * @param dateScheduled   scheduled date for the work
- * @param dateCompleted   completion date
- * @param costAmount      cost of the work
+ * @param schedule        optional scheduled/completed date pair
+ * @param cost            optional cost money
  * @param jobStatus       lifecycle status
  * @param description     detailed description of the work
  * @param priority        priority level
@@ -21,13 +23,12 @@ import java.util.UUID;
  * @param companyId       assigned company (optional)
  */
 public record UpdateWorkOrderRequest(
-        LocalDate dateScheduled,
-        LocalDate dateCompleted,
-        BigDecimal costAmount,
-        @NotBlank @Size(max = 50) String jobStatus,
+        @Valid WorkOrderSchedule schedule,
+        @Valid Money cost,
+        @NotNull WorkOrderStatus jobStatus,
         String description,
-        @Size(max = 20) String priority,
-        @Size(max = 50) String serviceCategory,
+        WorkOrderPriority priority,
+        ServiceCategory serviceCategory,
         UUID facilityId,
         UUID companyId
 ) {}

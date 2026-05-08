@@ -1,11 +1,15 @@
 package com.cpmss.maintenance.workorder;
 
+import com.cpmss.finance.money.Money;
 import com.cpmss.platform.common.BaseEntity;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.property.facility.Facility;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -17,14 +21,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-
 /**
  * Owned entity representing a maintenance or service request raised by a person.
  *
  * <p>Work orders are permanent records. Job status tracks the lifecycle
- * (Open, In Progress, Completed, Cancelled).
+ * (Pending, Assigned, In Progress, Completed, Paid, Cancelled).
  */
 @Entity
 @Table(name = "Work_Order")
@@ -40,33 +41,44 @@ public class WorkOrder extends BaseEntity {
     @Column(name = "work_order_no", nullable = false, unique = true, length = 20)
     private String workOrderNo;
 
-    /** Scheduled date for the work. */
-    @Column(name = "date_scheduled")
-    private LocalDate dateScheduled;
+    /** Optional scheduled/completed date pair. */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "dateScheduled",
+                    column = @Column(name = "date_scheduled")),
+            @AttributeOverride(name = "dateCompleted",
+                    column = @Column(name = "date_completed"))
+    })
+    private WorkOrderSchedule schedule;
 
-    /** Date the work was completed. */
-    @Column(name = "date_completed")
-    private LocalDate dateCompleted;
+    /** Cost of the work with explicit currency. */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount",
+                    column = @Column(name = "cost_amount", precision = 12, scale = 2)),
+            @AttributeOverride(name = "currency",
+                    column = @Column(name = "cost_currency", length = 10))
+    })
+    private Money cost;
 
-    /** Cost of the work. */
-    @Column(name = "cost_amount", precision = 12, scale = 2)
-    private BigDecimal costAmount;
-
-    /** Job lifecycle status (Open, In Progress, Completed, Cancelled). */
+    /** Job lifecycle status. */
+    @Convert(converter = WorkOrderStatusConverter.class)
     @Column(name = "job_status", nullable = false, length = 50)
-    private String jobStatus;
+    private WorkOrderStatus jobStatus;
 
     /** Detailed description of the work. */
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    /** Priority level (Low, Medium, High, Critical). */
+    /** Priority level. */
+    @Convert(converter = WorkOrderPriorityConverter.class)
     @Column(name = "priority", length = 20)
-    private String priority;
+    private WorkOrderPriority priority;
 
-    /** Service category (Plumbing, Electrical, HVAC, General). */
+    /** Service category. */
+    @Convert(converter = ServiceCategoryConverter.class)
     @Column(name = "service_category", length = 50)
-    private String serviceCategory;
+    private ServiceCategory serviceCategory;
 
     /** The person who raised this work order. */
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,10 +1,13 @@
 package com.cpmss.property.facility;
 
 import com.cpmss.property.building.Building;
+import com.cpmss.property.common.FacilityManagementType;
+import com.cpmss.property.common.FacilityManagementTypeConverter;
 import com.cpmss.platform.common.BaseEntity;
 import com.cpmss.maintenance.company.Company;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -46,8 +49,9 @@ public class Facility extends BaseEntity {
     private String facilityCategory;
 
     /** Management model — "Compound" or "Vendor". */
+    @Convert(converter = FacilityManagementTypeConverter.class)
     @Column(name = "management_type", nullable = false, length = 20)
-    private String managementType;
+    private FacilityManagementType managementType;
 
     /** The building this facility is located in. */
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,5 +1,7 @@
 package com.cpmss.property.unitstatushistory.dto;
 
+import com.cpmss.property.common.UnitStatus;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -9,5 +11,5 @@ import java.util.UUID;
 public record UnitStatusHistoryResponse(
         UUID unitId,
         LocalDate effectiveDate,
-        String unitStatus
+        UnitStatus unitStatus
 ) {}

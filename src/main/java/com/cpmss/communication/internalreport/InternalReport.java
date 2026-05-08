@@ -1,10 +1,14 @@
 package com.cpmss.communication.internalreport;
 
+import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.platform.common.BaseEntity;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -45,8 +49,9 @@ public class InternalReport extends BaseEntity {
     private Person reporter;
 
     /** The system role group that should see this report (pool model). */
+    @Enumerated(EnumType.STRING)
     @Column(name = "assigned_to_role", nullable = false, length = 30)
-    private String assignedToRole;
+    private SystemRole assignedToRole;
 
     /** Short subject line summarising the report. */
     @Column(nullable = false, length = 200)
@@ -57,16 +62,19 @@ public class InternalReport extends BaseEntity {
     private String body;
 
     /** Category of the report (e.g. Salary_Request, Complaint). */
+    @Convert(converter = ReportCategoryConverter.class)
     @Column(name = "report_category", nullable = false, length = 50)
-    private String reportCategory;
+    private ReportCategory reportCategory;
 
     /** Priority level (Low, Normal, High, Urgent). Defaults to Normal. */
+    @Convert(converter = ReportPriorityConverter.class)
     @Column(nullable = false, length = 20)
-    private String priority;
+    private ReportPriority priority;
 
     /** Current status (Open, In_Review, Resolved, Rejected). Defaults to Open. */
+    @Convert(converter = ReportStatusConverter.class)
     @Column(name = "report_status", nullable = false, length = 20)
-    private String reportStatus;
+    private ReportStatus reportStatus;
 
     /** Whether the report has been read by someone in the target role group. */
     @Column(name = "is_read", nullable = false)

@@ -36,6 +36,12 @@ ALTER TABLE Building
         building_type IN ('Residential', 'Non-Residential')
     );
 
+-- Structural check: floors_count cannot be negative when supplied.
+ALTER TABLE Building
+    ADD CONSTRAINT chk_building_floors_count CHECK (
+        floors_count IS NULL OR floors_count >= 0
+    );
+
 -- Structural check: a person cannot supervise themselves.
 ALTER TABLE Person_Supervision
     ADD CONSTRAINT chk_no_self_supervision CHECK (
@@ -72,6 +78,23 @@ ALTER TABLE Unit_Pricing_History
         listing_price >= 0
     );
 
+ALTER TABLE Unit_Pricing_History
+    ADD CONSTRAINT chk_listing_price_currency CHECK (
+        listing_price_currency ~ '^[A-Z]{3}$'
+    );
+
+-- Structural check: unit measurements cannot be negative and area must be positive when supplied.
+ALTER TABLE Unit
+    ADD CONSTRAINT chk_unit_measurements CHECK (
+        (floor_no IS NULL OR floor_no >= 0)
+        AND (no_of_rooms IS NULL OR no_of_rooms >= 0)
+        AND (no_of_bathrooms IS NULL OR no_of_bathrooms >= 0)
+        AND (no_of_bedrooms IS NULL OR no_of_bedrooms >= 0)
+        AND (no_of_total_rooms IS NULL OR no_of_total_rooms >= 0)
+        AND (no_of_balconies IS NULL OR no_of_balconies >= 0)
+        AND (square_foot IS NULL OR square_foot > 0)
+    );
+
 -- Business rule: unit_status must be one of the recognized occupancy states.
 ALTER TABLE Unit_Status_History
     ADD CONSTRAINT chk_unit_status CHECK (
@@ -89,6 +112,13 @@ ALTER TABLE Facility
     ADD CONSTRAINT chk_facility_management_ref CHECK (
         (management_type = 'Compound' AND managed_by_company_id IS NULL)::int +
         (management_type = 'Vendor'   AND managed_by_company_id IS NOT NULL)::int = 1
+    );
+
+-- Structural check: opening and closing times must be set together and ordered.
+ALTER TABLE Facility_Hours_History
+    ADD CONSTRAINT chk_facility_hours_window CHECK (
+        (opening_time IS NULL AND closing_time IS NULL)
+        OR (opening_time IS NOT NULL AND closing_time IS NOT NULL AND closing_time > opening_time)
     );
 
 -- ============================================================================
@@ -263,6 +293,13 @@ ALTER TABLE Enters_At
 ALTER TABLE Work_Order
     ADD CONSTRAINT chk_work_order_dates CHECK (
         date_completed IS NULL OR date_completed >= date_scheduled
+    );
+
+-- Structural check: work-order cost must carry currency when present and be positive.
+ALTER TABLE Work_Order
+    ADD CONSTRAINT chk_work_order_cost_money CHECK (
+        (cost_amount IS NULL AND cost_currency IS NULL)
+        OR (cost_amount IS NOT NULL AND cost_amount > 0 AND cost_currency ~ '^[A-Z]{3}$')
     );
 
 -- Business rule: job_status must reflect one of the recognized lifecycle stages.

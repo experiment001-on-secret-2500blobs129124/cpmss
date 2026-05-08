@@ -1,5 +1,6 @@
 package com.cpmss.property.facility.dto;
 
+import com.cpmss.property.common.FacilityManagementType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -22,7 +23,7 @@ import java.util.UUID;
 public record CreateFacilityRequest(
         @NotBlank @Size(max = 150) String facilityName,
         @Size(max = 50) String facilityCategory,
-        @NotBlank @Size(max = 20) String managementType,
+        @NotNull FacilityManagementType managementType,
         @NotNull UUID buildingId,
         UUID managedByCompanyId
 ) {}

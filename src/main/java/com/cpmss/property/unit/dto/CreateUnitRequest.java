@@ -1,10 +1,11 @@
 package com.cpmss.property.unit.dto;
 
+import com.cpmss.property.common.Area;
+import com.cpmss.property.common.NonNegativeCount;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -30,12 +31,12 @@ import java.util.UUID;
 public record CreateUnitRequest(
         @NotBlank @Size(max = 20) String unitNo,
         Integer floorNo,
-        Integer noOfRooms,
-        Integer noOfBathrooms,
-        Integer noOfBedrooms,
-        Integer noOfTotalRooms,
-        Integer noOfBalconies,
-        BigDecimal squareFoot,
+        NonNegativeCount noOfRooms,
+        NonNegativeCount noOfBathrooms,
+        NonNegativeCount noOfBedrooms,
+        NonNegativeCount noOfTotalRooms,
+        NonNegativeCount noOfBalconies,
+        Area squareFoot,
         @Size(max = 50) String viewOrientation,
         @Size(max = 50) String gasMeterCode,
         @Size(max = 50) String waterMeterCode,

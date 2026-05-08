@@ -1,7 +1,7 @@
 package com.cpmss.communication.internalreport.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import com.cpmss.communication.internalreport.ReportStatus;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
@@ -13,7 +13,7 @@ import java.util.UUID;
  * @param resolvedById   the person resolving the report (optional)
  */
 public record UpdateInternalReportRequest(
-        @NotBlank @Size(max = 20) String reportStatus,
+        @NotNull ReportStatus reportStatus,
         String resolutionNote,
         UUID resolvedById
 ) {}

@@ -1,9 +1,14 @@
 package com.cpmss.property.building;
 
 import com.cpmss.platform.common.BaseEntity;
+import com.cpmss.property.common.BuildingType;
+import com.cpmss.property.common.BuildingTypeConverter;
+import com.cpmss.property.common.NonNegativeCount;
+import com.cpmss.property.common.NonNegativeCountConverter;
 import com.cpmss.property.compound.Compound;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -42,12 +47,14 @@ public class Building extends BaseEntity {
     private String buildingName;
 
     /** Building classification (e.g. Residential, Commercial). */
+    @Convert(converter = BuildingTypeConverter.class)
     @Column(name = "building_type", length = 50)
-    private String buildingType;
+    private BuildingType buildingType;
 
     /** Number of floors in the building. */
+    @Convert(converter = NonNegativeCountConverter.class)
     @Column(name = "floors_count")
-    private Integer floorsCount;
+    private NonNegativeCount floorsCount;
 
     /** Date when construction was completed. */
     @Column(name = "construction_date")

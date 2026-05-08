@@ -91,16 +91,15 @@ public class WorkOrderService {
      */
     @Transactional
     public WorkOrderResponse create(CreateWorkOrderRequest request) {
-        rules.validateCostPositive(request.costAmount());
+        rules.validateCostPositive(request.cost());
 
         Person requester = personRepository.findById(request.requesterId())
                 .orElseThrow(() -> new ResourceNotFoundException("Person", request.requesterId()));
 
         WorkOrder workOrder = WorkOrder.builder()
                 .workOrderNo(request.workOrderNo())
-                .dateScheduled(request.dateScheduled())
-                .dateCompleted(request.dateCompleted())
-                .costAmount(request.costAmount())
+                .schedule(request.schedule())
+                .cost(request.cost())
                 .jobStatus(request.jobStatus())
                 .description(request.description())
                 .priority(request.priority())
@@ -126,12 +125,11 @@ public class WorkOrderService {
     public WorkOrderResponse update(UUID id, UpdateWorkOrderRequest request) {
         WorkOrder workOrder = findOrThrow(id);
 
-        rules.validateCostPositive(request.costAmount());
+        rules.validateCostPositive(request.cost());
         rules.validateStatusTransition(workOrder.getJobStatus(), request.jobStatus());
 
-        workOrder.setDateScheduled(request.dateScheduled());
-        workOrder.setDateCompleted(request.dateCompleted());
-        workOrder.setCostAmount(request.costAmount());
+        workOrder.setSchedule(request.schedule());
+        workOrder.setCost(request.cost());
         workOrder.setJobStatus(request.jobStatus());
         workOrder.setDescription(request.description());
         workOrder.setPriority(request.priority());

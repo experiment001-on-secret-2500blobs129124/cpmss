@@ -8,6 +8,7 @@ import com.cpmss.communication.internalreport.dto.InternalReportResponse;
 import com.cpmss.communication.internalreport.dto.MarkReportReadRequest;
 import com.cpmss.communication.internalreport.dto.ResolveInternalReportRequest;
 import com.cpmss.communication.internalreport.dto.UpdateInternalReportRequest;
+import com.cpmss.identity.auth.SystemRole;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +56,7 @@ public class InternalReportApiController {
      */
     @GetMapping(ApiPaths.INTERNAL_REPORTS)
     public ResponseEntity<ApiResponse<?>> listAll(
-            @RequestParam(required = false) String role,
+            @RequestParam(required = false) SystemRole role,
             @RequestParam(required = false) UUID reporterId,
             Pageable pageable) {
         if (role != null) {
@@ -77,7 +78,7 @@ public class InternalReportApiController {
      * @return 200 OK with unread count
      */
     @GetMapping(ApiPaths.INTERNAL_REPORTS_UNREAD_COUNT)
-    public ResponseEntity<ApiResponse<Long>> getUnreadCount(@RequestParam String role) {
+    public ResponseEntity<ApiResponse<Long>> getUnreadCount(@RequestParam SystemRole role) {
         return ResponseEntity.ok(ApiResponse.ok(internalReportService.countUnreadByRole(role)));
     }
 

@@ -1,8 +1,12 @@
 package com.cpmss.property.unitpricinghistory;
 
+import com.cpmss.finance.money.Money;
 import com.cpmss.platform.common.BaseAuditEntity;
 import com.cpmss.property.unit.Unit;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -15,7 +19,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -44,7 +47,13 @@ public class UnitPricingHistory extends BaseAuditEntity {
     @Column(name = "effective_date")
     private LocalDate effectiveDate;
 
-    /** Listing price for the unit at this effective date. */
-    @Column(name = "listing_price", nullable = false, precision = 12, scale = 2)
-    private BigDecimal listingPrice;
+    /** Listing price money for the unit at this effective date. */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount",
+                    column = @Column(name = "listing_price", nullable = false, precision = 12, scale = 2)),
+            @AttributeOverride(name = "currency",
+                    column = @Column(name = "listing_price_currency", nullable = false, length = 10))
+    })
+    private Money listingPrice;
 }
