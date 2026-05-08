@@ -8,6 +8,7 @@ import com.cpmss.security.entersat.dto.EntersAtResponse;
 import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.security.gate.Gate;
 import com.cpmss.security.gate.GateRepository;
+import com.cpmss.security.vehicle.LicensePlate;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import org.slf4j.Logger;
@@ -105,9 +106,9 @@ public class EntersAtService {
         EntersAt entry = EntersAt.builder()
                 .gate(gate)
                 .permit(resolvePermit(request.permitId()))
-                .manualPlateEntry(request.manualPlateEntry())
+                .manualPlateEntry(LicensePlate.ofNullable(request.manualPlateEntry()))
                 .enteredAt(request.enteredAt())
-                .direction(request.direction())
+                .direction(GateDirection.fromLabel(request.direction()))
                 .purpose(request.purpose())
                 .processedBy(resolvePersonNullable(request.processedById()))
                 .requestedBy(resolvePersonNullable(request.requestedById()))

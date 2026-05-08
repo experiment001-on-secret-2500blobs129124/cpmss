@@ -15,8 +15,8 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
     /**
      * Checks whether a vehicle with the given license number exists.
      *
-     * @param licenseNo the license plate number to check
+     * @param licenseNo the normalized license plate value to check
      * @return true if a matching vehicle exists
      */
-    boolean existsByLicenseNo(String licenseNo);
+    boolean existsByLicenseNo(LicensePlate licenseNo);
 }

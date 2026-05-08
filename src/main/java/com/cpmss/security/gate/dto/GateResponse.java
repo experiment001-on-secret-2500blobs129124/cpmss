@@ -13,7 +13,8 @@ import java.util.UUID;
  * @param gateNo       the gate number
  * @param gateName     display name of the gate
  * @param gateType     classification (may be {@code null})
- * @param gateStatus   operational status (may be {@code null})
+ * @param gateStatus   operational status (Active, Under Maintenance, Closed;
+ *                     may be {@code null})
  * @param compoundId   the owning compound's UUID
  * @param compoundName the owning compound's display name
  * @param createdAt    when the gate was created

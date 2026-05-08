@@ -101,11 +101,12 @@ public class VehicleService {
     public VehicleResponse create(CreateVehicleRequest request) {
         rules.validateExactlyOneOwner(
                 request.ownerPersonId(), request.ownerDepartmentId(), request.ownerCompanyId());
-        rules.validateLicenseNoUnique(request.licenseNo(),
-                repository.existsByLicenseNo(request.licenseNo()));
+        LicensePlate licenseNo = LicensePlate.of(request.licenseNo());
+        rules.validateLicenseNoUnique(licenseNo.value(),
+                repository.existsByLicenseNo(licenseNo));
 
         Vehicle vehicle = Vehicle.builder()
-                .licenseNo(request.licenseNo())
+                .licenseNo(licenseNo)
                 .vehicleModel(request.vehicleModel())
                 .ownerPerson(resolveOwnerPerson(request.ownerPersonId()))
                 .ownerDepartment(resolveOwnerDepartment(request.ownerDepartmentId()))
@@ -131,13 +132,14 @@ public class VehicleService {
 
         rules.validateExactlyOneOwner(
                 request.ownerPersonId(), request.ownerDepartmentId(), request.ownerCompanyId());
+        LicensePlate licenseNo = LicensePlate.of(request.licenseNo());
 
-        if (!vehicle.getLicenseNo().equals(request.licenseNo())) {
-            rules.validateLicenseNoUnique(request.licenseNo(),
-                    repository.existsByLicenseNo(request.licenseNo()));
+        if (!vehicle.getLicenseNo().equals(licenseNo.value())) {
+            rules.validateLicenseNoUnique(licenseNo.value(),
+                    repository.existsByLicenseNo(licenseNo));
         }
 
-        vehicle.setLicenseNo(request.licenseNo());
+        vehicle.setLicenseNo(licenseNo);
         vehicle.setVehicleModel(request.vehicleModel());
         vehicle.setOwnerPerson(resolveOwnerPerson(request.ownerPersonId()));
         vehicle.setOwnerDepartment(resolveOwnerDepartment(request.ownerDepartmentId()));

@@ -11,7 +11,7 @@ import java.util.UUID;
  * @param permitId         permit UUID (may be {@code null})
  * @param manualPlateEntry manually entered plate (may be {@code null})
  * @param enteredAt        exact timestamp of the event
- * @param direction        direction (IN or OUT)
+ * @param direction        direction (In or Out)
  * @param purpose          purpose of the visit (may be {@code null})
  * @param processedById    guard UUID (may be {@code null})
  * @param requestedById    resident/staff UUID (may be {@code null})
