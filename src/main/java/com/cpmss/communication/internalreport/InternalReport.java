@@ -2,6 +2,7 @@ package com.cpmss.communication.internalreport;
 
 import com.cpmss.platform.common.BaseEntity;
 import com.cpmss.people.person.Person;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -30,6 +31,7 @@ import java.time.OffsetDateTime;
  */
 @Entity
 @Table(name = "Internal_Report")
+@AttributeOverride(name = "id", column = @Column(name = "report_id"))
 @Getter
 @Setter
 @NoArgsConstructor
