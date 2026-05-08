@@ -1,5 +1,6 @@
 package com.cpmss.hr.staffsalaryhistory;
 
+import com.cpmss.hr.compensation.SalaryAmount;
 import com.cpmss.platform.exception.BusinessException;
 
 import java.math.BigDecimal;
@@ -25,9 +26,7 @@ public class StaffSalaryRules {
      * @throws BusinessException if rate is not positive
      */
     public void validateBaseDailyRatePositive(BigDecimal baseDailyRate) {
-        if (baseDailyRate == null || baseDailyRate.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("Base daily rate must be positive");
-        }
+        SalaryAmount.positive(baseDailyRate);
     }
 
     /**
@@ -37,8 +36,6 @@ public class StaffSalaryRules {
      * @throws BusinessException if maximum is not positive
      */
     public void validateMaximumSalaryPositive(BigDecimal maximumSalary) {
-        if (maximumSalary == null || maximumSalary.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("Maximum salary must be positive");
-        }
+        SalaryAmount.positive(maximumSalary);
     }
 }
