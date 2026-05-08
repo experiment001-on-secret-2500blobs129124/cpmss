@@ -2,9 +2,12 @@ package com.cpmss.performance.staffkpirecord;
 
 import com.cpmss.platform.common.BaseAuditEntity;
 import com.cpmss.organization.department.Department;
+import com.cpmss.performance.common.KpiScore;
+import com.cpmss.performance.common.KpiScoreConverter;
 import com.cpmss.performance.kpipolicy.KpiPolicy;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -12,6 +15,7 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -53,8 +57,10 @@ public class StaffKpiRecord extends BaseAuditEntity {
     private LocalDate recordDate;
 
     /** The KPI score for this date. */
+    @Convert(converter = KpiScoreConverter.class)
     @Column(name = "kpi_score", nullable = false, precision = 5, scale = 2)
-    private BigDecimal kpiScore;
+    @Setter(AccessLevel.NONE)
+    private KpiScore kpiScore;
 
     /** The KPI policy tier applicable for this record. */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -69,4 +75,35 @@ public class StaffKpiRecord extends BaseAuditEntity {
     /** Optional evaluator notes. */
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    /**
+     * Returns the KPI score for DTO compatibility.
+     *
+     * @return the KPI score, or {@code null} when unset
+     */
+    public BigDecimal getKpiScore() {
+        return kpiScore != null ? kpiScore.value() : null;
+    }
+
+    /**
+     * Returns the typed KPI score for domain logic.
+     *
+     * @return the typed KPI score, or {@code null} when unset
+     */
+    public KpiScore getKpiScoreValue() {
+        return kpiScore;
+    }
+
+    /**
+     * Assigns the required KPI score.
+     *
+     * @param kpiScore the typed KPI score
+     * @throws IllegalArgumentException if the score is missing
+     */
+    public void setKpiScore(KpiScore kpiScore) {
+        if (kpiScore == null) {
+            throw new IllegalArgumentException("KPI score is required");
+        }
+        this.kpiScore = kpiScore;
+    }
 }

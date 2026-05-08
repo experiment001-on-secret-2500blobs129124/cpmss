@@ -2,6 +2,7 @@ package com.cpmss.performance.staffperformancereview;
 
 import com.cpmss.platform.exception.BusinessException;
 import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.performance.common.PerformanceRating;
 
 import java.util.UUID;
 
@@ -33,18 +34,21 @@ public class StaffPerformanceReviewRules {
      *
      * <p>A "Poor" rating should not result in a promotion or raise.
      *
-     * @param overallRating        the review rating (may be {@code null})
+     * @param overallRating        the review rating label (may be {@code null})
      * @param resultedInPromotion  whether the review resulted in a promotion
      * @param resultedInRaise      whether the review resulted in a raise
+     * @return the typed performance rating, or {@code null} when absent
      * @throws BusinessException if flags are inconsistent with rating
      */
-    public void validatePromotionConsistency(String overallRating,
-                                              boolean resultedInPromotion,
-                                              boolean resultedInRaise) {
-        if ("Poor".equalsIgnoreCase(overallRating)
+    public PerformanceRating validatePromotionConsistency(String overallRating,
+                                                          boolean resultedInPromotion,
+                                                          boolean resultedInRaise) {
+        PerformanceRating rating = PerformanceRating.fromNullableLabel(overallRating);
+        if (rating == PerformanceRating.POOR
                 && (resultedInPromotion || resultedInRaise)) {
             throw new BusinessException(
                     "A 'Poor' rating cannot result in a promotion or raise");
         }
+        return rating;
     }
 }

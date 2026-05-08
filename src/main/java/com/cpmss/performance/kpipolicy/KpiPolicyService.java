@@ -4,6 +4,9 @@ import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
 import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.performance.common.KpiScoreRange;
+import com.cpmss.performance.common.PercentageRate;
+import com.cpmss.performance.common.PerformanceRating;
 import com.cpmss.performance.kpipolicy.dto.CreateKpiPolicyRequest;
 import com.cpmss.performance.kpipolicy.dto.KpiPolicyResponse;
 import com.cpmss.performance.kpipolicy.dto.UpdateKpiPolicyRequest;
@@ -15,13 +18,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
  * Orchestrates KPI policy tier operations.
  *
+ * <p>KPI policy fields are exposed as primitive DTO values, but the service
+ * converts them into {@link PerformanceRating}, {@link KpiScoreRange}, and
+ * {@link PercentageRate} before persisting the entity. This keeps the current
+ * API contract stable while enforcing the same vocabulary and range rules as
+ * the Flyway constraints.
+ *
  * @see KpiPolicyRepository
+ * @see KpiPolicyRules
  */
 @Service
 public class KpiPolicyService {
@@ -34,6 +43,14 @@ public class KpiPolicyService {
     private final KpiPolicyMapper mapper;
     private final KpiPolicyRules rules = new KpiPolicyRules();
 
+    /**
+     * Creates the KPI policy service.
+     *
+     * @param repository repository for KPI policy rows
+     * @param departmentRepository repository used to resolve owning departments
+     * @param personRepository repository used to resolve approving managers
+     * @param mapper mapper used to expose primitive DTO values
+     */
     public KpiPolicyService(KpiPolicyRepository repository,
                             DepartmentRepository departmentRepository,
                             PersonRepository personRepository,
@@ -44,19 +61,46 @@ public class KpiPolicyService {
         this.mapper = mapper;
     }
 
+    /**
+     * Retrieves a KPI policy by ID.
+     *
+     * @param id the KPI policy UUID
+     * @return the matching KPI policy response
+     * @throws ResourceNotFoundException if no KPI policy exists with this ID
+     */
     @Transactional(readOnly = true)
     public KpiPolicyResponse getById(UUID id) {
         return mapper.toResponse(findOrThrow(id));
     }
 
+    /**
+     * Lists KPI policies with pagination.
+     *
+     * @param pageable the pagination and sorting request
+     * @return a paged response of KPI policies
+     */
     @Transactional(readOnly = true)
     public PagedResponse<KpiPolicyResponse> listAll(Pageable pageable) {
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
+    /**
+     * Creates a KPI policy tier.
+     *
+     * @param request the KPI policy creation request
+     * @return the created KPI policy response
+     * @throws ResourceNotFoundException if the department or approver does not
+     *                                   exist
+     * @throws com.cpmss.platform.exception.BusinessException if the tier label,
+     *                                                        score range, or
+     *                                                        rates are invalid
+     */
     @Transactional
     public KpiPolicyResponse create(CreateKpiPolicyRequest request) {
-        rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
+        KpiScoreRange scoreRange = rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
+        PerformanceRating tier = PerformanceRating.fromLabel(request.tierLabel());
+        PercentageRate bonusRate = PercentageRate.orZero(request.bonusRate());
+        PercentageRate deductionRate = PercentageRate.orZero(request.deductionRate());
 
         Department dept = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
@@ -66,11 +110,11 @@ public class KpiPolicyService {
         KpiPolicy policy = KpiPolicy.builder()
                 .department(dept)
                 .effectiveDate(request.effectiveDate())
-                .tierLabel(request.tierLabel())
-                .minKpiScore(request.minKpiScore())
-                .maxKpiScore(request.maxKpiScore())
-                .bonusRate(request.bonusRate() != null ? request.bonusRate() : BigDecimal.ZERO)
-                .deductionRate(request.deductionRate() != null ? request.deductionRate() : BigDecimal.ZERO)
+                .tierLabel(tier)
+                .minKpiScore(scoreRange.min())
+                .maxKpiScore(scoreRange.max())
+                .bonusRate(bonusRate)
+                .deductionRate(deductionRate)
                 .approvedBy(approver)
                 .build();
         policy = repository.save(policy);
@@ -78,17 +122,28 @@ public class KpiPolicyService {
         return mapper.toResponse(policy);
     }
 
+    /**
+     * Updates a KPI policy tier.
+     *
+     * @param id the KPI policy UUID
+     * @param request the replacement KPI policy values
+     * @return the updated KPI policy response
+     * @throws ResourceNotFoundException if no KPI policy exists with this ID
+     * @throws com.cpmss.platform.exception.BusinessException if the tier label,
+     *                                                        score range, or
+     *                                                        rates are invalid
+     */
     @Transactional
     public KpiPolicyResponse update(UUID id, UpdateKpiPolicyRequest request) {
         KpiPolicy policy = findOrThrow(id);
 
-        rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
+        KpiScoreRange scoreRange = rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
 
-        policy.setTierLabel(request.tierLabel());
-        policy.setMinKpiScore(request.minKpiScore());
-        policy.setMaxKpiScore(request.maxKpiScore());
-        policy.setBonusRate(request.bonusRate() != null ? request.bonusRate() : BigDecimal.ZERO);
-        policy.setDeductionRate(request.deductionRate() != null ? request.deductionRate() : BigDecimal.ZERO);
+        policy.setTierLabel(PerformanceRating.fromLabel(request.tierLabel()));
+        policy.setMinKpiScore(scoreRange.min());
+        policy.setMaxKpiScore(scoreRange.max());
+        policy.setBonusRate(PercentageRate.orZero(request.bonusRate()));
+        policy.setDeductionRate(PercentageRate.orZero(request.deductionRate()));
         policy = repository.save(policy);
         log.info("KPI policy updated: {}", policy.getId());
         return mapper.toResponse(policy);

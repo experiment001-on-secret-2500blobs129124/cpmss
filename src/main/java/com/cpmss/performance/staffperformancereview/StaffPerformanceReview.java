@@ -2,14 +2,20 @@ package com.cpmss.performance.staffperformancereview;
 
 import com.cpmss.platform.common.BaseEntity;
 import com.cpmss.organization.department.Department;
+import com.cpmss.performance.common.KpiScore;
+import com.cpmss.performance.common.KpiScoreConverter;
+import com.cpmss.performance.common.PerformanceRating;
+import com.cpmss.performance.common.PerformanceRatingConverter;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -58,12 +64,16 @@ public class StaffPerformanceReview extends BaseEntity {
     private LocalDate reviewDate;
 
     /** Overall KPI score at time of review. */
+    @Convert(converter = KpiScoreConverter.class)
     @Column(name = "overall_kpi_score", precision = 5, scale = 2)
-    private BigDecimal overallKpiScore;
+    @Setter(AccessLevel.NONE)
+    private KpiScore overallKpiScore;
 
-    /** Overall rating (Excellent, Good, Satisfactory, Poor). */
+    /** Overall rating (Excellent, Good, Average, Poor). */
+    @Convert(converter = PerformanceRatingConverter.class)
     @Column(name = "overall_rating", length = 20)
-    private String overallRating;
+    @Setter(AccessLevel.NONE)
+    private PerformanceRating overallRating;
 
     /** Free-text review notes. */
     @Column(name = "notes", columnDefinition = "TEXT")
@@ -78,4 +88,58 @@ public class StaffPerformanceReview extends BaseEntity {
     @Column(name = "resulted_in_raise", nullable = false)
     @Builder.Default
     private Boolean resultedInRaise = false;
+
+    /**
+     * Returns the overall KPI score for DTO compatibility.
+     *
+     * @return the overall KPI score, or {@code null} when absent
+     */
+    public BigDecimal getOverallKpiScore() {
+        return overallKpiScore != null ? overallKpiScore.value() : null;
+    }
+
+    /**
+     * Returns the typed overall KPI score for domain logic.
+     *
+     * @return the typed overall KPI score, or {@code null} when absent
+     */
+    public KpiScore getOverallKpiScoreValue() {
+        return overallKpiScore;
+    }
+
+    /**
+     * Returns the overall rating for DTO compatibility.
+     *
+     * @return the database/API rating label, or {@code null} when absent
+     */
+    public String getOverallRating() {
+        return overallRating != null ? overallRating.label() : null;
+    }
+
+    /**
+     * Returns the typed overall rating for domain logic.
+     *
+     * @return the typed overall rating, or {@code null} when absent
+     */
+    public PerformanceRating getOverallRatingValue() {
+        return overallRating;
+    }
+
+    /**
+     * Assigns the optional overall KPI score.
+     *
+     * @param overallKpiScore the typed overall score
+     */
+    public void setOverallKpiScore(KpiScore overallKpiScore) {
+        this.overallKpiScore = overallKpiScore;
+    }
+
+    /**
+     * Assigns the optional overall performance rating.
+     *
+     * @param overallRating the typed overall rating
+     */
+    public void setOverallRating(PerformanceRating overallRating) {
+        this.overallRating = overallRating;
+    }
 }
