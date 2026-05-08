@@ -42,10 +42,11 @@ public class SomePlainObject {
 }
 ```
 
-**Java Records** — a Java 21 feature for defining DTOs. One line replaces an
-entire class with fields, constructor, getters, equals, hashCode, toString.
-Records define the *shape* of the DTO. MapStruct handles the *mapping* between
-entities and these record DTOs.
+**Java Records** — a Java 21 feature for defining immutable DTOs and small
+domain value types. One line replaces an entire class with fields,
+constructor, getters, equals, hashCode, and toString. Records define the
+*shape* of the DTO or value object. MapStruct handles the mapping between
+entities and record DTOs where mappers are used.
 
 ```java
 public record CreateEntityRequest(
@@ -83,17 +84,21 @@ file. Flyway runs on application startup and applies pending migrations in order
 
 ```
 src/main/resources/db/migration/
-  V1__create_initial_tables.sql    ← DDL: all CREATE TABLE statements
-  V2__add_constraints.sql          ← Deferred CHECKs added after Java validation
-  V3__add_auth_tables.sql          ← App_User table (authentication)
-  V4__add_auth_constraints.sql     ← App_User CHECK constraints
-  V5__seed_catalog_data.sql        ← Reference data required for the app to function (all environments)
-  R__seed_dev_data.sql             ← Dev-only: fixed set of fake records for local testing
+  V1__create_initial_tables.sql              ← DDL: all CREATE TABLE statements
+  V2__add_constraints.sql                    ← Deferred CHECKs for V1 tables
+  V3__add_auth_tables.sql                    ← App_User table (authentication)
+  V4__add_auth_constraints.sql               ← App_User CHECK constraints
+  V5__add_team_name.sql                      ← Adds team_name to Person_Supervision
+  V6__add_internal_report.sql                ← Internal_Report table
+  V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6
 ```
 
-Numbered migrations (`V1`–`V5`) run once, in order, and are never modified after commit.
-`V3`/`V4` add the auth tables and constraints. `V5` catalog data runs in all environments including production.
-The `R__` prefix is Flyway's repeatable migration convention — dev only, re-runs whenever the file changes.
+Numbered migrations (`V1`-`V7` today, `V8+` later) run once, in order.
+After the schema is shared or released, add a new migration instead of editing
+an applied one. Pre-release baseline edits require a database reset.
+`V3`/`V4` add the auth tables and constraints. `V6`/`V7` add the internal
+reporting table and constraints. The `R__` prefix is Flyway's repeatable
+migration convention for future dev-only seed data.
 
 A `CommandLineRunner` bean annotated with `@Profile("dev")` can run any dev-only startup automation
 (e.g. bulk demo data generation, MinIO bucket setup, test user creation). Planned, not yet implemented.
@@ -115,8 +120,9 @@ See [DATABASE.md](./DATABASE.md) for the full migration convention and rationale
 
 **Yaak** — API client for manual testing and collection management.
 
-**Yaak CLI + Python script** — automated collection runner for CI and
-environment verification.
+**Yaak CLI + Python script** — planned automated collection runner for CI and
+environment verification. The `tests/api/` runner is not committed yet.
+Until then, use `./gradlew test` for committed backend tests.
 
 - Location: `tests/api/`
 - Runtime: Python 3.14, `venv`-managed
@@ -143,6 +149,9 @@ Workflow:
 **JUnit 5** — test framework (ships with Spring Boot).
 
 **Mockito** — mocking library for unit tests.
+
+Current committed tests are focused unit tests under `src/test/java` for DDD
+value objects, enum labels, and converters.
 
 ```java
 @ExtendWith(MockitoExtension.class)

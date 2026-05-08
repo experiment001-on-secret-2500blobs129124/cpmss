@@ -106,10 +106,49 @@ every row.
 
 ---
 
-## Slug Pattern
+## Domain Value Types
+
+Use explicit domain value types when a primitive would hide an invariant.
+Value types should protect pure validation and normalization rules without
+changing service orchestration or API routes.
+
+| Use case | Pattern |
+|---|---|
+| Finite vocabulary | Java `enum`, usually with a JPA `AttributeConverter` |
+| One-column scalar | Java `record` plus `AttributeConverter` |
+| Multi-column concept | `@Embeddable` value object |
+| Repository-backed rule | Service/rules method, not a value object |
+
+Examples:
+
+- `Money` stores amount and currency together so currency-aware arithmetic is
+  impossible to forget.
+- `EmailAddress`, `PhoneNumber`, `Iban`, `SwiftCode`, `PaymentNumber`, and
+  `LicensePlate` normalize and validate externally meaningful identifiers.
+- `DatePeriod`, `TimeWindow`, `PayrollPeriod`, and `KpiPeriod` validate date
+  ordering or year/month bounds.
+- Status and type concepts such as `PaymentType`, `PermitStatus`,
+  `WorkOrderStatus`, and `InternalReportPriority` are enums rather than raw
+  strings.
+
+Rules:
+
+- Keep database labels stable unless a migration is part of the task.
+- Put pure checks in the value object constructor or enum converter.
+- Keep cross-aggregate checks in service/rules classes.
+- Preserve existing JSON shapes by using `@JsonCreator` and `@JsonValue` when a
+  value object is exposed by a DTO.
+- Add focused unit tests for every value object, converter, and enum label set.
+
+---
+
+## Slug Pattern (Planned)
 
 Entities with user-facing web URLs carry a `slug` field alongside the UUID
 primary key.
+
+Slug columns and lookup endpoints are not implemented yet. Use this pattern
+when the slug migration lands.
 
 ```java
 @Column(unique = true, nullable = false)
@@ -298,4 +337,3 @@ public class {Parent}{Child} extends BaseEntity {  // audit fields inherited
     // any additional columns here
 }
 ```
-

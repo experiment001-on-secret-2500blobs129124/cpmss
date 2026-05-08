@@ -57,7 +57,7 @@ flowchart TD
     H -..->|"future"| R["Redis Cache"]
 
     subgraph VW ["View Layer — V in MVCS"]
-        K["Response DTO / Thymeleaf Template"]
+        K["Response DTO / optional Thymeleaf Template"]
         K --> L["HTTP Response"]
     end
 
@@ -85,12 +85,12 @@ See [DATABASE.md](./DATABASE.md) for schema design decisions, migration conventi
 
 ---
 
-## Hybrid API Design
+## API Design
 
 ```mermaid
 flowchart LR
     subgraph Controllers
-        WC["@Controller — Thymeleaf HTML"]
+        WC["@Controller — Thymeleaf HTML (optional future)"]
         RC["@RestController — JSON"]
     end
 
@@ -98,13 +98,18 @@ flowchart LR
     RC --> S
 
     subgraph Routes
-        R1["/entity-name → web UI"]
+        R1["/entity-name → web UI (future)"]
         R2["/api/v1/entity-name → JSON"]
     end
 
     R1 --> WC
     R2 --> RC
 ```
+
+The current backend implementation is REST-first. JSON `@RestController`
+classes are the committed API surface. The Thymeleaf lane remains an optional
+future extension and must not be documented as implemented until web
+controllers and templates exist.
 
 ---
 
@@ -124,12 +129,14 @@ src/main/java/com/cpmss/
   ├── finance/
   │     bankaccount/
   │     installmentpayment/
+  │     money/
   │     payment/
   │     payrollpayment/
   │     personinvestsincompound/
   │     workorderpayment/
   ├── hr/
   │     application/
+  │     compensation/
   │     hireagreement/
   │     lawofshiftattendance/
   │     recruitment/
@@ -140,6 +147,7 @@ src/main/java/com/cpmss/
   ├── identity/
   │     auth/
   ├── leasing/
+  │     common/
   │     contract/
   │     contractparty/
   │     installment/
@@ -155,16 +163,19 @@ src/main/java/com/cpmss/
   │     departmentmanagers/
   │     personsupervision/
   ├── people/
+  │     common/
   │     person/
   │     qualification/
   │     role/
   ├── performance/
+  │     common/
   │     kpipolicy/
   │     staffkpimonthlysummary/
   │     staffkpirecord/
   │     staffperformancereview/
   ├── platform/
   │     common/                     ← base entities, API envelope, route constants
+  │       value/                    ← shared scalar value types
   │     config/                     ← Spring Security, JWT, auditing
   │       CacheConfig.java          ← Redis (future)
   │     exception/                  ← application exception hierarchy
@@ -172,6 +183,7 @@ src/main/java/com/cpmss/
   ├── property/
   │     building/
   │     compound/
+  │     common/
   │     facility/
   │     facilityhourshistory/
   │     facilitymanager/
@@ -187,6 +199,7 @@ src/main/java/com/cpmss/
   ├── workforce/
   │     assignedtask/
   │     attends/
+  │     common/
   │     shiftattendancetype/
   │     task/
   │     taskmonthlysalary/
@@ -210,8 +223,43 @@ src/main/java/com/cpmss/{context}/{feature}/
 ```
 
 See [`CONVENTIONS.md`](./CONVENTIONS.md) for implementation patterns: `BaseEntity`,
-entity annotations, `{Feature}Rules.java` contract, slug pattern, `PagedResponse<T>`,
-`ApiPaths.java`, transaction boundaries, and MapStruct + Records.
+entity annotations, domain value types, `{Feature}Rules.java` contract, planned
+slug pattern, `PagedResponse<T>`, `ApiPaths.java`, transaction boundaries, and
+MapStruct + Records.
+
+---
+
+## Domain Value Types
+
+The DDD-lite package layout is paired with explicit domain value types for
+business concepts that need validation or normalization. These types keep pure
+invariants near the data they protect while preserving the existing layered
+service pattern.
+
+| Concept type | Java shape | Persistence shape |
+|---|---|---|
+| Finite vocabulary | `enum` plus `AttributeConverter` when labels differ | Existing string column |
+| One-column scalar | `record` plus `AttributeConverter` | Existing single column |
+| Multi-column concept | `@Embeddable` record/class | Existing column group |
+| Cross-row workflow rule | Rules/service method | Repository-backed check |
+
+Current examples include:
+
+- `finance.money.Money` for amount and currency pairs.
+- `finance.payment.PaymentType`, `PaymentDirection`, `PaymentMethod`, and
+  `ReconciliationStatus` for payment vocabulary.
+- Period/window value objects for dates and times across leasing, security,
+  workforce, and property history.
+- Identity/reference values such as email, phone, national ID, license plate,
+  IBAN, SWIFT/BIC, payment number, and payment reference.
+- KPI, payroll, compensation, and operational value objects for scores, rates,
+  salary periods, areas, counts, status labels, and priority labels.
+
+Pure checks such as non-negative money, date ordering, score bounds, identifier
+format, and string normalization belong in these value objects. Rules that need
+repositories or multiple aggregates remain in service/rules classes; examples
+include one active staff position, one active department manager, permit
+entitlement checks, payroll close freezing, and payment subtype orchestration.
 
 ---
 
@@ -276,8 +324,8 @@ Validation error format (format validation failures):
 }
 ```
 
-HTML error pages for Thymeleaf routes — Spring Boot's `BasicErrorController`
-automatically serves these when the request comes from a browser:
+HTML error pages for future Thymeleaf routes can be served by Spring Boot's
+`BasicErrorController` when browser-facing controllers are introduced:
 
 ```
 src/main/resources/templates/error/
@@ -307,7 +355,7 @@ These apply across all layers and are not owned by any single layer.
 | Concern | Implementation |
 |---|---|
 | Logging | SLF4J / Logback. Controller logs request entry. Service logs decisions. Exception handler logs errors with stack traces. |
-| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) — catches all custom exceptions, maps to structured JSON. Thymeleaf routes get HTML error pages via `templates/error/`. |
+| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) — catches all custom exceptions and maps them to structured JSON. HTML error pages are future Thymeleaf work. |
 | CORS | Configured in `SecurityConfig`. |
 | Authentication | Stateless JWT. Token issued on login, validated on every request via Spring Security filter chain. CSRF disabled — no session cookies are issued. |
 | Authorization | `@PreAuthorize` for role-based. Explicit ownership checks in service for resource-based. |
@@ -318,7 +366,7 @@ These apply across all layers and are not owned by any single layer.
 | Data Masking | Sensitive fields returned masked in Response DTOs via `MaskingUtils`. Role-specific DTOs for different access levels. |
 | Input Validation | Format: `@Valid` annotations on Request DTOs. Business: explicit Rules class per feature. |
 | Pagination | All list endpoints accept `Pageable`. Service returns `PagedResponse<T>`. |
-| Slugs | URL-friendly identifier on applicable entities. Generated by `SlugUtils` on create. |
+| Slugs | Planned URL-friendly identifiers for named/catalog resources. `SlugUtils` exists, but slug columns and lookup endpoints are future work. |
 
 ---
 

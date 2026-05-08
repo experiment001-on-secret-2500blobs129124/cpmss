@@ -18,19 +18,23 @@ src/main/resources/db/migration/
   V5__add_team_name.sql                      ← Adds team_name to Person_Supervision
   V6__add_internal_report.sql                ← Internal_Report table (ticketing system)
   V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6 (paired)
-  V8__seed_catalog_data.sql                  ← Reference data required for the app to function
-  R__seed_dev_data.sql                       ← Dev-only: fixed list of fake records for testing
 ```
 
 | File | Runs in prod? | Purpose |
 |---|---|---|
-| `V1`–`V8` | All environments | Schema structure, auth tables, constraints, features, and required reference data |
-| `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
+| `V1`–`V7` | All environments | Current schema structure, auth tables, constraints, and internal reports |
+| Future `V8+` | All environments | New schema changes or required reference data |
+| Future `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
 
 **Rules:**
-- Never modify a committed versioned migration — Flyway checksums them. Add a new `Vn__` file instead.
+- After the schema is shared or released, never modify a committed versioned
+  migration — Flyway checksums them. Add a new `Vn__` file instead.
+- During first-version baseline work, a branch may deliberately edit existing
+  migrations when the database will be reset with `docker-compose down -v`.
+  Document that choice in the commit body.
 - `V3`/`V4` (auth) follow the same DDL → constraints pattern as `V1`/`V2`.
-- `V5` (catalog seed data) runs after all schema and constraints are in place — data is inserted into a fully constrained schema.
+- `V5` adds `team_name` to `Person_Supervision`.
+- `V6`/`V7` add `Internal_Report` and its deferred constraints.
 - `R__` stands for **Repeatable** — Flyway re-runs it whenever the file content changes (checksum-based). You can edit it freely. Used only in `dev` profile.
 - A `CommandLineRunner` for randomised bulk demo data is planned but not implemented.
 
@@ -59,6 +63,8 @@ Seeding is optional. Not every feature needs reference data. Add a seed migratio
 | Date-only fields | `DATE` — for facts with day-level precision: birthdays, contract dates, effective dates |
 | Event timestamps | `TIMESTAMPTZ` — for precise moments with timezone: audit fields, payment events |
 | Total participation | Enforced in the service layer (`@Transactional`) — `DEFERRABLE INITIALLY DEFERRED` constraint triggers are a valid PostgreSQL alternative but are deliberately not used here. Logic stays in Java where it is testable and explicit. |
+| Domain values | Java value objects, enums, embeddables, and converters mirror schema constraints without changing table names or API routes |
+| Money | Monetary facts use explicit amount and currency columns when the domain requires currency-aware behavior |
 
 ### Constraint Types
 
@@ -71,6 +77,7 @@ All CHECK constraints are deferred to `V2__add_constraints.sql` — V1 is pure D
 | Format check | Pattern or length validation: `LENGTH(column) = N` |
 | Mutual exclusion | Exactly one of several nullable columns must be NOT NULL. Two syntax options — see below. |
 | Cross-column rule | Two columns in the same row must satisfy a structural rule: `col_a != col_b` |
+| Domain pair | Two or more columns form one Java value object: `amount + currency`, `start_date + end_date`, `start_time + end_time` |
 | Partial unique index | Uniqueness enforced only among rows that match a condition |
 
 #### Mutual exclusion — two approaches
@@ -335,15 +342,19 @@ The service layer bridges them: when `PersonService` assigns the Staff role to a
 
 ---
 
-## File Storage
+## Planned File Storage
 
-Binary files (CVs, documents, images) are stored in **MinIO**, not in PostgreSQL.
-The database column holds only the object path or presigned URL — never file bytes.
+Binary files (CVs, documents, images) should be stored in **MinIO**, not in
+PostgreSQL. The database column holds only the object path or presigned URL —
+never file bytes.
 
 ```sql
 file_url VARCHAR(500)  -- object path, e.g. "resource-type/record-id/filename.ext"
 ```
 
-MinIO is an S3-compatible self-hosted object storage server running as a Docker service (see [DEVOPS.md](./DEVOPS.md)).
-The Java service uploads via the MinIO SDK and stores the returned path in the DB column.
-Switching to AWS S3 later = change the endpoint URL and credentials only — no schema or code logic changes.
+MinIO is an S3-compatible self-hosted object storage server running as a Docker
+service (see [DEVOPS.md](./DEVOPS.md)). The Java upload/download service is
+planned work. Once it exists, it will upload via the MinIO SDK and store the
+returned path in the DB column.
+Switching to AWS S3 later = change the endpoint URL and credentials only — no
+schema or code logic changes.

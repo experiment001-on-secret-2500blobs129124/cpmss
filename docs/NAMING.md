@@ -34,7 +34,7 @@
 | Instance fields | **camelCase** (no prefix) | `repository`, `rules`, `slug` |
 | Constants (`static final`) | **SCREAMING_SNAKE_CASE** | `MAX_RETRY_COUNT`, `DEFAULT_PAGE_SIZE` |
 | Enum values | **SCREAMING_SNAKE_CASE** | `ADMIN`, `PENDING`, `IN_PROGRESS` |
-| Packages | **all lowercase** | `com.cpmss.compound.dto` |
+| Packages | **all lowercase** | `com.cpmss.property.compound.dto` |
 | Files | **PascalCase** (match class) | `PersonService.java`, `BaseEntity.java` |
 | DB columns | **snake_case** | `person_id`, `created_at` |
 | JSON fields | **camelCase** | `firstName`, `createdAt` |
@@ -83,6 +83,8 @@ public abstract class BaseEntity { ... }
 | Web Controller | `{Feature}Controller` | `PersonController` |
 | API Controller | `{Feature}ApiController` | `PersonApiController` |
 | Mapper | `{Feature}Mapper` | `PersonMapper` |
+| Value object | Domain noun | `Money`, `EmailAddress`, `PaymentNumber` |
+| JPA converter | `{ValueObject}Converter` | `MoneyConverter`, `IbanConverter` |
 | Create DTO | `Create{Feature}Request` | `CreatePersonRequest` |
 | Update DTO | `Update{Feature}Request` | `UpdatePersonRequest` |
 | Response DTO | `{Feature}Response` | `PersonResponse` |
@@ -209,16 +211,18 @@ Use **all lowercase**, no underscores, no hyphens:
 
 ```
 com.cpmss                       ← root
-com.cpmss.common                ← shared classes
-com.cpmss.config                ← configuration
-com.cpmss.exception             ← exception hierarchy
-com.cpmss.util                  ← utility classes
-com.cpmss.person                ← feature package
-com.cpmss.person.dto            ← feature DTOs
-com.cpmss.compound              ← feature package
+com.cpmss.platform.common       ← shared classes
+com.cpmss.platform.config       ← configuration
+com.cpmss.platform.exception    ← exception hierarchy
+com.cpmss.platform.util         ← utility classes
+com.cpmss.people.person         ← feature package
+com.cpmss.people.person.dto     ← feature DTOs
+com.cpmss.property.compound     ← feature package
+com.cpmss.finance.money         ← shared finance value objects
 ```
 
-Package names are singular: `com.cpmss.person`, not `com.cpmss.persons`.
+Package names are singular: `com.cpmss.people.person`, not
+`com.cpmss.people.persons`.
 
 ---
 
@@ -274,7 +278,7 @@ REST paths use **kebab-case** (lowercase with hyphens):
 /api/v1/work-orders/{id}/assigned-to
 ```
 
-Web routes (Thymeleaf) also use kebab-case:
+Future web routes (if Thymeleaf is added) also use kebab-case:
 
 ```
 /persons
