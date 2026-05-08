@@ -107,6 +107,21 @@ public record CreatePersonRequest(
 ) {}
 ```
 
+Records that act as domain value objects follow the same rule, but their
+Javadoc explains the invariant they protect:
+
+```java
+/**
+ * Currency-aware monetary value.
+ *
+ * <p>Amount is normalized to two decimal places and cannot be negative.
+ *
+ * @param amount the decimal monetary amount
+ * @param currency the ISO currency code for the amount
+ */
+public record Money(BigDecimal amount, CurrencyCode currency) {}
+```
+
 ---
 
 ## Documenting Enums
@@ -126,6 +141,25 @@ public enum SystemRole {
     /** Operational access — daily tasks, attendance. */
     STAFF
 }
+```
+
+---
+
+## Documenting Converters
+
+JPA converters are public persistence boundary code. Document what Java type
+they persist, which database representation they preserve, and whether blank
+input becomes `null` or is rejected by the value object.
+
+```java
+/**
+ * Converts {@link EmailAddress} values to and from their database string form.
+ *
+ * <p>The converter preserves the one-column schema while allowing the entity
+ * to expose the validated domain value.
+ */
+@Converter(autoApply = false)
+public class EmailAddressConverter implements AttributeConverter<EmailAddress, String> { ... }
 ```
 
 ---
@@ -178,10 +212,17 @@ Javadoc always goes **above** the element — no trailing comment syntax.
 | Rules class methods | Private helpers with obvious names |
 | Entity classes | `BaseEntity` fields (documented once) |
 | Record components in DTOs | Standard repo methods (`findById`, `save`) |
+| Public value objects, enums, and converters | Private helpers with obvious names |
 | Non-obvious field semantics | Self-documenting fields (`email`, `name`) |
 | Custom repository queries | Config classes (annotations explain them) |
 
 > If removing the Javadoc would leave a reader confused about **what** or **why**, it's mandatory.
+
+---
+
+## Planned Documentation Backlog
+
+- `V8__seed_catalog_data.sql` (future)
 
 ---
 

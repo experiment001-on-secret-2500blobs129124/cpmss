@@ -152,8 +152,8 @@ Never leave whitespace at the end of any line.
 Group imports in this order, separated by blank lines:
 
 ```java
-import com.cpmss.common.BaseEntity;       // 1. Project imports
-import com.cpmss.person.dto.*;
+import com.cpmss.platform.common.BaseEntity;  // 1. Project imports
+import com.cpmss.people.person.dto.*;
 
 import jakarta.persistence.*;              // 2. Jakarta / javax imports
 import jakarta.validation.constraints.*;
