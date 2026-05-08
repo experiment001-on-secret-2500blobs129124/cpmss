@@ -1,8 +1,8 @@
 package com.cpmss.finance.payment;
 
+import com.cpmss.finance.money.Money;
 import com.cpmss.platform.exception.BusinessException;
 
-import java.math.BigDecimal;
 import java.util.Set;
 
 /**
@@ -10,10 +10,15 @@ import java.util.Set;
  *
  * <p>Enforces:
  * <ul>
- *   <li>Amount must be positive</li>
  *   <li>Payment type must be one of the valid types</li>
  *   <li>Direction must be Inbound or Outbound</li>
  * </ul>
+ *
+ * <p>Amount and currency invariants live in {@link Money}. This class keeps
+ * workflow-level vocabulary checks that still depend on the current payment
+ * table discriminator columns.
+ *
+ * @see Money
  */
 public class PaymentRules {
 
@@ -21,16 +26,11 @@ public class PaymentRules {
     private static final Set<String> VALID_DIRECTIONS = Set.of("Inbound", "Outbound");
 
     /**
-     * Validates that the payment amount is positive.
-     */
-    public void validateAmountPositive(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("Payment amount must be positive");
-        }
-    }
-
-    /**
      * Validates that the payment type is valid.
+     *
+     * @param paymentType the payment discriminator supplied by the workflow
+     * @throws BusinessException if the type is not one of the supported
+     *                           payment child-table categories
      */
     public void validatePaymentType(String paymentType) {
         if (!VALID_TYPES.contains(paymentType)) {
@@ -41,6 +41,9 @@ public class PaymentRules {
 
     /**
      * Validates that the direction is valid.
+     *
+     * @param direction the payment direction supplied by the workflow
+     * @throws BusinessException if the direction is not inbound or outbound
      */
     public void validateDirection(String direction) {
         if (!VALID_DIRECTIONS.contains(direction)) {

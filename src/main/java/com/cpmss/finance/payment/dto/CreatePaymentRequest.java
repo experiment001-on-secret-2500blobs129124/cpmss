@@ -14,7 +14,7 @@ import java.util.UUID;
  * @param amount               payment amount (must be positive)
  * @param currency             currency code (default USD)
  * @param paymentType          discriminator: Installment, WorkOrder, Payroll
- * @param method               payment method (Cash, BankTransfer, Check, Online)
+ * @param method               payment method (Cash, Bank Transfer, Cheque, Card, Other)
  * @param direction            direction: Inbound or Outbound
  * @param referenceNo          external reference number
  * @param bankAccountId        the bank account UUID used

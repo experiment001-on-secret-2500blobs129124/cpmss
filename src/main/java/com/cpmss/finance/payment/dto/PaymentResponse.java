@@ -13,10 +13,10 @@ import java.util.UUID;
  * @param amount               payment amount
  * @param currency             currency code
  * @param paymentType          discriminator (Installment, WorkOrder, Payroll)
- * @param method               payment method
+ * @param method               payment method (Cash, Bank Transfer, Cheque, Card, Other)
  * @param direction            direction (Inbound, Outbound)
  * @param referenceNo          external reference number
- * @param reconciliationStatus reconciliation status
+ * @param reconciliationStatus reconciliation status (Pending, Reconciled, Disputed)
  * @param bankAccountId        the bank account UUID
  * @param processedById        the staff member who processed this payment
  */

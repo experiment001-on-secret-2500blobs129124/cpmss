@@ -11,11 +11,13 @@ import com.cpmss.leasing.installment.InstallmentRepository;
 import com.cpmss.finance.installmentpayment.InstallmentPayment;
 import com.cpmss.finance.installmentpayment.InstallmentPaymentRepository;
 import com.cpmss.finance.installmentpayment.dto.CreateInstallmentPaymentRequest;
+import com.cpmss.finance.money.Money;
 import com.cpmss.finance.payment.dto.CreatePaymentRequest;
 import com.cpmss.finance.payment.dto.PaymentResponse;
 import com.cpmss.finance.payrollpayment.PayrollPayment;
 import com.cpmss.finance.payrollpayment.PayrollPaymentRepository;
 import com.cpmss.finance.payrollpayment.dto.CreatePayrollPaymentRequest;
+import com.cpmss.platform.exception.BusinessException;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.maintenance.workorder.WorkOrder;
@@ -37,8 +39,11 @@ import java.util.UUID;
  *
  * <p>Each create method is @Transactional, creating a parent Payment
  * record and exactly one child record (InstallmentPayment,
- * WorkOrderPayment, or PayrollPayment).
+ * WorkOrderPayment, or PayrollPayment). Parent payment amount and currency
+ * are normalized through {@link Money} before the row is persisted, while
+ * request and response DTOs keep their existing primitive shape.
  *
+ * @see Money
  * @see PaymentRules
  */
 @Service
@@ -57,6 +62,28 @@ public class PaymentService {
     private final DepartmentRepository departmentRepository;
     private final PaymentRules rules = new PaymentRules();
 
+    /**
+     * Creates the payment service with all repositories needed by subtype flows.
+     *
+     * <p>Each subtype workflow persists the same parent {@link Payment}
+     * aggregate root plus exactly one subtype row, so the service owns the
+     * repositories for all three subtype tables.
+     *
+     * @param paymentRepository repository for parent payment rows
+     * @param installmentPaymentRepository repository for installment payment
+     *                                     subtype rows
+     * @param workOrderPaymentRepository repository for work-order payment
+     *                                   subtype rows
+     * @param payrollPaymentRepository repository for payroll payment subtype
+     *                                 rows
+     * @param bankAccountRepository repository used to resolve payment bank
+     *                              accounts
+     * @param personRepository repository used to resolve processors and staff
+     * @param installmentRepository repository used to resolve installments
+     * @param workOrderRepository repository used to resolve work orders
+     * @param departmentRepository repository used to resolve payroll
+     *                             departments
+     */
     public PaymentService(PaymentRepository paymentRepository,
                           InstallmentPaymentRepository installmentPaymentRepository,
                           WorkOrderPaymentRepository workOrderPaymentRepository,
@@ -80,7 +107,20 @@ public class PaymentService {
     // ── Installment Payment ─────────────────────────────────────────────
 
     /**
-     * Creates an installment payment — Payment + InstallmentPayment in one transaction.
+     * Creates an installment payment in one transaction.
+     *
+     * <p>Persists the parent {@link Payment} as an inbound tenant payment and
+     * the child {@link InstallmentPayment} that links it to the installment
+     * being paid. The parent money is validated and normalized before the
+     * child record is saved.
+     *
+     * @param request the installment payment request, including parent payment
+     *                data and the target installment
+     * @return the created payment response
+     * @throws ResourceNotFoundException if the referenced bank account,
+     *                                   processor, or installment does not
+     *                                   exist
+     * @throws BusinessException if the payment money or direction is invalid
      */
     @Transactional
     public PaymentResponse createInstallmentPayment(CreateInstallmentPaymentRequest request) {
@@ -103,7 +143,20 @@ public class PaymentService {
     // ── Work Order Payment ──────────────────────────────────────────────
 
     /**
-     * Creates a work order payment — Payment + WorkOrderPayment in one transaction.
+     * Creates a work order payment in one transaction.
+     *
+     * <p>Persists the parent {@link Payment} as an outbound vendor payment
+     * and the child {@link WorkOrderPayment} that links it to the completed
+     * work order. This method does not perform work-order lifecycle changes;
+     * it only records the financial movement.
+     *
+     * @param request the work-order payment request, including parent payment
+     *                data and the target work order
+     * @return the created payment response
+     * @throws ResourceNotFoundException if the referenced bank account,
+     *                                   processor, or work order does not
+     *                                   exist
+     * @throws BusinessException if the payment money or direction is invalid
      */
     @Transactional
     public PaymentResponse createWorkOrderPayment(CreateWorkOrderPaymentRequest request) {
@@ -126,7 +179,20 @@ public class PaymentService {
     // ── Payroll Payment ─────────────────────────────────────────────────
 
     /**
-     * Creates a payroll payment — Payment + PayrollPayment in one transaction.
+     * Creates a payroll payment in one transaction.
+     *
+     * <p>Persists the parent {@link Payment} as an outbound staff payment and
+     * the child {@link PayrollPayment} that links it to a staff member,
+     * department, and payroll period. Payroll close calculations remain in
+     * the workforce workflow; this method only records disbursement.
+     *
+     * @param request the payroll payment request, including parent payment
+     *                data, staff, department, and period
+     * @return the created payment response
+     * @throws ResourceNotFoundException if the referenced bank account,
+     *                                   processor, staff member, or department
+     *                                   does not exist
+     * @throws BusinessException if the payment money or direction is invalid
      */
     @Transactional
     public PaymentResponse createPayrollPayment(CreatePayrollPaymentRequest request) {
@@ -154,6 +220,9 @@ public class PaymentService {
 
     /**
      * Lists all payments with pagination.
+     *
+     * @param pageable the pagination and sorting request
+     * @return a paged response of payment DTOs
      */
     @Transactional(readOnly = true)
     public PagedResponse<PaymentResponse> findAll(Pageable pageable) {
@@ -162,6 +231,10 @@ public class PaymentService {
 
     /**
      * Finds a single payment by ID.
+     *
+     * @param id the payment UUID primary key
+     * @return the matching payment response
+     * @throws ResourceNotFoundException if no payment exists with this ID
      */
     @Transactional(readOnly = true)
     public PaymentResponse findById(UUID id) {
@@ -173,8 +246,8 @@ public class PaymentService {
     // ── Private helpers ─────────────────────────────────────────────────
 
     private Payment createParentPayment(CreatePaymentRequest req, String enforceType) {
-        rules.validateAmountPositive(req.amount());
         rules.validateDirection(req.direction());
+        Money money = Money.positiveOrDefaultCurrency(req.amount(), req.currency());
 
         BankAccount bankAccount = bankAccountRepository.findById(req.bankAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("BankAccount", req.bankAccountId()));
@@ -186,8 +259,7 @@ public class PaymentService {
         Payment payment = Payment.builder()
                 .paymentNo(req.paymentNo())
                 .paidAt(Instant.now())
-                .amount(req.amount())
-                .currency(req.currency() != null ? req.currency() : "USD")
+                .money(money)
                 .paymentType(enforceType)
                 .method(req.method())
                 .direction(req.direction())
