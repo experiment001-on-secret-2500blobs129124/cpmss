@@ -40,10 +40,15 @@ public class SomePlainObject {
 
 ---
 
-## BaseEntity
+## BaseAuditEntity And BaseEntity
 
-All JPA entities extend `BaseEntity`. It provides the UUID primary key, audit
-fields, and correct identity semantics for Hibernate.
+JPA entities choose their mapped superclass based on primary-key shape.
+Surrogate UUID entities extend `BaseEntity`. Composite-key entities and
+shared-primary-key detail entities extend `BaseAuditEntity` and declare their
+own IDs.
+
+`BaseAuditEntity` provides only audit fields. `BaseEntity` extends it and adds
+the UUID primary key plus identity semantics for Hibernate.
 
 ```java
 @MappedSuperclass
@@ -331,7 +336,7 @@ private Set<{Child}> {children};
 // Full @Entity — when audit or extra data is required
 @Entity
 @IdClass({Parent}{Child}Id.class)
-public class {Parent}{Child} extends BaseEntity {  // audit fields inherited
+public class {Parent}{Child} extends BaseAuditEntity {  // audit fields inherited
     @Id @ManyToOne @JoinColumn(name = "{parent}_id") private {Parent} {parent};
     @Id @ManyToOne @JoinColumn(name = "{child}_id")  private {Child}  {child};
     // any additional columns here
