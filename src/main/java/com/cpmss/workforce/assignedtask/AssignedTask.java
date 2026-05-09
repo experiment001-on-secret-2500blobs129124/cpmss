@@ -30,7 +30,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "Assigned_Task", uniqueConstraints =
         @UniqueConstraint(columnNames = {"staff_id", "task_id", "assignment_date"}))
-@AttributeOverride(name = "id", column = @Column(name = "assignment_id"))
+@AttributeOverride(name = "id", column = @Column(name = "assignment_id", nullable = false))
 @Getter
 @Setter
 @Builder

@@ -37,18 +37,18 @@ public class PersonSupervision extends BaseAuditEntity {
     /** The supervising person (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supervisor_id")
+    @JoinColumn(name = "supervisor_id", nullable = false)
     private Person supervisor;
 
     /** The supervised person (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supervisee_id")
+    @JoinColumn(name = "supervisee_id", nullable = false)
     private Person supervisee;
 
     /** The date this supervision relationship started (part of composite PK). */
     @Id
-    @Column(name = "supervision_start_date")
+    @Column(name = "supervision_start_date", nullable = false)
     private LocalDate supervisionStartDate;
 
     /** The date this supervision ended ({@code null} = still active). */

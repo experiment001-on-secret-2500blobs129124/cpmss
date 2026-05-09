@@ -19,7 +19,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "Qualification")
-@AttributeOverride(name = "id", column = @Column(name = "qualification_id"))
+@AttributeOverride(name = "id", column = @Column(name = "qualification_id", nullable = false))
 @Getter
 @Setter
 @Builder
@@ -28,6 +28,6 @@ import lombok.Setter;
 public class Qualification extends BaseEntity {
 
     /** Human-readable qualification name (unique across the system). */
-    @Column(name = "qualification_name", nullable = false, unique = true)
+    @Column(name = "qualification_name", nullable = false, unique = true, length = 100)
     private String qualificationName;
 }

@@ -38,13 +38,13 @@ public class InstallmentPayment extends BaseAuditEntity {
 
     /** Shared primary key — same as the payment's UUID. */
     @Id
-    @Column(name = "payment_id")
+    @Column(name = "payment_id", nullable = false)
     private UUID id;
 
     /** The parent payment record (1:1 relationship). */
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "payment_id")
+    @JoinColumn(name = "payment_id", nullable = false)
     private Payment payment;
 
     /** The installment this payment applies to. */

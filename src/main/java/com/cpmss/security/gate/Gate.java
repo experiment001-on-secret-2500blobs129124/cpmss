@@ -27,7 +27,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "Gate", uniqueConstraints =
         @UniqueConstraint(columnNames = {"compound_id", "gate_name"}))
-@AttributeOverride(name = "id", column = @Column(name = "gate_id"))
+@AttributeOverride(name = "id", column = @Column(name = "gate_id", nullable = false))
 @Getter
 @Setter
 @Builder

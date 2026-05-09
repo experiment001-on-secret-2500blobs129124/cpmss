@@ -35,7 +35,7 @@ import java.time.OffsetDateTime;
  */
 @Entity
 @Table(name = "Internal_Report")
-@AttributeOverride(name = "id", column = @Column(name = "report_id"))
+@AttributeOverride(name = "id", column = @Column(name = "report_id", nullable = false))
 @Getter
 @Setter
 @NoArgsConstructor

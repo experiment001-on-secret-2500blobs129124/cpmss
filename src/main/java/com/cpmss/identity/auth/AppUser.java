@@ -49,20 +49,20 @@ public class AppUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private UUID id;
 
     /** Login email, independent from Person_Email contact addresses. */
     @Convert(converter = EmailAddressConverter.class)
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     @Setter(lombok.AccessLevel.NONE)
     private EmailAddress email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "system_role", nullable = false)
+    @Column(name = "system_role", nullable = false, length = 50)
     private SystemRole systemRole;
 
     @Column(name = "is_active", nullable = false)
@@ -77,17 +77,19 @@ public class AppUser {
     private UUID personId;
 
     @CreatedDate
-    @Column(updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @CreatedBy
-    @Column(updatable = false)
+    @Column(name = "created_by", length = 255, updatable = false)
     private String createdBy;
 
     @LastModifiedBy
+    @Column(name = "updated_by", length = 255)
     private String updatedBy;
 
     @Override

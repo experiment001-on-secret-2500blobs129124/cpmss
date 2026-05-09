@@ -35,13 +35,13 @@ public class PersonWorksForCompany extends BaseAuditEntity {
     /** The employee person (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id")
+    @JoinColumn(name = "employee_id", nullable = false)
     private Person employee;
 
     /** The employing company (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
+    @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
     /** The person's job title within the external company. */

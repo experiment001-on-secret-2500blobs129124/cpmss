@@ -24,7 +24,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "Task")
-@AttributeOverride(name = "id", column = @Column(name = "task_id"))
+@AttributeOverride(name = "id", column = @Column(name = "task_id", nullable = false))
 @Getter
 @Setter
 @Builder

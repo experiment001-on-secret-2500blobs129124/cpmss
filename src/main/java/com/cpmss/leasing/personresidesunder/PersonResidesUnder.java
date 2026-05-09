@@ -41,18 +41,18 @@ public class PersonResidesUnder extends BaseAuditEntity {
     /** The resident person (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resident_id")
+    @JoinColumn(name = "resident_id", nullable = false)
     private Person resident;
 
     /** The residential contract (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contract_id")
+    @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
 
     /** The date the person moved in (part of composite PK). */
     @Id
-    @Column(name = "move_in_date")
+    @Column(name = "move_in_date", nullable = false)
     private LocalDate moveInDate;
 
     /** The date the person moved out ({@code null} = still residing). */

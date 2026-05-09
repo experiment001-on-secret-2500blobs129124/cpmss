@@ -30,16 +30,18 @@ import java.time.Instant;
 public abstract class BaseAuditEntity {
 
     @CreatedDate
-    @Column(updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @CreatedBy
-    @Column(updatable = false)
+    @Column(name = "created_by", length = 255, updatable = false)
     private String createdBy;
 
     @LastModifiedBy
+    @Column(name = "updated_by", length = 255)
     private String updatedBy;
 }

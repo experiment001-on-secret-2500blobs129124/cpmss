@@ -38,7 +38,7 @@ import java.time.Instant;
  */
 @Entity
 @Table(name = "Payment")
-@AttributeOverride(name = "id", column = @Column(name = "payment_id"))
+@AttributeOverride(name = "id", column = @Column(name = "payment_id", nullable = false))
 @Getter
 @Setter
 @Builder

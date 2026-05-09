@@ -39,12 +39,12 @@ public class UnitPricingHistory extends BaseAuditEntity {
     /** The unit whose pricing is tracked (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_id")
+    @JoinColumn(name = "unit_id", nullable = false)
     private Unit unit;
 
     /** The date this pricing became effective (part of composite PK). */
     @Id
-    @Column(name = "effective_date")
+    @Column(name = "effective_date", nullable = false)
     private LocalDate effectiveDate;
 
     /** Listing price money for the unit at this effective date. */

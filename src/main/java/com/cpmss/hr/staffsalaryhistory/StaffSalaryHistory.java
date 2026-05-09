@@ -42,12 +42,12 @@ public class StaffSalaryHistory extends BaseAuditEntity {
     /** The staff member (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staff_id")
+    @JoinColumn(name = "staff_id", nullable = false)
     private Person staff;
 
     /** The date this rate became effective (part of composite PK). */
     @Id
-    @Column(name = "effective_date")
+    @Column(name = "effective_date", nullable = false)
     private LocalDate effectiveDate;
 
     /** The date this rate was superseded ({@code null} = still active). */

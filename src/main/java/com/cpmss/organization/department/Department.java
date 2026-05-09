@@ -20,7 +20,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "Department")
-@AttributeOverride(name = "id", column = @Column(name = "department_id"))
+@AttributeOverride(name = "id", column = @Column(name = "department_id", nullable = false))
 @Getter
 @Setter
 @Builder
@@ -29,6 +29,6 @@ import lombok.Setter;
 public class Department extends BaseEntity {
 
     /** Human-readable department name (unique across the system). */
-    @Column(name = "department_name", nullable = false, unique = true)
+    @Column(name = "department_name", nullable = false, unique = true, length = 100)
     private String departmentName;
 }

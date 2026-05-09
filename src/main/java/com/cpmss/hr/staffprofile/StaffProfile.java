@@ -48,13 +48,13 @@ public class StaffProfile {
 
     /** Shared primary key — same as the person's UUID. */
     @Id
-    @Column(name = "person_id")
+    @Column(name = "person_id", nullable = false)
     private UUID id;
 
     /** The person this profile extends (1:1 relationship). */
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "person_id")
+    @JoinColumn(name = "person_id", nullable = false)
     private Person person;
 
     /** The staff member's highest qualification. */
@@ -71,16 +71,18 @@ public class StaffProfile {
     private String cvFileUrl;
 
     @CreatedDate
-    @Column(updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     @CreatedBy
-    @Column(updatable = false)
+    @Column(name = "created_by", length = 255, updatable = false)
     private String createdBy;
 
     @LastModifiedBy
+    @Column(name = "updated_by", length = 255)
     private String updatedBy;
 }

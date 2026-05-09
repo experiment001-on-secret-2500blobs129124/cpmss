@@ -39,12 +39,12 @@ public class UnitStatusHistory extends BaseAuditEntity {
     /** The unit whose status is tracked (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_id")
+    @JoinColumn(name = "unit_id", nullable = false)
     private Unit unit;
 
     /** The date this status became effective (part of composite PK). */
     @Id
-    @Column(name = "effective_date")
+    @Column(name = "effective_date", nullable = false)
     private LocalDate effectiveDate;
 
     /** The occupancy status at this effective date. */

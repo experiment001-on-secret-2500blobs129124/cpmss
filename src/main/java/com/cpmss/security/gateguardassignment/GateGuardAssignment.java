@@ -29,7 +29,7 @@ import java.time.Instant;
  */
 @Entity
 @Table(name = "Gate_Guard_Assignment")
-@AttributeOverride(name = "id", column = @Column(name = "guard_post_id"))
+@AttributeOverride(name = "id", column = @Column(name = "guard_post_id", nullable = false))
 @Getter
 @Setter
 @Builder

@@ -42,18 +42,18 @@ public class StaffKpiRecord extends BaseAuditEntity {
     /** The staff member (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staff_id")
+    @JoinColumn(name = "staff_id", nullable = false)
     private Person staff;
 
     /** The department (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
+    @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
     /** The date the KPI was recorded (part of composite PK). */
     @Id
-    @Column(name = "record_date")
+    @Column(name = "record_date", nullable = false)
     private LocalDate recordDate;
 
     /** The KPI score for this date. */

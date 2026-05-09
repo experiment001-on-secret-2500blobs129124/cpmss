@@ -38,12 +38,12 @@ public class FacilityHoursHistory extends BaseAuditEntity {
     /** The facility whose hours are tracked (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "facility_id")
+    @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;
 
     /** The date this hours schedule became effective (part of composite PK). */
     @Id
-    @Column(name = "effective_date")
+    @Column(name = "effective_date", nullable = false)
     private LocalDate effectiveDate;
 
     /** Optional same-day opening and closing window. */

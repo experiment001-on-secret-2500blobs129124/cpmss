@@ -37,12 +37,12 @@ public class DepartmentLocationHistory extends BaseAuditEntity {
     /** The department whose location is tracked (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
+    @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
     /** The date this location became effective (part of composite PK). */
     @Id
-    @Column(name = "location_start_date_in_building")
+    @Column(name = "location_start_date_in_building", nullable = false)
     private LocalDate locationStartDateInBuilding;
 
     /** The date this location ended ({@code null} = still current). */
