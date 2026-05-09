@@ -1,5 +1,7 @@
 package com.cpmss.security.gateguardassignment;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,7 +12,8 @@ import java.util.UUID;
 /**
  * Spring Data repository for {@link GateGuardAssignment} entities.
  *
- * <p>Provides CRUD via {@link JpaRepository}.
+ * <p>Provides CRUD via {@link JpaRepository} and assignment checks used by
+ * gate-entry ownership rules.
  */
 public interface GateGuardAssignmentRepository
         extends JpaRepository<GateGuardAssignment, UUID> {
@@ -38,4 +41,23 @@ public interface GateGuardAssignmentRepository
     boolean existsActivePostingAtGate(@Param("guardId") UUID guardId,
                                       @Param("gateId") UUID gateId,
                                       @Param("at") Instant at);
+
+    /**
+     * Finds active assignments for a specific guard.
+     *
+     * @param guardId person UUID of the guard
+     * @param at      timestamp used to determine active assignments
+     * @param pageable pagination parameters
+     * @return active guard assignments for the guard
+     */
+    @Query("""
+            select assignment
+            from GateGuardAssignment assignment
+            where assignment.guard.id = :guardId
+              and assignment.shiftStart <= :at
+              and (assignment.shiftEnd is null or assignment.shiftEnd >= :at)
+            """)
+    Page<GateGuardAssignment> findActiveByGuardId(@Param("guardId") UUID guardId,
+                                                  @Param("at") Instant at,
+                                                  Pageable pageable);
 }

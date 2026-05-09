@@ -66,6 +66,9 @@ public enum SecurityErrorCode implements ErrorCode {
     /** Guard is not assigned to the gate. */
     GUARD_NOT_ASSIGNED(403, "Guard is not assigned to this gate"),
 
+    /** User cannot access this security record. */
+    SECURITY_RECORD_ACCESS_DENIED(403, "Security record access denied"),
+
     /** Gate entry record not found. */
     GATE_ENTRY_NOT_FOUND(404, "Gate entry not found"),
 

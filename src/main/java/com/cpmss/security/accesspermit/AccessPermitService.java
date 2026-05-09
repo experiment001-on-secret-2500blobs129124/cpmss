@@ -1,5 +1,6 @@
 package com.cpmss.security.accesspermit;
 
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.leasing.contract.Contract;
 import com.cpmss.leasing.contract.ContractRepository;
 import com.cpmss.leasing.common.LeasingErrorCode;
@@ -17,6 +18,7 @@ import com.cpmss.platform.exception.ApiException;
 import com.cpmss.security.accesspermit.dto.AccessPermitResponse;
 import com.cpmss.security.accesspermit.dto.CreateAccessPermitRequest;
 import com.cpmss.security.accesspermit.dto.UpdateAccessPermitRequest;
+import com.cpmss.security.common.SecurityAccessRules;
 import com.cpmss.security.common.SecurityErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +48,10 @@ public class AccessPermitService {
     private final StaffProfileRepository staffProfileRepository;
     private final ContractRepository contractRepository;
     private final WorkOrderRepository workOrderRepository;
+    private final CurrentUserService currentUserService;
     private final AccessPermitMapper mapper;
     private final AccessPermitRules rules = new AccessPermitRules();
+    private final SecurityAccessRules accessRules = new SecurityAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -57,6 +61,7 @@ public class AccessPermitService {
      * @param staffProfileRepository staff profile data access (entitlement FK lookup)
      * @param contractRepository     contract data access (entitlement FK lookup)
      * @param workOrderRepository    work order data access (entitlement FK lookup)
+     * @param currentUserService     current-user resolver for ownership checks
      * @param mapper                 entity-DTO mapper
      */
     public AccessPermitService(AccessPermitRepository repository,
@@ -64,12 +69,14 @@ public class AccessPermitService {
                                StaffProfileRepository staffProfileRepository,
                                ContractRepository contractRepository,
                                WorkOrderRepository workOrderRepository,
+                               CurrentUserService currentUserService,
                                AccessPermitMapper mapper) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.contractRepository = contractRepository;
         this.workOrderRepository = workOrderRepository;
+        this.currentUserService = currentUserService;
         this.mapper = mapper;
     }
 
@@ -82,6 +89,7 @@ public class AccessPermitService {
      */
     @Transactional(readOnly = true)
     public AccessPermitResponse getById(UUID id) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         return mapper.toResponse(findOrThrow(id));
     }
 
@@ -93,6 +101,7 @@ public class AccessPermitService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<AccessPermitResponse> listAll(Pageable pageable) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -105,6 +114,7 @@ public class AccessPermitService {
      */
     @Transactional
     public AccessPermitResponse create(CreateAccessPermitRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         rules.validateExactlyOneEntitlement(
                 request.staffProfileId(), request.contractId(),
                 request.workOrderId(), request.invitedById());
@@ -138,6 +148,7 @@ public class AccessPermitService {
      */
     @Transactional
     public AccessPermitResponse update(UUID id, UpdateAccessPermitRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         AccessPermit permit = findOrThrow(id);
 
         permit.setAccessLevel(AccessLevel.fromNullableLabel(request.accessLevel()));

@@ -1,10 +1,12 @@
 package com.cpmss.security.gate;
 
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.property.compound.Compound;
 import com.cpmss.property.compound.CompoundRepository;
 import com.cpmss.property.common.PropertyErrorCode;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityAccessRules;
 import com.cpmss.security.common.SecurityErrorCode;
 import com.cpmss.security.gate.dto.CreateGateRequest;
 import com.cpmss.security.gate.dto.GateResponse;
@@ -33,21 +35,26 @@ public class GateService {
 
     private final GateRepository repository;
     private final CompoundRepository compoundRepository;
+    private final CurrentUserService currentUserService;
     private final GateMapper mapper;
     private final GateRules rules = new GateRules();
+    private final SecurityAccessRules accessRules = new SecurityAccessRules();
 
     /**
      * Constructs the service with required dependencies.
      *
      * @param repository         gate data access
      * @param compoundRepository compound data access (for FK lookup)
+     * @param currentUserService current-user resolver for ownership checks
      * @param mapper             entity-DTO mapper
      */
     public GateService(GateRepository repository,
                        CompoundRepository compoundRepository,
+                       CurrentUserService currentUserService,
                        GateMapper mapper) {
         this.repository = repository;
         this.compoundRepository = compoundRepository;
+        this.currentUserService = currentUserService;
         this.mapper = mapper;
     }
 
@@ -60,6 +67,7 @@ public class GateService {
      */
     @Transactional(readOnly = true)
     public GateResponse getById(UUID id) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND)));
     }
@@ -72,6 +80,7 @@ public class GateService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<GateResponse> listAll(Pageable pageable) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -84,6 +93,7 @@ public class GateService {
      */
     @Transactional
     public GateResponse create(CreateGateRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         Compound compound = compoundRepository.findById(request.compoundId())
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
 
@@ -111,6 +121,7 @@ public class GateService {
      */
     @Transactional
     public GateResponse update(UUID id, UpdateGateRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         Gate gate = repository.findById(id)
                 .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND));
 
@@ -139,6 +150,7 @@ public class GateService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         Gate gate = repository.findById(id)
                 .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND));
         repository.delete(gate);

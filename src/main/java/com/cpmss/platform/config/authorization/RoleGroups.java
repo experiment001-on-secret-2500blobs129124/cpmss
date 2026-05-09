@@ -22,7 +22,9 @@ final class RoleGroups {
     static final String SECURITY_OFFICER = role(SystemRole.SECURITY_OFFICER);
     static final String FACILITY_OFFICER = role(SystemRole.FACILITY_OFFICER);
     static final String DEPARTMENT_MANAGER = role(SystemRole.DEPARTMENT_MANAGER);
+    static final String SUPERVISOR = role(SystemRole.SUPERVISOR);
     static final String GATE_GUARD = role(SystemRole.GATE_GUARD);
+    static final String STAFF = role(SystemRole.STAFF);
 
     /** Roles allowed to create login accounts for people they onboard. */
     static final List<String> ACCOUNT_CREATORS = roles(
@@ -63,9 +65,18 @@ final class RoleGroups {
     static final List<String> FACILITY_READERS = roles(
             ADMIN, GENERAL_MANAGER, FACILITY_OFFICER, ACCOUNTANT);
 
+    /** Roles allowed to read gate assignments before service ownership narrows rows. */
+    static final List<String> GATE_GUARD_ASSIGNMENT_READERS = roles(
+            ADMIN, GENERAL_MANAGER, SECURITY_OFFICER, GATE_GUARD);
+
     /** Roles allowed to create gate entry events at route level. */
     static final List<String> ENTRY_WRITERS = roles(
             ADMIN, GENERAL_MANAGER, SECURITY_OFFICER, GATE_GUARD);
+
+    /** Internal staff roles that can file and participate in internal reports. */
+    static final List<String> INTERNAL_REPORT_USERS = roles(
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, ACCOUNTANT, SECURITY_OFFICER,
+            FACILITY_OFFICER, DEPARTMENT_MANAGER, SUPERVISOR, GATE_GUARD, STAFF);
 
     private RoleGroups() {
     }

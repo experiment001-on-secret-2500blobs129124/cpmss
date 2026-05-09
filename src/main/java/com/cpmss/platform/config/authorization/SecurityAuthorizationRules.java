@@ -43,12 +43,16 @@ final class SecurityAuthorizationRules {
                         // Allow security officers to update access permit status/details.
                         EndpointAuthorizationRules.allow(HttpMethod.PUT,
                                 ApiPaths.ACCESS_PERMITS_BY_ID, RoleGroups.SECURITY),
-                        // Allow security officers to browse guard assignments.
+                        // Allow security officers and gate guards to reach guard assignment reads;
+                        // service rules narrow gate guards to their own active assignment.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,
-                                ApiPaths.GATE_GUARD_ASSIGNMENTS, RoleGroups.SECURITY),
-                        // Allow security officers to inspect a guard assignment.
+                                ApiPaths.GATE_GUARD_ASSIGNMENTS,
+                                RoleGroups.GATE_GUARD_ASSIGNMENT_READERS),
+                        // Allow security officers and gate guards to inspect guard assignments;
+                        // service rules narrow gate guards to their own active assignment.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,
-                                ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID, RoleGroups.SECURITY),
+                                ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID,
+                                RoleGroups.GATE_GUARD_ASSIGNMENT_READERS),
                         // Allow security officers to assign guards to gates.
                         EndpointAuthorizationRules.allow(HttpMethod.POST,
                                 ApiPaths.GATE_GUARD_ASSIGNMENTS, RoleGroups.SECURITY),

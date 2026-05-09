@@ -8,9 +8,9 @@ import java.util.List;
 /**
  * Role gates for internal report routes.
  *
- * <p>Current report routes expose broad list and mutation operations. Reporter
- * and assigned-role visibility should be granted through scoped service rules
- * before staff or team roles receive direct route access.
+ * <p>Internal staff roles can reach report endpoints so reporters can see their
+ * own reports and assigned roles can work their inbox. Service-level ownership
+ * rules narrow each request to the reporter, assigned role, or business admin.
  */
 final class CommunicationAuthorizationRules {
 
@@ -24,30 +24,33 @@ final class CommunicationAuthorizationRules {
      */
     static List<EndpointAuthorizationRule> rules() {
         return List.of(
-                // Allow business administrators to view unread report counts.
+                // Allow internal report users to view unread report counts;
+                // service rules restrict the requested role.
                 EndpointAuthorizationRules.allow(HttpMethod.GET,
-                        ApiPaths.INTERNAL_REPORTS_UNREAD_COUNT, RoleGroups.BUSINESS_ADMIN),
-                // Allow business administrators to browse internal reports.
+                        ApiPaths.INTERNAL_REPORTS_UNREAD_COUNT,
+                        RoleGroups.INTERNAL_REPORT_USERS),
+                // Allow internal report users to browse reports;
+                // service rules restrict rows to own reports or assigned role.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.INTERNAL_REPORTS,
-                        RoleGroups.BUSINESS_ADMIN),
-                // Allow business administrators to inspect an internal report.
+                        RoleGroups.INTERNAL_REPORT_USERS),
+                // Allow internal report users to inspect reports they own or receive.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.INTERNAL_REPORTS_BY_ID,
-                        RoleGroups.BUSINESS_ADMIN),
-                // Allow business administrators to file internal reports from broad route.
+                        RoleGroups.INTERNAL_REPORT_USERS),
+                // Allow internal report users to file reports as themselves.
                 EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.INTERNAL_REPORTS,
-                        RoleGroups.BUSINESS_ADMIN),
-                // Allow business administrators to update an internal report.
+                        RoleGroups.INTERNAL_REPORT_USERS),
+                // Allow assigned report handlers to update their report queue.
                 EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.INTERNAL_REPORTS_BY_ID,
-                        RoleGroups.BUSINESS_ADMIN),
-                // Allow business administrators to mark an internal report read.
+                        RoleGroups.INTERNAL_REPORT_USERS),
+                // Allow assigned report handlers to mark reports read.
                 EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.INTERNAL_REPORTS_READ,
-                        RoleGroups.BUSINESS_ADMIN),
-                // Allow business administrators to mark an internal report unread.
+                        RoleGroups.INTERNAL_REPORT_USERS),
+                // Allow assigned report handlers to mark reports unread.
                 EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.INTERNAL_REPORTS_UNREAD,
-                        RoleGroups.BUSINESS_ADMIN),
-                // Allow business administrators to resolve an internal report.
+                        RoleGroups.INTERNAL_REPORT_USERS),
+                // Allow assigned report handlers to resolve reports.
                 EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.INTERNAL_REPORTS_RESOLVE,
-                        RoleGroups.BUSINESS_ADMIN)
+                        RoleGroups.INTERNAL_REPORT_USERS)
         );
     }
 }

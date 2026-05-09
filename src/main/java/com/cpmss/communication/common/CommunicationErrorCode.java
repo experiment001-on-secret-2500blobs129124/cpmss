@@ -39,7 +39,10 @@ public enum CommunicationErrorCode implements ErrorCode {
     REPORT_CATEGORY_INVALID(422, "Report category must be one of: Salary_Request, Transfer_Request, Complaint, Maintenance_Request, Security_Incident, Policy_Suggestion, General"),
 
     /** Report is already resolved. */
-    REPORT_ALREADY_RESOLVED(409, "Report is already resolved");
+    REPORT_ALREADY_RESOLVED(409, "Report is already resolved"),
+
+    /** User cannot access this internal report. */
+    REPORT_ACCESS_DENIED(403, "Internal report access denied");
 
     private final int status;
     private final String defaultMessage;
