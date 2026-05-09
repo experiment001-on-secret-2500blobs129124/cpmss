@@ -1,7 +1,6 @@
 package com.cpmss.finance.payment;
 
 import com.cpmss.finance.money.Money;
-import com.cpmss.platform.exception.BusinessException;
 
 /**
  * Stateless business rules for payments.
@@ -25,8 +24,8 @@ public class PaymentRules {
      *
      * @param paymentType the payment discriminator supplied by the workflow
      * @return the typed payment discriminator
-     * @throws BusinessException if the type is not a supported child-table
-     *                           category
+     * @throws com.cpmss.platform.exception.ApiException if the type is not a
+     *                                      supported child-table category
      */
     public PaymentType validatePaymentType(String paymentType) {
         return PaymentType.fromLabel(paymentType);
@@ -37,7 +36,8 @@ public class PaymentRules {
      *
      * @param method the optional payment method label supplied by the workflow
      * @return the typed payment method, or {@code null} when none was supplied
-     * @throws BusinessException if the method label is blank or unsupported
+     * @throws com.cpmss.platform.exception.ApiException if the method label is
+     *                                      blank or unsupported
      */
     public PaymentMethod validateMethod(String method) {
         return PaymentMethod.fromNullableLabel(method);
@@ -48,7 +48,8 @@ public class PaymentRules {
      *
      * @param direction the payment direction supplied by the workflow
      * @return the typed payment direction
-     * @throws BusinessException if the direction is not inbound or outbound
+     * @throws com.cpmss.platform.exception.ApiException if the direction is
+     *                                      not inbound or outbound
      */
     public PaymentDirection validateDirection(String direction) {
         return PaymentDirection.fromLabel(direction);

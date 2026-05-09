@@ -102,6 +102,12 @@ public enum FinanceErrorCode implements ErrorCode {
     /** SWIFT/BIC code format is invalid. */
     BANK_SWIFT_INVALID(422, "SWIFT/BIC code format is invalid"),
 
+    /** Bank account not found. */
+    BANK_ACCOUNT_NOT_FOUND(404, "Bank account not found"),
+
+    /** Payment not found. */
+    PAYMENT_NOT_FOUND(404, "Payment not found"),
+
     // --- Payroll ---
 
     /** Payroll period is missing. */
