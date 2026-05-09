@@ -1,6 +1,6 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -23,7 +23,7 @@ class YearMonthPeriodTest {
     @Test
     void rejectsInvalidMonth() {
         assertThatThrownBy(() -> YearMonthPeriod.of(2026, 13))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Year-month period is invalid");
     }
 }

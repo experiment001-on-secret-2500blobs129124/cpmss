@@ -74,13 +74,13 @@ public enum CommonErrorCode implements ErrorCode {
     INSTANT_WINDOW_INVALID(422, "Instant window is missing or out of order"),
 
     /** Year/month pair is invalid. */
-    YEAR_MONTH_PERIOD_INVALID(422, "Year/month pair is invalid"),
+    YEAR_MONTH_PERIOD_INVALID(422, "Year-month period is invalid"),
 
     /** Hours amount is missing. */
     HOURS_AMOUNT_REQUIRED(422, "Hours amount is missing"),
 
     /** Hours amount is not positive. */
-    HOURS_AMOUNT_INVALID(422, "Hours amount is not positive"),
+    HOURS_AMOUNT_INVALID(422, "Hours amount must be positive"),
 
     /** Hour delta is missing. */
     HOUR_DELTA_REQUIRED(422, "Hour delta is missing");
