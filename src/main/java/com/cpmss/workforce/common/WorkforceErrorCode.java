@@ -59,7 +59,16 @@ public enum WorkforceErrorCode implements ErrorCode {
     ASSIGNED_TASK_DUPLICATE(409, "Staff member is already assigned to this task"),
 
     /** Payroll period is required. */
-    PAYROLL_PERIOD_REQUIRED(422, "Payroll period is required");
+    PAYROLL_PERIOD_REQUIRED(422, "Payroll period is required"),
+
+    /** Task not found. */
+    TASK_NOT_FOUND(404, "Task not found"),
+
+    /** Shift attendance type not found. */
+    SHIFT_TYPE_NOT_FOUND(404, "Shift attendance type not found"),
+
+    /** Assigned task not found. */
+    ASSIGNED_TASK_NOT_FOUND(404, "Assigned task not found");
 
     private final int status;
     private final String defaultMessage;

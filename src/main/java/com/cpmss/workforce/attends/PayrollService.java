@@ -1,14 +1,17 @@
 package com.cpmss.workforce.attends;
 
 import com.cpmss.finance.money.Money;
+import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.workforce.attends.dto.AttendsResponse;
 import com.cpmss.workforce.attends.dto.CreateAttendsRequest;
 import com.cpmss.workforce.assignedtask.AssignedTaskRepository;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
+import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceTypeRepository;
 import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistory;
@@ -91,14 +94,14 @@ public class PayrollService {
      *
      * @param request the attendance details
      * @return the created attendance response
-     * @throws ResourceNotFoundException if staff or shift not found
+     * @throws ApiException if staff or shift not found
      */
     @Transactional
     public AttendsResponse recordAttendance(CreateAttendsRequest request) {
         Person staff = personRepository.findById(request.staffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         ShiftAttendanceType shift = shiftRepository.findById(request.shiftId())
-                .orElseThrow(() -> new ResourceNotFoundException("ShiftAttendanceType", request.shiftId()));
+                .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
 
         // Validate assignment exists
         boolean hasAssignment = assignedTaskRepository.existsByStaffIdAndAssignmentDate(
@@ -165,7 +168,7 @@ public class PayrollService {
         YearMonthPeriod period = YearMonthPeriod.of(year, month);
         Money zero = new Money(BigDecimal.ZERO, currency);
         Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         LocalDate from = period.firstDay();
         LocalDate to = period.lastDay();
@@ -247,10 +250,10 @@ public class PayrollService {
         salaryRules.validateMaximumSalaryPositive(request.maximumSalary());
 
         Person staff = personRepository.findById(request.staffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Person approver = request.approvedById() != null
                 ? personRepository.findById(request.approvedById())
-                        .orElseThrow(() -> new ResourceNotFoundException("Person", request.approvedById()))
+                        .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND))
                 : null;
 
         // Close current active rate (end_date IS NULL)

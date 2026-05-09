@@ -1,12 +1,14 @@
 package com.cpmss.workforce.assignedtask;
 
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.people.person.Person;
+import com.cpmss.people.person.PersonRepository;
 import com.cpmss.workforce.assignedtask.dto.AssignedTaskResponse;
 import com.cpmss.workforce.assignedtask.dto.CreateAssignedTaskRequest;
 import com.cpmss.workforce.assignedtask.dto.UpdateAssignedTaskRequest;
-import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
-import com.cpmss.people.person.Person;
-import com.cpmss.people.person.PersonRepository;
+import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceTypeRepository;
 import com.cpmss.workforce.task.Task;
@@ -62,7 +64,7 @@ public class AssignedTaskService {
      *
      * @param id the assignment's UUID
      * @return the matching assignment response
-     * @throws ResourceNotFoundException if not found
+    * @throws ApiException if not found
      */
     @Transactional(readOnly = true)
     public AssignedTaskResponse getById(UUID id) {
@@ -94,12 +96,11 @@ public class AssignedTaskService {
                         request.staffId(), request.taskId(), request.assignmentDate()));
 
         Person staff = personRepository.findById(request.staffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
+            .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Task task = taskRepository.findById(request.taskId())
-                .orElseThrow(() -> new ResourceNotFoundException("Task", request.taskId()));
+            .orElseThrow(() -> new ApiException(WorkforceErrorCode.TASK_NOT_FOUND));
         ShiftAttendanceType shift = shiftRepository.findById(request.shiftId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "ShiftAttendanceType", request.shiftId()));
+            .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
 
         AssignedTask assignment = AssignedTask.builder()
                 .staff(staff)
@@ -119,7 +120,7 @@ public class AssignedTaskService {
      * @param id      the assignment's UUID
      * @param request the update request
      * @return the updated assignment response
-     * @throws ResourceNotFoundException if not found
+    * @throws ApiException if not found
      */
     @Transactional
     public AssignedTaskResponse update(UUID id, UpdateAssignedTaskRequest request) {
@@ -132,6 +133,6 @@ public class AssignedTaskService {
 
     private AssignedTask findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("AssignedTask", id));
+                .orElseThrow(() -> new ApiException(WorkforceErrorCode.ASSIGNED_TASK_NOT_FOUND));
     }
 }
