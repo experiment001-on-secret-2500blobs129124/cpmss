@@ -92,6 +92,33 @@ public final class ErrorResponseFactory {
     }
 
     /**
+     * Builds an error response for legacy exceptions not yet migrated
+     * to {@link ApiException}.
+     *
+     * <p>This method bridges the old string-only exceptions to the new
+     * envelope shape. It will be removed after all throw sites are
+     * migrated.
+     *
+     * @param status  the HTTP status code
+     * @param code    the error code string
+     * @param message the error message
+     * @return the error response
+     * @deprecated Remove after all throw sites use {@link ApiException}
+     */
+    @Deprecated
+    public static ErrorResponse fromLegacyException(int status, String code, String message) {
+        return new ErrorResponse(
+                status,
+                code,
+                HttpStatus.valueOf(status).getReasonPhrase(),
+                message,
+                null,
+                MDC.get(MDC_REQUEST_ID),
+                Instant.now()
+        );
+    }
+
+    /**
      * Builds a generic 500 error response for unexpected failures.
      *
      * <p>The original exception message is never exposed to clients.

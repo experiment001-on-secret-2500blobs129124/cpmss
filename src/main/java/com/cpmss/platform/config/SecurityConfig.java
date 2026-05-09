@@ -20,25 +20,35 @@ import java.util.List;
  * Spring Security configuration.
  *
  * <p>Configures the JWT filter chain, endpoint access rules, CORS,
- * and the BCrypt password encoder. Replaces Phase 0 permit-all with
- * authenticated access for all endpoints except auth, actuator, and Swagger.
+ * the BCrypt password encoder, and JSON error handlers for 401/403
+ * responses.
  *
  * @see JwtAuthenticationFilter
  * @see JwtUtils
+ * @see JsonAuthenticationEntryPoint
+ * @see JsonAccessDeniedHandler
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JsonAuthenticationEntryPoint authenticationEntryPoint;
+    private final JsonAccessDeniedHandler accessDeniedHandler;
 
     /**
-     * Constructs the security configuration with the JWT filter.
+     * Constructs the security configuration.
      *
-     * @param jwtAuthenticationFilter the JWT bearer token filter
+     * @param jwtAuthenticationFilter  the JWT bearer token filter
+     * @param authenticationEntryPoint JSON handler for 401 responses
+     * @param accessDeniedHandler      JSON handler for 403 responses
      */
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          JsonAuthenticationEntryPoint authenticationEntryPoint,
+                          JsonAccessDeniedHandler accessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     /**
@@ -71,6 +81,10 @@ public class SecurityConfig {
                 // TODO: Add role-based path matchers per REQUIREMENTS.md § 4
                 //       when Services are built (e.g. .hasRole("HR_OFFICER"))
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
             )
             .addFilterBefore(jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class);
