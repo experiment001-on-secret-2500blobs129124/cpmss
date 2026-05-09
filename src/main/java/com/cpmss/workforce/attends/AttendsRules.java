@@ -1,6 +1,7 @@
 package com.cpmss.workforce.attends;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.workforce.common.WorkforceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.workforce.common.AttendanceTimeWindow;
 
 /**
@@ -19,12 +20,11 @@ public class AttendsRules {
      * Validates that a staff member has an assigned task before recording attendance.
      *
      * @param hasAssignment whether the staff has an assigned task
-     * @throws BusinessException if no assignment exists
+     * @throws ApiException if no assignment exists
      */
     public void validateHasAssignedTask(boolean hasAssignment) {
         if (!hasAssignment) {
-            throw new BusinessException(
-                    "Cannot record attendance — staff has no assigned task for this date");
+            throw new ApiException(WorkforceErrorCode.ATTENDANCE_DATE_OUTSIDE_TASK);
         }
     }
 
@@ -32,12 +32,11 @@ public class AttendsRules {
      * Validates that no duplicate attendance exists for the same staff+shift+date.
      *
      * @param exists whether an attendance record already exists
-     * @throws BusinessException if duplicate found
+     * @throws ApiException if duplicate found
      */
     public void validateNoDuplicate(boolean exists) {
         if (exists) {
-            throw new BusinessException(
-                    "Attendance record already exists for this staff, shift, and date");
+            throw new ApiException(WorkforceErrorCode.ATTENDANCE_DUPLICATE);
         }
     }
 
@@ -46,12 +45,11 @@ public class AttendsRules {
      *
      * @param isAbsent    whether the staff member was absent
      * @param attendanceWindow actual attendance time window
-     * @throws BusinessException if present but missing times
+     * @throws ApiException if present but missing times
      */
     public void validateTimesWhenPresent(boolean isAbsent, AttendanceTimeWindow attendanceWindow) {
         if (!isAbsent && attendanceWindow == null) {
-            throw new BusinessException(
-                    "Check-in and check-out times are required when staff is not absent");
+            throw new ApiException(WorkforceErrorCode.ATTENDANCE_TIMES_REQUIRED);
         }
     }
 }

@@ -3,7 +3,6 @@ package com.cpmss.workforce.common;
 import com.cpmss.finance.payrollpayment.PayrollPayment;
 import com.cpmss.platform.common.value.YearMonthPeriod;
 import com.cpmss.platform.exception.ApiException;
-import com.cpmss.platform.exception.BusinessException;
 import com.cpmss.workforce.attends.AttendsRules;
 import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalary;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ class WorkforcePayrollValueTest {
     @Test
     void rejectsIncompleteAttendanceWindows() {
         assertThatThrownBy(() -> new AttendanceTimeWindow(LocalTime.of(8, 0), null))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Check-out time is required");
     }
 
@@ -39,7 +38,7 @@ class WorkforcePayrollValueTest {
         assertThatThrownBy(() -> new AttendanceTimeWindow(
                 LocalTime.of(8, 0),
                 LocalTime.of(8, 0)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Check-out time must be after check-in time");
     }
 
@@ -58,7 +57,7 @@ class WorkforcePayrollValueTest {
         assertThatThrownBy(() -> new ShiftTimeWindow(
                 LocalTime.of(22, 0),
                 LocalTime.of(6, 0)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Shift end time must be after start time");
     }
 
@@ -89,7 +88,7 @@ class WorkforcePayrollValueTest {
         assertThatCode(() -> rules.validateTimesWhenPresent(true, null))
                 .doesNotThrowAnyException();
         assertThatThrownBy(() -> rules.validateTimesWhenPresent(false, null))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Check-in and check-out times are required when staff is not absent");
     }
 
@@ -110,7 +109,7 @@ class WorkforcePayrollValueTest {
     @Test
     void payrollPeriodSettersRequirePeriod() {
         assertThatThrownBy(() -> new TaskMonthlySalary().setPayrollPeriod(null))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Payroll period is required");
         assertThatThrownBy(() -> new PayrollPayment().setPayrollPeriod(null))
                 .isInstanceOf(ApiException.class)
