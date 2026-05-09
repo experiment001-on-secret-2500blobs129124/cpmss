@@ -4,9 +4,10 @@ import com.cpmss.property.building.dto.BuildingResponse;
 import com.cpmss.property.building.dto.CreateBuildingRequest;
 import com.cpmss.property.building.dto.UpdateBuildingRequest;
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.property.common.PropertyErrorCode;
 import com.cpmss.property.compound.Compound;
 import com.cpmss.property.compound.CompoundRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -53,12 +54,12 @@ public class BuildingService {
      *
      * @param id the building's UUID primary key
      * @return the matching building response
-     * @throws ResourceNotFoundException if no building exists with this ID
+     * @throws ApiException if no building exists with this ID
      */
     @Transactional(readOnly = true)
     public BuildingResponse getById(UUID id) {
         Building building = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Building", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_NOT_FOUND));
         return mapper.toResponse(building);
     }
 
@@ -78,12 +79,12 @@ public class BuildingService {
      *
      * @param request the create request with building details and compound ID
      * @return the created building response
-     * @throws ResourceNotFoundException if the compound does not exist
+     * @throws ApiException if the compound does not exist
      */
     @Transactional
     public BuildingResponse create(CreateBuildingRequest request) {
         Compound compound = compoundRepository.findById(request.compoundId())
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", request.compoundId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
 
         Building building = Building.builder()
                 .buildingNo(request.buildingNo())
@@ -104,15 +105,15 @@ public class BuildingService {
      * @param id      the building's UUID
      * @param request the update request with new values
      * @return the updated building response
-     * @throws ResourceNotFoundException if the building or compound does not exist
+     * @throws ApiException if the building or compound does not exist
      */
     @Transactional
     public BuildingResponse update(UUID id, UpdateBuildingRequest request) {
         Building building = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Building", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_NOT_FOUND));
 
         Compound compound = compoundRepository.findById(request.compoundId())
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", request.compoundId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
 
         building.setBuildingNo(request.buildingNo());
         building.setBuildingName(request.buildingName());
@@ -129,12 +130,12 @@ public class BuildingService {
      * Deletes a building by ID.
      *
      * @param id the building's UUID
-     * @throws ResourceNotFoundException if no building exists with this ID
+     * @throws ApiException if no building exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Building building = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Building", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_NOT_FOUND));
         repository.delete(building);
         log.info("Building deleted: {}", building.getBuildingNo());
     }

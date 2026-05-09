@@ -48,6 +48,12 @@ public enum PropertyErrorCode implements ErrorCode {
     /** Unit not found. */
     UNIT_NOT_FOUND(404, "Unit not found"),
 
+    /** Building not found. */
+    BUILDING_NOT_FOUND(404, "Building not found"),
+
+    /** Compound not found. */
+    COMPOUND_NOT_FOUND(404, "Compound not found"),
+
     /** Unit number already exists in this facility. */
     UNIT_DUPLICATE(409, "Unit number already exists in this facility"),
 
