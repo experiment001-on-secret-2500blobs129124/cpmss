@@ -1,6 +1,6 @@
 package com.cpmss.security.gate;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +18,7 @@ class GateStatusTest {
     @Test
     void rejectsUnknownStatus() {
         assertThatThrownBy(() -> GateStatus.fromNullableLabel("Open"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Gate status must be one of: Active, Under Maintenance, Closed");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Gate status cannot be blank");
     }
 }

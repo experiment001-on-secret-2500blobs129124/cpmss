@@ -1,6 +1,7 @@
 package com.cpmss.security.gate;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -39,20 +40,19 @@ public enum GateStatus {
      *
      * @param label the optional gate status label
      * @return the matching gate status, or {@code null} when absent
-     * @throws BusinessException if the label is blank or unsupported
+     * @throws ApiException if the label is blank or unsupported
      */
     public static GateStatus fromNullableLabel(String label) {
         if (label == null) {
             return null;
         }
         if (label.isBlank()) {
-            throw new BusinessException("Gate status cannot be blank");
+            throw new ApiException(SecurityErrorCode.GATE_STATUS_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Gate status must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_STATUS_REQUIRED));
     }
 
     /**

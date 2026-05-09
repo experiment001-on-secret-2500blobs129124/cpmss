@@ -1,6 +1,6 @@
 package com.cpmss.security.vehicle;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +23,7 @@ class LicensePlateTest {
     @Test
     void rejectsBlankPlate() {
         assertThatThrownBy(() -> LicensePlate.of(" "))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("License plate is required");
     }
 

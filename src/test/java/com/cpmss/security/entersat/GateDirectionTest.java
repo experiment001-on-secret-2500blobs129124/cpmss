@@ -1,6 +1,6 @@
 package com.cpmss.security.entersat;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,7 +17,7 @@ class GateDirectionTest {
     @Test
     void rejectsUnknownDirection() {
         assertThatThrownBy(() -> GateDirection.fromLabel("Inside"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Gate direction must be one of: In, Out");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Gate direction is required");
     }
 }

@@ -1,6 +1,7 @@
 package com.cpmss.security.gate;
 
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Business rules for {@link Gate} operations.
@@ -14,11 +15,11 @@ public class GateRules {
      *
      * @param gateNo the desired gate number
      * @param exists whether a gate with this number already exists
-     * @throws ConflictException if the gate number is already in use
+     * @throws ApiException if the gate number is already in use
      */
     public void validateGateNoUnique(String gateNo, boolean exists) {
         if (exists) {
-            throw new ConflictException("Gate number '" + gateNo + "' is already in use");
+            throw new ApiException(SecurityErrorCode.GATE_DUPLICATE);
         }
     }
 }

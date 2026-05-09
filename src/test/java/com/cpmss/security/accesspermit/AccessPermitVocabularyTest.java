@@ -1,6 +1,6 @@
 package com.cpmss.security.accesspermit;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -27,11 +27,11 @@ class AccessPermitVocabularyTest {
     @Test
     void rejectsUnknownPermitVocabulary() {
         assertThatThrownBy(() -> PermitType.fromLabel("Temporary Badge"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Permit type must be one of");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Permit type is required");
         assertThatThrownBy(() -> AccessLevel.fromNullableLabel("VIP"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Access level must be one of");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Access level cannot be blank");
     }
 
     @Test
@@ -49,7 +49,7 @@ class AccessPermitVocabularyTest {
         assertThatThrownBy(() -> new PermitValidity(
                 LocalDate.of(2026, 5, 8),
                 LocalDate.of(2026, 5, 7)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Permit expiry date cannot be before issue date");
     }
 }
