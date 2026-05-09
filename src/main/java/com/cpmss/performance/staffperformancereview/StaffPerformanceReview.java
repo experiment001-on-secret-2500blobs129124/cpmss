@@ -36,7 +36,7 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "Staff_Performance_Review")
-@AttributeOverride(name = "id", column = @Column(name = "review_id"))
+@AttributeOverride(name = "id", column = @Column(name = "review_id", nullable = false))
 @Getter
 @Setter
 @Builder

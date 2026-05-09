@@ -20,7 +20,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "Shift_Attendance_Type")
-@AttributeOverride(name = "id", column = @Column(name = "shift_id"))
+@AttributeOverride(name = "id", column = @Column(name = "shift_id", nullable = false))
 @Getter
 @Setter
 @Builder
@@ -29,6 +29,6 @@ import lombok.Setter;
 public class ShiftAttendanceType extends BaseEntity {
 
     /** Human-readable shift name. */
-    @Column(name = "shift_name", nullable = false)
+    @Column(name = "shift_name", nullable = false, length = 50)
     private String shiftName;
 }

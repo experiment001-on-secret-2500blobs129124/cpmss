@@ -37,18 +37,18 @@ public class PersonInvestsInCompound extends BaseAuditEntity {
     /** The investing person (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "investor_id")
+    @JoinColumn(name = "investor_id", nullable = false)
     private Person investor;
 
     /** The compound being invested in (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "compound_id")
+    @JoinColumn(name = "compound_id", nullable = false)
     private Compound compound;
 
     /** The timestamp of the investment event (part of composite PK). */
     @Id
-    @Column(name = "invested_at")
+    @Column(name = "invested_at", nullable = false)
     private Instant investedAt;
 
     /** Investment stake amount. */

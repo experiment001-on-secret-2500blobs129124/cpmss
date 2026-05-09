@@ -19,7 +19,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "Company")
-@AttributeOverride(name = "id", column = @Column(name = "company_id"))
+@AttributeOverride(name = "id", column = @Column(name = "company_id", nullable = false))
 @Getter
 @Setter
 @Builder

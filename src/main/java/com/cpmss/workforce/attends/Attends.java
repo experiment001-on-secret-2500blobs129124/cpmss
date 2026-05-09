@@ -45,18 +45,18 @@ public class Attends extends BaseAuditEntity {
     /** The staff member (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staff_id")
+    @JoinColumn(name = "staff_id", nullable = false)
     private Person staff;
 
     /** The shift type (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shift_id")
+    @JoinColumn(name = "shift_id", nullable = false)
     private ShiftAttendanceType shift;
 
     /** The attendance date (part of composite PK). */
     @Id
-    @Column(name = "date")
+    @Column(name = "date", nullable = false)
     private LocalDate date;
 
     /** Whether the staff member was absent. */

@@ -41,19 +41,19 @@ public class ContractParty extends BaseAuditEntity {
     /** The person involved in the contract (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "person_id")
+    @JoinColumn(name = "person_id", nullable = false)
     private Person person;
 
     /** The contract (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "contract_id")
+    @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
 
     /** The person's role in the contract (part of composite PK). */
     @Id
     @Convert(converter = ContractPartyRoleConverter.class)
-    @Column(name = "role", length = 50)
+    @Column(name = "role", nullable = false, length = 50)
     private ContractPartyRole role;
 
     /** Date and time the party signed the contract ({@code null} = not yet signed). */

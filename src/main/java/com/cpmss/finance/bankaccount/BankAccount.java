@@ -29,7 +29,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "Bank_Account")
-@AttributeOverride(name = "id", column = @Column(name = "account_id"))
+@AttributeOverride(name = "id", column = @Column(name = "account_id", nullable = false))
 @Getter
 @Setter
 @Builder

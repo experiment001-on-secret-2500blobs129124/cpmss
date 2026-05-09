@@ -20,7 +20,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "Role")
-@AttributeOverride(name = "id", column = @Column(name = "role_id"))
+@AttributeOverride(name = "id", column = @Column(name = "role_id", nullable = false))
 @Getter
 @Setter
 @Builder
@@ -29,6 +29,6 @@ import lombok.Setter;
 public class Role extends BaseEntity {
 
     /** Human-readable role name (unique across the system). */
-    @Column(name = "role_name", nullable = false, unique = true)
+    @Column(name = "role_name", nullable = false, unique = true, length = 50)
     private String roleName;
 }
