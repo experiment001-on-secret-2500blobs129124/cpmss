@@ -1,5 +1,8 @@
 package com.cpmss.performance.staffperformancereview;
 
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.organization.common.DepartmentScopeService;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
@@ -7,6 +10,7 @@ import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.performance.common.KpiScore;
+import com.cpmss.performance.common.PerformanceAccessRules;
 import com.cpmss.performance.common.PerformanceErrorCode;
 import com.cpmss.performance.common.PerformanceRating;
 import com.cpmss.performance.staffperformancereview.dto.CreateStaffPerformanceReviewRequest;
@@ -20,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -40,7 +45,10 @@ public class StaffPerformanceReviewService {
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
     private final StaffPerformanceReviewMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final DepartmentScopeService departmentScopeService;
     private final StaffPerformanceReviewRules rules = new StaffPerformanceReviewRules();
+    private final PerformanceAccessRules accessRules = new PerformanceAccessRules();
 
     /**
      * Creates the performance review service.
@@ -53,11 +61,15 @@ public class StaffPerformanceReviewService {
     public StaffPerformanceReviewService(StaffPerformanceReviewRepository repository,
                                          PersonRepository personRepository,
                                          DepartmentRepository departmentRepository,
-                                         StaffPerformanceReviewMapper mapper) {
+                                         StaffPerformanceReviewMapper mapper,
+                                         CurrentUserService currentUserService,
+                                         DepartmentScopeService departmentScopeService) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.departmentRepository = departmentRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
+        this.departmentScopeService = departmentScopeService;
     }
 
     /**
@@ -69,7 +81,12 @@ public class StaffPerformanceReviewService {
      */
     @Transactional(readOnly = true)
     public StaffPerformanceReviewResponse getById(UUID id) {
-        return mapper.toResponse(findOrThrow(id));
+        CurrentUser user = currentUserService.currentUser();
+        StaffPerformanceReview review = findOrThrow(id);
+        accessRules.requireCanViewStaffPerformance(
+                user, review.getStaff().getId(),
+                review.getDepartment().getId(), departmentScopeService);
+        return mapper.toResponse(review);
     }
 
     /**
@@ -80,7 +97,14 @@ public class StaffPerformanceReviewService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<StaffPerformanceReviewResponse> listAll(Pageable pageable) {
-        return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+        CurrentUser user = currentUserService.currentUser();
+        List<StaffPerformanceReviewResponse> content = repository.findAll(pageable).getContent()
+                .stream()
+                .filter(review -> canViewReview(user, review))
+                .map(mapper::toResponse)
+                .toList();
+        return new PagedResponse<>(
+                content, content.size(), 1, pageable.getPageNumber(), pageable.getPageSize());
     }
 
     /**
@@ -93,6 +117,14 @@ public class StaffPerformanceReviewService {
      */
     @Transactional
     public StaffPerformanceReviewResponse create(CreateStaffPerformanceReviewRequest request) {
+        CurrentUser user = currentUserService.currentUser();
+        accessRules.requireCanCreateReview(
+                user, request.reviewerId(), request.departmentId(), departmentScopeService);
+        if (!accessRules.isHrOrBusinessAdmin(user)
+                && !departmentScopeService.staffBelongsToDepartment(
+                        request.staffId(), request.departmentId())) {
+            throw new ApiException(PerformanceErrorCode.PERFORMANCE_RECORD_ACCESS_DENIED);
+        }
         rules.validateReviewerIsNotSelf(request.staffId(), request.reviewerId());
         PerformanceRating rating = rules.validatePromotionConsistency(
                 request.overallRating(),
@@ -134,7 +166,10 @@ public class StaffPerformanceReviewService {
      */
     @Transactional
     public StaffPerformanceReviewResponse update(UUID id, UpdateStaffPerformanceReviewRequest request) {
+        CurrentUser user = currentUserService.currentUser();
         StaffPerformanceReview review = findOrThrow(id);
+        accessRules.requireCanManageDepartment(
+                user, review.getDepartment().getId(), departmentScopeService);
         PerformanceRating rating = rules.validatePromotionConsistency(
                 request.overallRating(),
                 request.resultedInPromotion() != null && request.resultedInPromotion(),
@@ -147,6 +182,17 @@ public class StaffPerformanceReviewService {
         review = repository.save(review);
         log.info("Performance review updated: {}", review.getId());
         return mapper.toResponse(review);
+    }
+
+    private boolean canViewReview(CurrentUser user, StaffPerformanceReview review) {
+        try {
+            accessRules.requireCanViewStaffPerformance(
+                    user, review.getStaff().getId(),
+                    review.getDepartment().getId(), departmentScopeService);
+            return true;
+        } catch (ApiException ex) {
+            return false;
+        }
     }
 
     private StaffPerformanceReview findOrThrow(UUID id) {

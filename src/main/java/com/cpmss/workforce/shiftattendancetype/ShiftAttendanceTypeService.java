@@ -1,5 +1,7 @@
 package com.cpmss.workforce.shiftattendancetype;
 
+import com.cpmss.hr.common.HrAccessRules;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
 import com.cpmss.workforce.common.WorkforceErrorCode;
@@ -27,7 +29,9 @@ public class ShiftAttendanceTypeService {
 
     private final ShiftAttendanceTypeRepository repository;
     private final ShiftAttendanceTypeMapper mapper;
+    private final CurrentUserService currentUserService;
     private final ShiftAttendanceTypeRules rules = new ShiftAttendanceTypeRules();
+    private final HrAccessRules accessRules = new HrAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -37,9 +41,11 @@ public class ShiftAttendanceTypeService {
      */
     public ShiftAttendanceTypeService(
             ShiftAttendanceTypeRepository repository,
-            ShiftAttendanceTypeMapper mapper) {
+            ShiftAttendanceTypeMapper mapper,
+            CurrentUserService currentUserService) {
         this.repository = repository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -51,6 +57,7 @@ public class ShiftAttendanceTypeService {
      */
     @Transactional(readOnly = true)
     public ShiftAttendanceTypeResponse getById(UUID id) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         ShiftAttendanceType entity = repository.findById(id)
             .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
         return mapper.toResponse(entity);
@@ -64,6 +71,7 @@ public class ShiftAttendanceTypeService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<ShiftAttendanceTypeResponse> listAll(Pageable pageable) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -75,6 +83,7 @@ public class ShiftAttendanceTypeService {
      */
     @Transactional
     public ShiftAttendanceTypeResponse create(CreateShiftAttendanceTypeRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         rules.validateNameUnique(request.shiftName(), repository.existsByShiftName(request.shiftName()));
         ShiftAttendanceType entity = mapper.toEntity(request);
         entity = repository.save(entity);
@@ -92,6 +101,7 @@ public class ShiftAttendanceTypeService {
      */
     @Transactional
     public ShiftAttendanceTypeResponse update(UUID id, UpdateShiftAttendanceTypeRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         ShiftAttendanceType entity = repository.findById(id)
             .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
         if (!entity.getShiftName().equals(request.shiftName())) {
@@ -111,6 +121,7 @@ public class ShiftAttendanceTypeService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         ShiftAttendanceType entity = repository.findById(id)
             .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
         repository.delete(entity);

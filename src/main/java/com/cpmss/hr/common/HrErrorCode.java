@@ -60,7 +60,10 @@ public enum HrErrorCode implements ErrorCode {
     PERSON_NOT_FOUND(404, "Person not found"),
 
     /** Qualification not found. */
-    QUALIFICATION_NOT_FOUND(404, "Qualification not found");
+    QUALIFICATION_NOT_FOUND(404, "Qualification not found"),
+
+    /** User cannot access this HR record. */
+    HR_RECORD_ACCESS_DENIED(403, "HR record access denied");
 
     private final int status;
     private final String defaultMessage;

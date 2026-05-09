@@ -1,10 +1,14 @@
 package com.cpmss.workforce.task;
 
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.organization.common.DepartmentScopeService;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.workforce.common.WorkforceAccessRules;
 import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.task.dto.CreateTaskRequest;
 import com.cpmss.workforce.task.dto.TaskResponse;
@@ -15,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -34,7 +39,10 @@ public class TaskService {
     private final TaskRepository repository;
     private final DepartmentRepository departmentRepository;
     private final TaskMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final DepartmentScopeService departmentScopeService;
     private final TaskRules rules = new TaskRules();
+    private final WorkforceAccessRules accessRules = new WorkforceAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -46,10 +54,14 @@ public class TaskService {
     public TaskService(
             TaskRepository repository,
             DepartmentRepository departmentRepository,
-            TaskMapper mapper) {
+            TaskMapper mapper,
+            CurrentUserService currentUserService,
+            DepartmentScopeService departmentScopeService) {
         this.repository = repository;
         this.departmentRepository = departmentRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
+        this.departmentScopeService = departmentScopeService;
     }
 
     /**
@@ -61,8 +73,11 @@ public class TaskService {
      */
     @Transactional(readOnly = true)
     public TaskResponse getById(UUID id) {
+        CurrentUser user = currentUserService.currentUser();
         Task task = repository.findById(id)
                 .orElseThrow(() -> new ApiException(WorkforceErrorCode.TASK_NOT_FOUND));
+        accessRules.requireCanManageDepartment(
+                user, task.getDepartment().getId(), departmentScopeService);
         return mapper.toResponse(task);
     }
 
@@ -74,7 +89,13 @@ public class TaskService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<TaskResponse> listAll(Pageable pageable) {
-        return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+        CurrentUser user = currentUserService.currentUser();
+        List<TaskResponse> content = repository.findAll(pageable).getContent().stream()
+                .filter(task -> canManageDepartment(user, task.getDepartment().getId()))
+                .map(mapper::toResponse)
+                .toList();
+        return new PagedResponse<>(
+                content, content.size(), 1, pageable.getPageNumber(), pageable.getPageSize());
     }
 
     /**
@@ -86,6 +107,9 @@ public class TaskService {
      */
     @Transactional
     public TaskResponse create(CreateTaskRequest request) {
+        CurrentUser user = currentUserService.currentUser();
+        accessRules.requireCanManageDepartment(
+                user, request.departmentId(), departmentScopeService);
         Department department = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
@@ -113,8 +137,13 @@ public class TaskService {
      */
     @Transactional
     public TaskResponse update(UUID id, UpdateTaskRequest request) {
+        CurrentUser user = currentUserService.currentUser();
         Task task = repository.findById(id)
                 .orElseThrow(() -> new ApiException(WorkforceErrorCode.TASK_NOT_FOUND));
+        accessRules.requireCanManageDepartment(
+                user, task.getDepartment().getId(), departmentScopeService);
+        accessRules.requireCanManageDepartment(
+                user, request.departmentId(), departmentScopeService);
 
         Department department = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
@@ -144,9 +173,21 @@ public class TaskService {
      */
     @Transactional
     public void delete(UUID id) {
+        CurrentUser user = currentUserService.currentUser();
         Task task = repository.findById(id)
                 .orElseThrow(() -> new ApiException(WorkforceErrorCode.TASK_NOT_FOUND));
+        accessRules.requireCanManageDepartment(
+                user, task.getDepartment().getId(), departmentScopeService);
         repository.delete(task);
         log.info("Task deleted: {}", task.getTaskTitle());
+    }
+
+    private boolean canManageDepartment(CurrentUser user, UUID departmentId) {
+        try {
+            accessRules.requireCanManageDepartment(user, departmentId, departmentScopeService);
+            return true;
+        } catch (ApiException ex) {
+            return false;
+        }
     }
 }

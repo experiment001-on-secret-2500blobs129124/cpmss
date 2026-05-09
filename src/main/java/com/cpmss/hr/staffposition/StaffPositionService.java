@@ -1,6 +1,8 @@
 package com.cpmss.hr.staffposition;
 
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.hr.common.HrAccessRules;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.hr.common.HrErrorCode;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
@@ -34,7 +36,9 @@ public class StaffPositionService {
     private final StaffPositionRepository repository;
     private final DepartmentRepository departmentRepository;
     private final StaffPositionMapper mapper;
+    private final CurrentUserService currentUserService;
     private final StaffPositionRules rules = new StaffPositionRules();
+    private final HrAccessRules accessRules = new HrAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -45,10 +49,12 @@ public class StaffPositionService {
      */
     public StaffPositionService(StaffPositionRepository repository,
                                 DepartmentRepository departmentRepository,
-                                StaffPositionMapper mapper) {
+                                StaffPositionMapper mapper,
+                                CurrentUserService currentUserService) {
         this.repository = repository;
         this.departmentRepository = departmentRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -60,6 +66,7 @@ public class StaffPositionService {
      */
     @Transactional(readOnly = true)
     public StaffPositionResponse getById(UUID id) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND)));
     }
@@ -72,6 +79,7 @@ public class StaffPositionService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<StaffPositionResponse> listAll(Pageable pageable) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -84,6 +92,7 @@ public class StaffPositionService {
      */
     @Transactional
     public StaffPositionResponse create(CreateStaffPositionRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         Department department = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
@@ -106,6 +115,7 @@ public class StaffPositionService {
      */
     @Transactional
     public StaffPositionResponse update(UUID id, UpdateStaffPositionRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         StaffPosition position = repository.findById(id)
                 .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
 
@@ -127,6 +137,7 @@ public class StaffPositionService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         StaffPosition position = repository.findById(id)
                 .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
         repository.delete(position);

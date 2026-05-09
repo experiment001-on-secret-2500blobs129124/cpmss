@@ -1,6 +1,10 @@
 package com.cpmss.workforce.attends;
 
 import com.cpmss.finance.money.Money;
+import com.cpmss.hr.common.HrAccessRules;
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.organization.common.DepartmentScopeService;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.workforce.attends.dto.AttendsResponse;
 import com.cpmss.workforce.attends.dto.CreateAttendsRequest;
@@ -11,6 +15,7 @@ import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.platform.exception.ApiException;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
+import com.cpmss.workforce.common.WorkforceAccessRules;
 import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceTypeRepository;
@@ -56,8 +61,12 @@ public class PayrollService {
     private final ShiftAttendanceTypeRepository shiftRepository;
     private final DepartmentRepository departmentRepository;
     private final AssignedTaskRepository assignedTaskRepository;
+    private final CurrentUserService currentUserService;
+    private final DepartmentScopeService departmentScopeService;
     private final AttendsRules attendsRules = new AttendsRules();
     private final StaffSalaryRules salaryRules = new StaffSalaryRules();
+    private final WorkforceAccessRules workforceAccessRules = new WorkforceAccessRules();
+    private final HrAccessRules hrAccessRules = new HrAccessRules();
 
     /**
      * Constructs the payroll service with repositories used by attendance,
@@ -77,7 +86,9 @@ public class PayrollService {
                           PersonRepository personRepository,
                           ShiftAttendanceTypeRepository shiftRepository,
                           DepartmentRepository departmentRepository,
-                          AssignedTaskRepository assignedTaskRepository) {
+                          AssignedTaskRepository assignedTaskRepository,
+                          CurrentUserService currentUserService,
+                          DepartmentScopeService departmentScopeService) {
         this.attendsRepository = attendsRepository;
         this.monthlySalaryRepository = monthlySalaryRepository;
         this.salaryHistoryRepository = salaryHistoryRepository;
@@ -85,6 +96,8 @@ public class PayrollService {
         this.shiftRepository = shiftRepository;
         this.departmentRepository = departmentRepository;
         this.assignedTaskRepository = assignedTaskRepository;
+        this.currentUserService = currentUserService;
+        this.departmentScopeService = departmentScopeService;
     }
 
     // ── Attendance Operations ───────────────────────────────────────────
@@ -98,6 +111,12 @@ public class PayrollService {
      */
     @Transactional
     public AttendsResponse recordAttendance(CreateAttendsRequest request) {
+        CurrentUser user = currentUserService.currentUser();
+        UUID departmentId = departmentScopeService.activeDepartmentForStaff(request.staffId())
+                .orElse(null);
+        workforceAccessRules.requireCanManageDepartment(
+                user, departmentId, departmentScopeService);
+
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         ShiftAttendanceType shift = shiftRepository.findById(request.shiftId())
@@ -139,11 +158,15 @@ public class PayrollService {
      */
     @Transactional(readOnly = true)
     public List<AttendsResponse> getAttendanceByStaff(UUID staffId, int year, int month) {
+        CurrentUser user = currentUserService.currentUser();
         YearMonthPeriod period = YearMonthPeriod.of(year, month);
         LocalDate from = period.firstDay();
         LocalDate to = period.lastDay();
         return attendsRepository.findByStaffIdAndDateBetween(staffId, from, to)
-                .stream().map(this::toAttendsResponse).toList();
+                .stream()
+                .filter(attends -> canViewAttendance(user, attends))
+                .map(this::toAttendsResponse)
+                .toList();
     }
 
     // ── Monthly Payroll Close ───────────────────────────────────────────
@@ -165,6 +188,7 @@ public class PayrollService {
     @Transactional
     public List<TaskMonthlySalaryResponse> closeMonthlyPayroll(
             UUID departmentId, int year, int month, String currency) {
+        workforceAccessRules.requirePayrollFinance(currentUserService.currentUser());
         YearMonthPeriod period = YearMonthPeriod.of(year, month);
         Money zero = new Money(BigDecimal.ZERO, currency);
         Department department = departmentRepository.findById(departmentId)
@@ -177,6 +201,8 @@ public class PayrollService {
         // For simplicity, get all and aggregate in memory
         List<Attends> allAttendance = attendsRepository.findAll().stream()
                 .filter(a -> !a.getDate().isBefore(from) && !a.getDate().isAfter(to))
+                .filter(a -> departmentScopeService.staffBelongsToDepartment(
+                        a.getStaff().getId(), departmentId))
                 .toList();
 
         // Group by staff+shift
@@ -229,6 +255,7 @@ public class PayrollService {
      */
     @Transactional(readOnly = true)
     public List<TaskMonthlySalaryResponse> getMonthlyPayroll(UUID departmentId, int year, int month) {
+        workforceAccessRules.requirePayrollFinance(currentUserService.currentUser());
         return monthlySalaryRepository.findByDepartmentIdAndYearAndMonth(departmentId, year, month)
                 .stream().map(this::toMonthlySalaryResponse).toList();
     }
@@ -246,6 +273,7 @@ public class PayrollService {
      */
     @Transactional
     public StaffSalaryHistoryResponse createSalaryChange(CreateStaffSalaryHistoryRequest request) {
+        hrAccessRules.requireHrAdministrator(currentUserService.currentUser());
         salaryRules.validateBaseDailyRatePositive(request.baseDailyRate());
         salaryRules.validateMaximumSalaryPositive(request.maximumSalary());
 
@@ -281,6 +309,18 @@ public class PayrollService {
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private boolean canViewAttendance(CurrentUser user, Attends attends) {
+        UUID departmentId = departmentScopeService.activeDepartmentForStaff(
+                attends.getStaff().getId()).orElse(null);
+        try {
+            workforceAccessRules.requireCanViewStaffWorkforce(
+                    user, attends.getStaff().getId(), departmentId, departmentScopeService);
+            return true;
+        } catch (ApiException ex) {
+            return false;
+        }
+    }
 
     private AttendsResponse toAttendsResponse(Attends a) {
         return new AttendsResponse(

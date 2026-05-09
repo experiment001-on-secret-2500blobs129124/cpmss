@@ -67,7 +67,10 @@ public enum PerformanceErrorCode implements ErrorCode {
     KPI_POLICY_NOT_FOUND(404, "KPI policy not found"),
 
     /** Performance review not found. */
-    REVIEW_NOT_FOUND(404, "Performance review not found");
+    REVIEW_NOT_FOUND(404, "Performance review not found"),
+
+    /** User cannot access this performance record. */
+    PERFORMANCE_RECORD_ACCESS_DENIED(403, "Performance record access denied");
 
     private final int status;
     private final String defaultMessage;

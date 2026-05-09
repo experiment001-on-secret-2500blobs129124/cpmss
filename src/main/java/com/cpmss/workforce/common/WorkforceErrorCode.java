@@ -68,7 +68,10 @@ public enum WorkforceErrorCode implements ErrorCode {
     SHIFT_TYPE_NOT_FOUND(404, "Shift attendance type not found"),
 
     /** Assigned task not found. */
-    ASSIGNED_TASK_NOT_FOUND(404, "Assigned task not found");
+    ASSIGNED_TASK_NOT_FOUND(404, "Assigned task not found"),
+
+    /** User cannot access this workforce record. */
+    WORKFORCE_RECORD_ACCESS_DENIED(403, "Workforce record access denied");
 
     private final int status;
     private final String defaultMessage;
