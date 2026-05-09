@@ -3,8 +3,6 @@ package com.cpmss.finance.payment;
 import com.cpmss.finance.money.Money;
 import com.cpmss.platform.exception.BusinessException;
 
-import java.util.Set;
-
 /**
  * Stateless business rules for payments.
  *
@@ -22,33 +20,37 @@ import java.util.Set;
  */
 public class PaymentRules {
 
-    private static final Set<String> VALID_TYPES = Set.of("Installment", "WorkOrder", "Payroll");
-    private static final Set<String> VALID_DIRECTIONS = Set.of("Inbound", "Outbound");
-
     /**
      * Validates that the payment type is valid.
      *
      * @param paymentType the payment discriminator supplied by the workflow
-     * @throws BusinessException if the type is not one of the supported
-     *                           payment child-table categories
+     * @return the typed payment discriminator
+     * @throws BusinessException if the type is not a supported child-table
+     *                           category
      */
-    public void validatePaymentType(String paymentType) {
-        if (!VALID_TYPES.contains(paymentType)) {
-            throw new BusinessException(
-                    "Payment type must be one of: " + VALID_TYPES);
-        }
+    public PaymentType validatePaymentType(String paymentType) {
+        return PaymentType.fromLabel(paymentType);
+    }
+
+    /**
+     * Validates that the optional payment method is valid when supplied.
+     *
+     * @param method the optional payment method label supplied by the workflow
+     * @return the typed payment method, or {@code null} when none was supplied
+     * @throws BusinessException if the method label is blank or unsupported
+     */
+    public PaymentMethod validateMethod(String method) {
+        return PaymentMethod.fromNullableLabel(method);
     }
 
     /**
      * Validates that the direction is valid.
      *
      * @param direction the payment direction supplied by the workflow
+     * @return the typed payment direction
      * @throws BusinessException if the direction is not inbound or outbound
      */
-    public void validateDirection(String direction) {
-        if (!VALID_DIRECTIONS.contains(direction)) {
-            throw new BusinessException(
-                    "Payment direction must be 'Inbound' or 'Outbound'");
-        }
+    public PaymentDirection validateDirection(String direction) {
+        return PaymentDirection.fromLabel(direction);
     }
 }

@@ -1,10 +1,10 @@
 package com.cpmss.finance.installmentpayment.dto;
 
+import com.cpmss.finance.money.Money;
 import com.cpmss.finance.payment.dto.CreatePaymentRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -12,10 +12,10 @@ import java.util.UUID;
  *
  * @param payment       the base payment details
  * @param installmentId the installment UUID being paid
- * @param lateFeeAmount optional late fee amount
+ * @param lateFee       optional late fee money
  */
 public record CreateInstallmentPaymentRequest(
         @NotNull @Valid CreatePaymentRequest payment,
         @NotNull UUID installmentId,
-        BigDecimal lateFeeAmount
+        @Valid Money lateFee
 ) {}

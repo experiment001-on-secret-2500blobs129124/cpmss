@@ -1,5 +1,8 @@
 package com.cpmss.communication.internalreport.dto;
 
+import com.cpmss.communication.internalreport.ReportCategory;
+import com.cpmss.communication.internalreport.ReportPriority;
+import com.cpmss.identity.auth.SystemRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -18,9 +21,9 @@ import java.util.UUID;
  */
 public record CreateInternalReportRequest(
         @NotNull UUID reporterId,
-        @NotBlank @Size(max = 30) String assignedToRole,
+        @NotNull SystemRole assignedToRole,
         @NotBlank @Size(max = 200) String subject,
         @NotBlank String body,
-        @NotBlank @Size(max = 50) String reportCategory,
-        @Size(max = 20) String priority
+        @NotNull ReportCategory reportCategory,
+        ReportPriority priority
 ) {}

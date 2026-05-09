@@ -1,6 +1,6 @@
 package com.cpmss.leasing.contractparty.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.cpmss.leasing.common.ContractPartyRole;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.Instant;
@@ -19,6 +19,6 @@ import java.util.UUID;
  */
 public record AddContractPartyRequest(
         @NotNull UUID personId,
-        @NotBlank String role,
+        @NotNull ContractPartyRole role,
         Instant dateSigned
 ) {}

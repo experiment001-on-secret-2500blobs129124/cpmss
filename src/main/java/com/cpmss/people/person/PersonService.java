@@ -1,6 +1,9 @@
 package com.cpmss.people.person;
 
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.people.common.EgyptianNationalId;
+import com.cpmss.people.common.Gender;
+import com.cpmss.people.common.PassportNumber;
 import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.people.person.dto.CreatePersonRequest;
 import com.cpmss.people.person.dto.PersonResponse;
@@ -99,14 +102,15 @@ public class PersonService {
     @Transactional
     public PersonResponse create(CreatePersonRequest request) {
         rules.validateAtLeastOneRole(request.roleIds());
-        rules.validateGender(request.gender());
-        rules.validateEgyptianNationalId(request.nationality(), request.egyptianNationalId());
-        rules.validatePassportUnique(request.passportNo(),
-                repository.existsByPassportNo(request.passportNo()));
+        Gender gender = rules.validateGender(request.gender());
+        EgyptianNationalId nationalId = rules.validateEgyptianNationalId(
+                request.nationality(), request.egyptianNationalId());
+        PassportNumber passportNo = PassportNumber.of(request.passportNo());
+        rules.validatePassportUnique(passportNo, repository.existsByPassportNo(passportNo));
 
         Person person = Person.builder()
-                .passportNo(request.passportNo())
-                .egyptianNationalId(request.egyptianNationalId())
+                .passportNo(passportNo)
+                .egyptianNationalId(nationalId)
                 .firstName(request.firstName())
                 .middleName(request.middleName())
                 .lastName(request.lastName())
@@ -114,7 +118,7 @@ public class PersonService {
                 .city(request.city())
                 .street(request.street())
                 .dateOfBirth(request.dateOfBirth())
-                .gender(request.gender())
+                .gender(gender)
                 .phones(toPhoneSet(request.phones()))
                 .emails(toEmailSet(request.emails()))
                 .build();
@@ -143,16 +147,17 @@ public class PersonService {
         Person person = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Person", id));
 
-        rules.validateGender(request.gender());
-        rules.validateEgyptianNationalId(request.nationality(), request.egyptianNationalId());
+        Gender gender = rules.validateGender(request.gender());
+        EgyptianNationalId nationalId = rules.validateEgyptianNationalId(
+                request.nationality(), request.egyptianNationalId());
+        PassportNumber passportNo = PassportNumber.of(request.passportNo());
 
-        if (!person.getPassportNo().equals(request.passportNo())) {
-            rules.validatePassportUnique(request.passportNo(),
-                    repository.existsByPassportNo(request.passportNo()));
+        if (!person.getPassportNo().equals(passportNo.value())) {
+            rules.validatePassportUnique(passportNo, repository.existsByPassportNo(passportNo));
         }
 
-        person.setPassportNo(request.passportNo());
-        person.setEgyptianNationalId(request.egyptianNationalId());
+        person.setPassportNo(passportNo);
+        person.setEgyptianNationalId(nationalId);
         person.setFirstName(request.firstName());
         person.setMiddleName(request.middleName());
         person.setLastName(request.lastName());
@@ -160,7 +165,7 @@ public class PersonService {
         person.setCity(request.city());
         person.setStreet(request.street());
         person.setDateOfBirth(request.dateOfBirth());
-        person.setGender(request.gender());
+        person.setGender(gender);
 
         if (request.phones() != null) {
             person.getPhones().clear();

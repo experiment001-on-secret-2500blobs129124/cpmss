@@ -390,14 +390,16 @@ CREATE TABLE Department_Location_History (
 --       one_hour_diff_discount applies per hour BELOW expected_hours (lateness/early leave).
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Law_of_Shift_Attendance (
-    shift_id               UUID           NOT NULL REFERENCES Shift_Attendance_Type(shift_id) ON DELETE CASCADE,
-    effective_date         DATE           NOT NULL,
-    start_time             TIME           NOT NULL,
-    end_time               TIME           NOT NULL,
-    expected_hours         DECIMAL(4,2)   NOT NULL,
-    one_hour_extra_bonus   DECIMAL(8, 2),
-    one_hour_diff_discount DECIMAL(8, 2),
-    period_start_end       VARCHAR(50),
+    shift_id                      UUID           NOT NULL REFERENCES Shift_Attendance_Type(shift_id) ON DELETE CASCADE,
+    effective_date                DATE           NOT NULL,
+    start_time                    TIME           NOT NULL,
+    end_time                      TIME           NOT NULL,
+    expected_hours                DECIMAL(4,2)   NOT NULL,
+    one_hour_extra_bonus          DECIMAL(8, 2),
+    one_hour_extra_bonus_currency VARCHAR(10),
+    one_hour_diff_discount        DECIMAL(8, 2),
+    one_hour_diff_discount_currency VARCHAR(10),
+    period_start_end              VARCHAR(50),
     PRIMARY KEY (shift_id, effective_date),
     -- Audit columns (mapped to BaseEntity)
     created_at             TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
@@ -442,15 +444,16 @@ CREATE TABLE Unit (
 -- ORDER BY effective_date DESC LIMIT 1 = current listing price.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Unit_Pricing_History (
-    unit_id        UUID           NOT NULL REFERENCES Unit(unit_id) ON DELETE RESTRICT,
-    effective_date DATE           NOT NULL,
-    listing_price  DECIMAL(12, 2) NOT NULL,
+    unit_id                UUID           NOT NULL REFERENCES Unit(unit_id) ON DELETE RESTRICT,
+    effective_date         DATE           NOT NULL,
+    listing_price          DECIMAL(12, 2) NOT NULL,
+    listing_price_currency VARCHAR(10)    NOT NULL,
     PRIMARY KEY (unit_id, effective_date),
     -- Audit columns (mapped to BaseEntity)
-    created_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-    updated_at     TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-    created_by     VARCHAR(255),
-    updated_by     VARCHAR(255)
+    created_at             TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at             TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    created_by             VARCHAR(255),
+    updated_by             VARCHAR(255)
 );
 
 -- Detail-History table: tracks occupancy status of a Unit over time (SCD Type 2).
@@ -544,8 +547,10 @@ CREATE TABLE Contract (
     contract_type           VARCHAR(50)   NOT NULL,
     contract_status         VARCHAR(50)   NOT NULL,
     payment_frequency       VARCHAR(50),
-    final_price             DECIMAL(12, 2),
-    security_deposit_amount DECIMAL(12, 2),
+    final_price               DECIMAL(12, 2),
+    final_price_currency      VARCHAR(10),
+    security_deposit_amount   DECIMAL(12, 2),
+    security_deposit_currency VARCHAR(10),
     renewal_terms           TEXT,
     unit_id                 UUID          REFERENCES Unit(unit_id)         ON DELETE RESTRICT,
     facility_id             UUID          REFERENCES Facility(facility_id) ON DELETE RESTRICT,
@@ -560,12 +565,13 @@ CREATE TABLE Contract (
 -- Installments are permanent financial records — they cannot be deleted and belong to exactly one contract.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Installment (
-    installment_id     UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    installment_type   VARCHAR(50)   NOT NULL,
-    due_date           DATE          NOT NULL,
-    installment_status VARCHAR(50)   NOT NULL,
-    amount_expected    DECIMAL(12, 2) NOT NULL,
-    contract_id        UUID          NOT NULL REFERENCES Contract(contract_id) ON DELETE RESTRICT,
+    installment_id             UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
+    installment_type           VARCHAR(50)    NOT NULL,
+    due_date                   DATE           NOT NULL,
+    installment_status         VARCHAR(50)    NOT NULL,
+    amount_expected            DECIMAL(12, 2) NOT NULL,
+    amount_expected_currency   VARCHAR(10)    NOT NULL,
+    contract_id                UUID           NOT NULL REFERENCES Contract(contract_id) ON DELETE RESTRICT,
     -- Audit columns (mapped to BaseEntity)
     created_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
@@ -639,6 +645,7 @@ CREATE TABLE Work_Order (
     date_scheduled   DATE,
     date_completed   DATE,
     cost_amount      DECIMAL(12, 2),
+    cost_currency    VARCHAR(10),
     job_status       VARCHAR(50)   NOT NULL,
     description      TEXT,
     priority         VARCHAR(20),
@@ -835,18 +842,22 @@ CREATE TABLE Assigned_Task (
 --       Once payroll is run, these values are frozen — do not recalculate from current rates.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Attends (
-    staff_id         UUID           NOT NULL REFERENCES Person(person_id)                ON DELETE RESTRICT,
-    shift_id         UUID           NOT NULL REFERENCES Shift_Attendance_Type(shift_id)  ON DELETE RESTRICT,
-    date             DATE           NOT NULL,
-    is_absent        BOOLEAN        NOT NULL DEFAULT FALSE,
-    check_in_time    TIME,
-    check_out_time   TIME,
-    period_out_in    VARCHAR(50),
-    diff_hour        DECIMAL(5, 2),
-    daily_bonus      DECIMAL(10, 2),
-    daily_deduction  DECIMAL(10, 2),
-    daily_salary     DECIMAL(10, 2),
-    daily_net_salary DECIMAL(10, 2),
+    staff_id                 UUID           NOT NULL REFERENCES Person(person_id)                ON DELETE RESTRICT,
+    shift_id                 UUID           NOT NULL REFERENCES Shift_Attendance_Type(shift_id)  ON DELETE RESTRICT,
+    date                     DATE           NOT NULL,
+    is_absent                BOOLEAN        NOT NULL DEFAULT FALSE,
+    check_in_time            TIME,
+    check_out_time           TIME,
+    period_out_in            VARCHAR(50),
+    diff_hour                DECIMAL(5, 2),
+    daily_bonus              DECIMAL(10, 2),
+    daily_bonus_currency     VARCHAR(10),
+    daily_deduction          DECIMAL(10, 2),
+    daily_deduction_currency VARCHAR(10),
+    daily_salary             DECIMAL(10, 2),
+    daily_salary_currency    VARCHAR(10),
+    daily_net_salary         DECIMAL(10, 2),
+    daily_net_salary_currency VARCHAR(10),
     PRIMARY KEY (staff_id, shift_id, date),
     -- Audit columns (mapped to BaseEntity)
     created_at       TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
@@ -862,16 +873,21 @@ CREATE TABLE Attends (
 --       monthly_net_salary must not exceed Staff_Salary_History.maximum_salary — enforced in PayrollRules.java.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Task_Monthly_Salary (
-    staff_id           UUID           NOT NULL REFERENCES Person(person_id)               ON DELETE RESTRICT,
-    department_id      UUID           NOT NULL REFERENCES Department(department_id)        ON DELETE RESTRICT,
-    shift_id           UUID           NOT NULL REFERENCES Shift_Attendance_Type(shift_id)  ON DELETE RESTRICT,
-    year               INT            NOT NULL,
-    month              INT            NOT NULL,
-    monthly_deduction  DECIMAL(12, 2),
-    monthly_bonus      DECIMAL(12, 2),
-    tax                DECIMAL(12, 2),
-    monthly_salary     DECIMAL(12, 2),
-    monthly_net_salary DECIMAL(12, 2),
+    staff_id                   UUID           NOT NULL REFERENCES Person(person_id)               ON DELETE RESTRICT,
+    department_id              UUID           NOT NULL REFERENCES Department(department_id)        ON DELETE RESTRICT,
+    shift_id                   UUID           NOT NULL REFERENCES Shift_Attendance_Type(shift_id)  ON DELETE RESTRICT,
+    year                       INT            NOT NULL,
+    month                      INT            NOT NULL,
+    monthly_deduction          DECIMAL(12, 2),
+    monthly_deduction_currency VARCHAR(10),
+    monthly_bonus              DECIMAL(12, 2),
+    monthly_bonus_currency     VARCHAR(10),
+    tax                        DECIMAL(12, 2),
+    tax_currency               VARCHAR(10),
+    monthly_salary             DECIMAL(12, 2),
+    monthly_salary_currency    VARCHAR(10),
+    monthly_net_salary         DECIMAL(12, 2),
+    monthly_net_salary_currency VARCHAR(10),
     PRIMARY KEY (staff_id, department_id, year, month),
     -- Audit columns (mapped to BaseEntity)
     created_at         TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
@@ -1046,7 +1062,7 @@ CREATE TABLE Payment (
     payment_no            VARCHAR(20)    NOT NULL UNIQUE,
     paid_at               TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     amount                DECIMAL(12, 2) NOT NULL,
-    currency              VARCHAR(10)    NOT NULL DEFAULT 'USD',
+    currency              VARCHAR(10)    NOT NULL,
     payment_type          VARCHAR(20)    NOT NULL,
     method                VARCHAR(50),
     direction             VARCHAR(20)    NOT NULL,
@@ -1065,9 +1081,10 @@ CREATE TABLE Payment (
 -- Note: payer is derivable via installment_id → Installment → Contract → Contract_Party — not stored redundantly here.
 -- Audit columns capture when the record was added or changed, and which authenticated user did it.
 CREATE TABLE Installment_Payment (
-    payment_id       UUID           PRIMARY KEY REFERENCES Payment(payment_id)      ON DELETE CASCADE,
-    installment_id   UUID           NOT NULL REFERENCES Installment(installment_id) ON DELETE RESTRICT,
-    late_fee_amount  DECIMAL(12, 2),
+    payment_id        UUID           PRIMARY KEY REFERENCES Payment(payment_id)      ON DELETE CASCADE,
+    installment_id    UUID           NOT NULL REFERENCES Installment(installment_id) ON DELETE RESTRICT,
+    late_fee_amount   DECIMAL(12, 2),
+    late_fee_currency VARCHAR(10),
     -- Audit columns (mapped to BaseEntity)
     created_at       TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ    NOT NULL DEFAULT NOW(),

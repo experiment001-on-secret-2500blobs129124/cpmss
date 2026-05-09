@@ -1,6 +1,8 @@
 package com.cpmss.property.unit.dto;
 
-import java.math.BigDecimal;
+import com.cpmss.property.common.Area;
+import com.cpmss.property.common.NonNegativeCount;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -31,12 +33,12 @@ public record UnitResponse(
         UUID id,
         String unitNo,
         Integer floorNo,
-        Integer noOfRooms,
-        Integer noOfBathrooms,
-        Integer noOfBedrooms,
-        Integer noOfTotalRooms,
-        Integer noOfBalconies,
-        BigDecimal squareFoot,
+        NonNegativeCount noOfRooms,
+        NonNegativeCount noOfBathrooms,
+        NonNegativeCount noOfBedrooms,
+        NonNegativeCount noOfTotalRooms,
+        NonNegativeCount noOfBalconies,
+        Area squareFoot,
         String viewOrientation,
         String gasMeterCode,
         String waterMeterCode,

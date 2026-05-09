@@ -12,7 +12,8 @@ import java.time.LocalDate;
  * <p>Entitlement basis and holder are immutable after creation.
  * Only status, access level, and expiry can be changed.
  *
- * @param accessLevel  access level (Full, Restricted, Emergency Only)
+ * @param accessLevel  access level (Full Access, Restricted Areas,
+ *                     Common Areas Only)
  * @param permitStatus lifecycle status (Active, Suspended, Revoked, Expired)
  * @param expiryDate   date the permit expires ({@code null} = no expiry)
  */

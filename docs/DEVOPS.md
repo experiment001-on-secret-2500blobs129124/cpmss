@@ -3,13 +3,15 @@
 ## Environments
 
 Three environments, each with its own Spring profile and configuration file.
+Only `application.yml` and `application-dev.yml` are committed today; the test,
+staging, and production files are planned DevOps work.
 
 | Environment | Profile | Config File | Purpose |
 |---|---|---|---|
-| Development | `dev` | `application-dev.yml` | Local development. PostgreSQL via Docker. Debug logging. Data seeding enabled. |
-| Testing | `test` | `application-test.yml` | Automated tests. Testcontainers spins up isolated PostgreSQL. Wiped after each run. |
-| Staging | `staging` | `application-staging.yml` | Pre-production. Same config as prod — used to validate changes before going live. |
-| Production | `prod` | `application-prod.yml` | Live system. No seeding. Info-level logging only. |
+| Development | `dev` | `application-dev.yml` | Local development. PostgreSQL via Docker. Debug logging. |
+| Testing | `test` | `application-test.yml` (planned) | Automated tests. Testcontainers spins up isolated PostgreSQL. Wiped after each run. |
+| Staging | `staging` | `application-staging.yml` (planned) | Pre-production. Same config as prod — used to validate changes before going live. |
+| Production | `prod` | `application-prod.yml` (planned) | Live system. No seeding. Info-level logging only. |
 
 Active profile is set in the `.env` file:
 
@@ -45,7 +47,7 @@ jwt:
 | Environment | How secrets are provided |
 |---|---|
 | `dev` | `.env` file on local machine — always in `.gitignore`, never committed |
-| `test` | Testcontainers manages the DB automatically. JWT secret is a hardcoded value in `application-test.yml` |
+| `test` | Planned: Testcontainers manages the DB automatically. JWT secret is a hardcoded value in `application-test.yml` |
 | `prod` | Jenkins credentials store — injected via `withCredentials`, no `.env` file on server |
 
 Docker Compose loads the `.env` file automatically (dev only).
@@ -54,22 +56,14 @@ Docker Compose loads the `.env` file automatically (dev only).
 
 ## Docker
 
-### Services
+### Current Local Services
+
+The committed `docker-compose.yml` currently starts PostgreSQL and MinIO only.
+The Spring Boot application is run locally with Gradle during development.
 
 ```yaml
 # docker-compose.yml
 services:
-  app:
-    build: .
-    ports: ["8080:8080"]
-    env_file: .env
-    depends_on: [postgres, minio]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   postgres:
     image: postgres:16
     env_file: .env
@@ -93,11 +87,6 @@ services:
     ports:
       - "9000:9000"   # S3-compatible file API
       - "9001:9001"   # MinIO console UI
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Future: Redis
   # redis:
@@ -109,7 +98,7 @@ volumes:
   minio_data:
 ```
 
-### Dockerfile
+### Dockerfile (Planned)
 
 Multi-stage build: compile in one stage, run in a minimal JRE image.
 
@@ -129,7 +118,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 ---
 
-## Reverse Proxy — Nginx
+## Reverse Proxy — Nginx (Planned)
 
 Tomcat (embedded in Spring Boot) handles HTTP. Nginx sits in front for TLS
 termination (HTTPS) and reverse proxy. TLS certificates are provided by
@@ -179,8 +168,8 @@ http {
 
 ## CI/CD — Jenkins
 
-Jenkins runs as a Docker container. A `Jenkinsfile` at the repo root defines
-the pipeline.
+Jenkins is the planned CI/CD runner. A `Jenkinsfile` is not committed yet; the
+pipeline below is the target shape for the deployment phase.
 
 ### Running Jenkins
 
@@ -192,7 +181,7 @@ docker run -d \
   jenkins/jenkins:lts
 ```
 
-### Pipeline
+### Pipeline (Planned)
 
 ```groovy
 // Jenkinsfile
@@ -304,8 +293,8 @@ pipeline {
 
 ### Trigger
 
-Every push to `master` triggers the full pipeline via GitHub webhook. PRs
-trigger Build + Test stages only (no deploy).
+Planned flow: every push to `master` triggers the full pipeline via GitHub
+webhook. PRs trigger Build + Test stages only (no deploy).
 
 ### Rollback
 
@@ -341,5 +330,6 @@ Spring Boot Actuator provides `/actuator/health`:
 { "status": "UP" }
 ```
 
-Health check is defined in the Docker Compose service above (30s interval,
-3 retries before the container is marked unhealthy).
+When the app container is added to Docker Compose, define this health check on
+that service with a 30s interval and 3 retries before the container is marked
+unhealthy.

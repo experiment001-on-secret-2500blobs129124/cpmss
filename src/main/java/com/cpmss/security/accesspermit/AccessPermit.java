@@ -6,7 +6,10 @@ import com.cpmss.people.person.Person;
 import com.cpmss.hr.staffprofile.StaffProfile;
 import com.cpmss.maintenance.workorder.WorkOrder;
 import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -47,25 +50,34 @@ public class AccessPermit extends BaseEntity {
     @Column(name = "permit_no", nullable = false, unique = true, length = 20)
     private String permitNo;
 
-    /** Permit type (Staff Badge, Resident Card, Contractor Pass, Visitor Pass). */
+    /** Permit type (Staff Badge, Resident Card, Visitor Pass, Contractor Pass, Vehicle Sticker). */
+    @Convert(converter = PermitTypeConverter.class)
     @Column(name = "permit_type", nullable = false, length = 50)
-    private String permitType;
+    @Setter(lombok.AccessLevel.NONE)
+    private PermitType permitType;
 
-    /** Access level (Full, Restricted, Emergency Only). */
+    /** Access level (Full Access, Restricted Areas, Common Areas Only). */
+    @Convert(converter = AccessLevelConverter.class)
     @Column(name = "access_level", length = 50)
-    private String accessLevel;
+    @Setter(lombok.AccessLevel.NONE)
+    private AccessLevel accessLevel;
 
     /** Lifecycle status (Active, Suspended, Revoked, Expired). */
+    @Convert(converter = PermitStatusConverter.class)
     @Column(name = "permit_status", nullable = false, length = 50)
-    private String permitStatus;
+    @Setter(lombok.AccessLevel.NONE)
+    private PermitStatus permitStatus;
 
-    /** Date the permit was issued. */
-    @Column(name = "issue_date", nullable = false)
-    private LocalDate issueDate;
-
-    /** Date the permit expires ({@code null} = no expiry). */
-    @Column(name = "expiry_date")
-    private LocalDate expiryDate;
+    /** Permit issue and expiry dates mapped to the existing date columns. */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "issueDate",
+                    column = @Column(name = "issue_date", nullable = false)),
+            @AttributeOverride(name = "expiryDate",
+                    column = @Column(name = "expiry_date"))
+    })
+    @Setter(lombok.AccessLevel.NONE)
+    private PermitValidity validity;
 
     /** The person holding this permit. */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -96,4 +108,124 @@ public class AccessPermit extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "issued_by_id", nullable = false)
     private Person issuedBy;
+
+    /**
+     * Returns the permit type label for DTO compatibility.
+     *
+     * @return the database/API permit type label, or {@code null} when unset
+     */
+    public String getPermitType() {
+        return permitType != null ? permitType.label() : null;
+    }
+
+    /**
+     * Returns the typed permit type for domain logic.
+     *
+     * @return the typed permit type, or {@code null} when unset
+     */
+    public PermitType getPermitTypeValue() {
+        return permitType;
+    }
+
+    /**
+     * Returns the access level label for DTO compatibility.
+     *
+     * @return the database/API access level label, or {@code null} when unset
+     */
+    public String getAccessLevel() {
+        return accessLevel != null ? accessLevel.label() : null;
+    }
+
+    /**
+     * Returns the typed access level for domain logic.
+     *
+     * @return the typed access level, or {@code null} when unset
+     */
+    public AccessLevel getAccessLevelValue() {
+        return accessLevel;
+    }
+
+    /**
+     * Returns the permit status label for DTO compatibility.
+     *
+     * @return the database/API permit status label, or {@code null} when unset
+     */
+    public String getPermitStatus() {
+        return permitStatus != null ? permitStatus.label() : null;
+    }
+
+    /**
+     * Returns the typed permit status for domain logic.
+     *
+     * @return the typed permit status, or {@code null} when unset
+     */
+    public PermitStatus getPermitStatusValue() {
+        return permitStatus;
+    }
+
+    /**
+     * Returns the permit issue date for DTO compatibility.
+     *
+     * @return the permit issue date, or {@code null} when validity is unset
+     */
+    public LocalDate getIssueDate() {
+        return validity != null ? validity.getIssueDate() : null;
+    }
+
+    /**
+     * Returns the permit expiry date for DTO compatibility.
+     *
+     * @return the optional permit expiry date, or {@code null} when absent
+     */
+    public LocalDate getExpiryDate() {
+        return validity != null ? validity.getExpiryDate() : null;
+    }
+
+    /**
+     * Assigns the typed permit type.
+     *
+     * @param permitType the typed permit type
+     * @throws IllegalArgumentException if the permit type is missing
+     */
+    public void setPermitType(PermitType permitType) {
+        if (permitType == null) {
+            throw new IllegalArgumentException("Permit type is required");
+        }
+        this.permitType = permitType;
+    }
+
+    /**
+     * Assigns the optional typed access level.
+     *
+     * @param accessLevel the optional access level
+     */
+    public void setAccessLevel(AccessLevel accessLevel) {
+        this.accessLevel = accessLevel;
+    }
+
+    /**
+     * Assigns the typed permit status.
+     *
+     * @param permitStatus the typed permit status
+     * @throws IllegalArgumentException if the permit status is missing
+     */
+    public void setPermitStatus(PermitStatus permitStatus) {
+        if (permitStatus == null) {
+            throw new IllegalArgumentException("Permit status is required");
+        }
+        this.permitStatus = permitStatus;
+    }
+
+    /**
+     * Assigns the permit validity period.
+     *
+     * @param validity the permit validity value
+     * @throws IllegalArgumentException if the validity value is missing
+     */
+    public void setValidity(PermitValidity validity) {
+        if (validity == null) {
+            throw new IllegalArgumentException("Permit validity is required");
+        }
+        this.validity = validity;
+    }
 }

@@ -1,5 +1,6 @@
 package com.cpmss.leasing.contractparty;
 
+import com.cpmss.leasing.common.ContractPartyRole;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -26,5 +27,5 @@ public class ContractPartyId implements Serializable {
     private UUID contract;
 
     /** The person's role in the contract. */
-    private String role;
+    private ContractPartyRole role;
 }

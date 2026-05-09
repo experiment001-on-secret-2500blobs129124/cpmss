@@ -1,5 +1,7 @@
 package com.cpmss.property.facility.dto;
 
+import com.cpmss.property.common.FacilityManagementType;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,7 +25,7 @@ public record FacilityResponse(
         UUID id,
         String facilityName,
         String facilityCategory,
-        String managementType,
+        FacilityManagementType managementType,
         UUID buildingId,
         String buildingNo,
         UUID managedByCompanyId,

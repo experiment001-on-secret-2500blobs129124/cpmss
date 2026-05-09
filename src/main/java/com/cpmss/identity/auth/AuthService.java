@@ -4,6 +4,7 @@ import com.cpmss.identity.auth.dto.LoginRequest;
 import com.cpmss.identity.auth.dto.LoginResponse;
 import com.cpmss.identity.auth.dto.RefreshRequest;
 import com.cpmss.identity.auth.dto.SetupRequest;
+import com.cpmss.people.common.EmailAddress;
 import com.cpmss.platform.config.JwtUtils;
 import com.cpmss.platform.exception.BusinessException;
 import com.cpmss.platform.exception.ResourceNotFoundException;
@@ -64,9 +65,10 @@ public class AuthService {
     @Transactional
     public LoginResponse setup(SetupRequest request) {
         rules.validateSetupAllowed(repository.count());
+        EmailAddress loginEmail = EmailAddress.of(request.email());
 
         AppUser admin = AppUser.builder()
-                .email(request.email())
+                .email(loginEmail)
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .systemRole(SystemRole.ADMIN)
                 .active(true)
@@ -91,8 +93,9 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
-        AppUser user = repository.findByEmailAndActiveTrue(request.email())
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", request.email()));
+        EmailAddress loginEmail = EmailAddress.of(request.email());
+        AppUser user = repository.findByEmailAndActiveTrue(loginEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BusinessException("Invalid credentials");
@@ -124,8 +127,9 @@ public class AuthService {
         }
 
         String email = jwtUtils.getEmail(claims);
-        AppUser user = repository.findByEmailAndActiveTrue(email)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", email));
+        EmailAddress loginEmail = EmailAddress.of(email);
+        AppUser user = repository.findByEmailAndActiveTrue(loginEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
 
         rules.validateAccountActive(user.isActive());
 

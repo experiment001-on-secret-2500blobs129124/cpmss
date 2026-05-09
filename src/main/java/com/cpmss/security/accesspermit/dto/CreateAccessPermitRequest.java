@@ -14,8 +14,10 @@ import java.util.UUID;
  * {@link com.cpmss.security.accesspermit.AccessPermitRules}.
  *
  * @param permitNo       system-unique permit number
- * @param permitType     type (Staff Badge, Resident Card, Contractor Pass, Visitor Pass)
- * @param accessLevel    access level (Full, Restricted, Emergency Only)
+ * @param permitType     type (Staff Badge, Resident Card, Visitor Pass,
+ *                       Contractor Pass, Vehicle Sticker)
+ * @param accessLevel    access level (Full Access, Restricted Areas,
+ *                       Common Areas Only)
  * @param permitStatus   lifecycle status (Active, Suspended, Revoked, Expired)
  * @param issueDate      date the permit was issued
  * @param expiryDate     date the permit expires ({@code null} = no expiry)

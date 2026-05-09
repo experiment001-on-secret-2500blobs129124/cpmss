@@ -1,5 +1,10 @@
 package com.cpmss.communication.internalreport.dto;
 
+import com.cpmss.communication.internalreport.ReportCategory;
+import com.cpmss.communication.internalreport.ReportPriority;
+import com.cpmss.communication.internalreport.ReportStatus;
+import com.cpmss.identity.auth.SystemRole;
+
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -10,12 +15,12 @@ import java.util.UUID;
 public record InternalReportResponse(
         UUID id,
         UUID reporterId,
-        String assignedToRole,
+        SystemRole assignedToRole,
         String subject,
         String body,
-        String reportCategory,
-        String priority,
-        String reportStatus,
+        ReportCategory reportCategory,
+        ReportPriority priority,
+        ReportStatus reportStatus,
         boolean isRead,
         OffsetDateTime readAt,
         UUID readById,

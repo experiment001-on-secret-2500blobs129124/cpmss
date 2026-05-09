@@ -1,9 +1,13 @@
 package com.cpmss.finance.installmentpayment;
 
+import com.cpmss.finance.money.Money;
 import com.cpmss.platform.common.BaseAuditEntity;
 import com.cpmss.leasing.installment.Installment;
 import com.cpmss.finance.payment.Payment;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -17,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -49,7 +52,13 @@ public class InstallmentPayment extends BaseAuditEntity {
     @JoinColumn(name = "installment_id", nullable = false)
     private Installment installment;
 
-    /** Late fee amount ({@code null} if no late fee). */
-    @Column(name = "late_fee_amount", precision = 12, scale = 2)
-    private BigDecimal lateFeeAmount;
+    /** Optional late fee money mapped to the late-fee amount and currency columns. */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount",
+                    column = @Column(name = "late_fee_amount", precision = 12, scale = 2)),
+            @AttributeOverride(name = "currency",
+                    column = @Column(name = "late_fee_currency", length = 10))
+    })
+    private Money lateFee;
 }

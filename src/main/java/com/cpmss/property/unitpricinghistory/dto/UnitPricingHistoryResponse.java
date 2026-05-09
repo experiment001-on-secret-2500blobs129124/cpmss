@@ -1,6 +1,7 @@
 package com.cpmss.property.unitpricinghistory.dto;
 
-import java.math.BigDecimal;
+import com.cpmss.finance.money.Money;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -10,5 +11,5 @@ import java.util.UUID;
 public record UnitPricingHistoryResponse(
         UUID unitId,
         LocalDate effectiveDate,
-        BigDecimal listingPrice
+        Money listingPrice
 ) {}

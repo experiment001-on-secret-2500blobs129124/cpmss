@@ -522,6 +522,13 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 - Payment amount must be > 0
   → PaymentRules.java
 
+- Every monetary amount must carry an explicit currency
+  → Money value object + matching database currency column where applicable
+
+- Money can only be added, compared, or rolled up within the same currency
+  unless a later exchange-rate workflow explicitly converts it
+  → Money value object + workflow rules
+
 - Payments are never deleted — financial records are permanent
   → PaymentRules.java (no delete endpoint)
 
@@ -557,13 +564,13 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
   → AttendsRules.java (enforced by composite PK)
 
 - daily_salary, daily_bonus, daily_deduction are computed snapshots — frozen after payroll close
-  → AttendsRules.java (immutable after month close)
+  → AttendsRules.java (amount and currency immutable after month close)
 
 - Task_Monthly_Salary monthly_net_salary ≤ Staff_Salary_History.maximum_salary
   → PayrollRules.java
 
 - Task_Monthly_Salary values are snapshots — do not recalculate after month is closed
-  → PayrollRules.java
+  → PayrollRules.java (amount and currency immutable after close)
 
 - A staff member must have an Assigned_Task before an Attends row can be created for that date
   → AttendsRules.java

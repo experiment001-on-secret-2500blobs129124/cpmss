@@ -1,6 +1,8 @@
 package com.cpmss.leasing.personresidesunder.dto;
 
-import java.time.LocalDate;
+import com.cpmss.leasing.common.HouseholdRelationship;
+import com.cpmss.leasing.common.ResidencyPeriod;
+
 import java.util.UUID;
 
 /**
@@ -8,14 +10,12 @@ import java.util.UUID;
  *
  * @param residentId            the resident person UUID
  * @param contractId            the contract UUID
- * @param moveInDate            the move-in date
- * @param moveOutDate           the move-out date (null = still residing)
+ * @param residencyPeriod       the move-in and optional move-out period
  * @param householdRelationship relationship to the primary contract holder
  */
 public record PersonResidesUnderResponse(
         UUID residentId,
         UUID contractId,
-        LocalDate moveInDate,
-        LocalDate moveOutDate,
-        String householdRelationship
+        ResidencyPeriod residencyPeriod,
+        HouseholdRelationship householdRelationship
 ) {}

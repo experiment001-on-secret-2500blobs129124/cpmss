@@ -14,24 +14,31 @@ import java.util.Set;
  */
 public class InternalReportRules {
 
-    private static final Set<String> VALID_CATEGORIES = Set.of(
-            "Salary_Request", "Complaint", "Maintenance", "Leave_Request",
-            "Incident", "Suggestion", "General"
+    private static final Set<SystemRole> REPORT_RECEIVER_ROLES = Set.of(
+            SystemRole.ADMIN,
+            SystemRole.GENERAL_MANAGER,
+            SystemRole.HR_OFFICER,
+            SystemRole.ACCOUNTANT,
+            SystemRole.SECURITY_OFFICER,
+            SystemRole.FACILITY_OFFICER,
+            SystemRole.DEPARTMENT_MANAGER,
+            SystemRole.SUPERVISOR
     );
 
     /**
      * Validates that the assigned role is a valid system role.
      *
-     * @param assignedToRole the role string to validate
-     * @throws BusinessException if the role is not a valid SystemRole
+     * @param assignedToRole the target role to validate
+     * @throws BusinessException if the role cannot process internal reports
      */
-    public void validateAssignedToRole(String assignedToRole) {
-        try {
-            SystemRole.valueOf(assignedToRole);
-        } catch (IllegalArgumentException e) {
+    public void validateAssignedToRole(SystemRole assignedToRole) {
+        if (assignedToRole == null) {
+            throw new BusinessException("Assigned role is required");
+        }
+        if (!REPORT_RECEIVER_ROLES.contains(assignedToRole)) {
             throw new BusinessException(
                     "Invalid assigned role: '" + assignedToRole
-                            + "'. Must be a valid SystemRole");
+                            + "'. Must be a report receiver role");
         }
     }
 
@@ -41,11 +48,9 @@ public class InternalReportRules {
      * @param reportCategory the category to validate
      * @throws BusinessException if the category is unknown
      */
-    public void validateCategory(String reportCategory) {
-        if (!VALID_CATEGORIES.contains(reportCategory)) {
-            throw new BusinessException(
-                    "Invalid report category: '" + reportCategory
-                            + "'. Valid categories: " + VALID_CATEGORIES);
+    public void validateCategory(ReportCategory reportCategory) {
+        if (reportCategory == null) {
+            throw new BusinessException("Report category is required");
         }
     }
 }

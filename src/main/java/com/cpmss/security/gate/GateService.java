@@ -91,7 +91,7 @@ public class GateService {
                 .gateNo(request.gateNo())
                 .gateName(request.gateName())
                 .gateType(request.gateType())
-                .gateStatus(request.gateStatus())
+                .gateStatus(GateStatus.fromNullableLabel(request.gateStatus()))
                 .compound(compound)
                 .build();
         gate = repository.save(gate);
@@ -122,7 +122,7 @@ public class GateService {
         gate.setGateNo(request.gateNo());
         gate.setGateName(request.gateName());
         gate.setGateType(request.gateType());
-        gate.setGateStatus(request.gateStatus());
+        gate.setGateStatus(GateStatus.fromNullableLabel(request.gateStatus()));
         gate.setCompound(compound);
         gate = repository.save(gate);
         log.info("Gate updated: {}", gate.getGateNo());

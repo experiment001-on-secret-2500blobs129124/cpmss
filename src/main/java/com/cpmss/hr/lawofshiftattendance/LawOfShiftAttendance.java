@@ -1,8 +1,17 @@
 package com.cpmss.hr.lawofshiftattendance;
 
+import com.cpmss.finance.money.Money;
 import com.cpmss.platform.common.BaseAuditEntity;
+import com.cpmss.platform.common.value.HoursAmount;
+import com.cpmss.platform.common.value.HoursAmountConverter;
+import com.cpmss.platform.common.value.LocalTimeWindow;
+import com.cpmss.workforce.common.ShiftTimeWindow;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -48,27 +57,107 @@ public class LawOfShiftAttendance extends BaseAuditEntity {
     @Column(name = "effective_date")
     private LocalDate effectiveDate;
 
-    /** Shift start time. */
-    @Column(name = "start_time", nullable = false)
-    private LocalTime startTime;
-
-    /** Shift end time. */
-    @Column(name = "end_time", nullable = false)
-    private LocalTime endTime;
+    /** Required same-day shift time window. */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "startTime",
+                    column = @Column(name = "start_time", nullable = false)),
+            @AttributeOverride(name = "endTime",
+                    column = @Column(name = "end_time", nullable = false))
+    })
+    @Setter(lombok.AccessLevel.NONE)
+    private ShiftTimeWindow shiftTimeWindow;
 
     /** Expected working hours per shift — basis for daily pay fraction. */
+    @Convert(converter = HoursAmountConverter.class)
     @Column(name = "expected_hours", nullable = false, precision = 4, scale = 2)
-    private BigDecimal expectedHours;
+    @Setter(lombok.AccessLevel.NONE)
+    private HoursAmount expectedHours;
 
-    /** Bonus rate per hour worked above expected hours (overtime). */
-    @Column(name = "one_hour_extra_bonus", precision = 8, scale = 2)
-    private BigDecimal oneHourExtraBonus;
+    /** Bonus money per hour worked above expected hours (overtime). */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount",
+                    column = @Column(name = "one_hour_extra_bonus", precision = 8, scale = 2)),
+            @AttributeOverride(name = "currency",
+                    column = @Column(name = "one_hour_extra_bonus_currency", length = 10))
+    })
+    private Money oneHourExtraBonus;
 
-    /** Deduction rate per hour below expected hours (lateness/early leave). */
-    @Column(name = "one_hour_diff_discount", precision = 8, scale = 2)
-    private BigDecimal oneHourDiffDiscount;
+    /** Deduction money per hour below expected hours (lateness/early leave). */
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount",
+                    column = @Column(name = "one_hour_diff_discount", precision = 8, scale = 2)),
+            @AttributeOverride(name = "currency",
+                    column = @Column(name = "one_hour_diff_discount_currency", length = 10))
+    })
+    private Money oneHourDiffDiscount;
 
     /** Optional label describing the shift period range. */
     @Column(name = "period_start_end", length = 50)
     private String periodStartEnd;
+
+    /**
+     * Returns the shift time window for domain logic.
+     *
+     * @return the same-day shift time window
+     */
+    public LocalTimeWindow getShiftWindow() {
+        return new LocalTimeWindow(shiftTimeWindow.getStartTime(), shiftTimeWindow.getEndTime());
+    }
+
+    /**
+     * Returns the shift start time for compatibility with existing callers.
+     *
+     * @return the shift start time
+     */
+    public LocalTime getStartTime() {
+        return shiftTimeWindow != null ? shiftTimeWindow.getStartTime() : null;
+    }
+
+    /**
+     * Returns the shift end time for compatibility with existing callers.
+     *
+     * @return the shift end time
+     */
+    public LocalTime getEndTime() {
+        return shiftTimeWindow != null ? shiftTimeWindow.getEndTime() : null;
+    }
+
+    /**
+     * Assigns the required shift time window.
+     *
+     * @param shiftTimeWindow the shift time window
+     */
+    public void setShiftTimeWindow(ShiftTimeWindow shiftTimeWindow) {
+        this.shiftTimeWindow = shiftTimeWindow;
+    }
+
+    /**
+     * Returns the expected hours amount for DTO compatibility.
+     *
+     * @return the expected hours, or {@code null} when unset
+     */
+    public BigDecimal getExpectedHours() {
+        return expectedHours != null ? expectedHours.hours() : null;
+    }
+
+    /**
+     * Returns the typed expected hours amount for domain logic.
+     *
+     * @return the typed expected hours, or {@code null} when unset
+     */
+    public HoursAmount getExpectedHoursValue() {
+        return expectedHours;
+    }
+
+    /**
+     * Assigns the required expected hours amount.
+     *
+     * @param expectedHours the expected shift hours
+     */
+    public void setExpectedHours(BigDecimal expectedHours) {
+        this.expectedHours = HoursAmount.positive(expectedHours);
+    }
 }

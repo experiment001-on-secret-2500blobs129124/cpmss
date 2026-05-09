@@ -1,8 +1,11 @@
 package com.cpmss.property.unitstatushistory;
 
 import com.cpmss.platform.common.BaseAuditEntity;
+import com.cpmss.property.common.UnitStatus;
+import com.cpmss.property.common.UnitStatusConverter;
 import com.cpmss.property.unit.Unit;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -45,6 +48,7 @@ public class UnitStatusHistory extends BaseAuditEntity {
     private LocalDate effectiveDate;
 
     /** The occupancy status at this effective date. */
+    @Convert(converter = UnitStatusConverter.class)
     @Column(name = "unit_status", nullable = false, length = 50)
-    private String unitStatus;
+    private UnitStatus unitStatus;
 }

@@ -1,5 +1,6 @@
 package com.cpmss.workforce.attends;
 
+import com.cpmss.finance.money.Money;
 import com.cpmss.workforce.attends.dto.AttendsResponse;
 import com.cpmss.workforce.attends.dto.CreateAttendsRequest;
 import com.cpmss.workforce.assignedtask.AssignedTaskRepository;
@@ -18,6 +19,7 @@ import com.cpmss.hr.staffsalaryhistory.dto.StaffSalaryHistoryResponse;
 import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalary;
 import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalaryRepository;
 import com.cpmss.workforce.taskmonthlysalary.dto.TaskMonthlySalaryResponse;
+import com.cpmss.platform.common.value.YearMonthPeriod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Orchestrates attendance recording, monthly payroll close, and salary changes.
@@ -53,6 +56,18 @@ public class PayrollService {
     private final AttendsRules attendsRules = new AttendsRules();
     private final StaffSalaryRules salaryRules = new StaffSalaryRules();
 
+    /**
+     * Constructs the payroll service with repositories used by attendance,
+     * payroll rollup, and salary history flows.
+     *
+     * @param attendsRepository attendance data access
+     * @param monthlySalaryRepository monthly payroll snapshot data access
+     * @param salaryHistoryRepository staff salary history data access
+     * @param personRepository person data access
+     * @param shiftRepository shift attendance type data access
+     * @param departmentRepository department data access
+     * @param assignedTaskRepository assigned-task data access
+     */
     public PayrollService(AttendsRepository attendsRepository,
                           TaskMonthlySalaryRepository monthlySalaryRepository,
                           StaffSalaryHistoryRepository salaryHistoryRepository,
@@ -95,18 +110,14 @@ public class PayrollService {
         attendsRules.validateNoDuplicate(attendsRepository.existsById(id));
 
         // Validate times when present
-        attendsRules.validateTimesWhenPresent(
-                request.isAbsent(),
-                request.checkInTime() != null,
-                request.checkOutTime() != null);
+        attendsRules.validateTimesWhenPresent(request.isAbsent(), request.attendanceWindow());
 
         Attends attends = new Attends();
         attends.setStaff(staff);
         attends.setShift(shift);
         attends.setDate(request.date());
         attends.setIsAbsent(request.isAbsent());
-        attends.setCheckInTime(request.checkInTime());
-        attends.setCheckOutTime(request.checkOutTime());
+        attends.setAttendanceWindow(request.attendanceWindow());
         attends.setPeriodOutIn(request.periodOutIn());
         attends.setDiffHour(request.diffHour());
         attends = attendsRepository.save(attends);
@@ -125,8 +136,9 @@ public class PayrollService {
      */
     @Transactional(readOnly = true)
     public List<AttendsResponse> getAttendanceByStaff(UUID staffId, int year, int month) {
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
         return attendsRepository.findByStaffIdAndDateBetween(staffId, from, to)
                 .stream().map(this::toAttendsResponse).toList();
     }
@@ -144,15 +156,19 @@ public class PayrollService {
      * @param departmentId the department UUID
      * @param year         the payroll year
      * @param month        the payroll month (1-12)
+     * @param currency     ISO-4217 currency for zero or newly created snapshots
      * @return list of created monthly salary responses
      */
     @Transactional
-    public List<TaskMonthlySalaryResponse> closeMonthlyPayroll(UUID departmentId, int year, int month) {
+    public List<TaskMonthlySalaryResponse> closeMonthlyPayroll(
+            UUID departmentId, int year, int month, String currency) {
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
+        Money zero = new Money(BigDecimal.ZERO, currency);
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
 
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
 
         // Get all attendance in the period — group by staff
         // For simplicity, get all and aggregate in memory
@@ -170,26 +186,23 @@ public class PayrollService {
             List<Attends> records = entry.getValue();
             Attends sample = records.get(0);
 
-            BigDecimal totalSalary = records.stream()
-                    .map(a -> a.getDailySalary() != null ? a.getDailySalary() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal totalBonus = records.stream()
-                    .map(a -> a.getDailyBonus() != null ? a.getDailyBonus() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal totalDeduction = records.stream()
-                    .map(a -> a.getDailyDeduction() != null ? a.getDailyDeduction() : BigDecimal.ZERO)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal tax = totalSalary.multiply(BigDecimal.valueOf(0.10))
+            Money totalSalary = sumMoney(records, Attends::getDailySalary, zero);
+            Money totalBonus = sumMoney(records, Attends::getDailyBonus, zero);
+            Money totalDeduction = sumMoney(records, Attends::getDailyDeduction, zero);
+            BigDecimal taxAmount = totalSalary.getAmount().multiply(BigDecimal.valueOf(0.10))
                     .setScale(2, RoundingMode.HALF_UP);
-            BigDecimal netSalary = totalSalary.add(totalBonus)
-                    .subtract(totalDeduction).subtract(tax);
+            Money tax = new Money(taxAmount, totalSalary.getCurrency());
+            BigDecimal netSalaryAmount = totalSalary.getAmount()
+                    .add(totalBonus.getAmount())
+                    .subtract(totalDeduction.getAmount())
+                    .subtract(tax.getAmount());
+            Money netSalary = new Money(netSalaryAmount, totalSalary.getCurrency());
 
             TaskMonthlySalary monthly = new TaskMonthlySalary();
             monthly.setStaff(sample.getStaff());
             monthly.setDepartment(department);
             monthly.setShift(sample.getShift());
-            monthly.setYear(year);
-            monthly.setMonth(month);
+            monthly.setPayrollPeriod(period);
             monthly.setMonthlySalary(totalSalary);
             monthly.setMonthlyBonus(totalBonus);
             monthly.setMonthlyDeduction(totalDeduction);
@@ -269,7 +282,7 @@ public class PayrollService {
     private AttendsResponse toAttendsResponse(Attends a) {
         return new AttendsResponse(
                 a.getStaff().getId(), a.getShift().getId(), a.getDate(),
-                a.getIsAbsent(), a.getCheckInTime(), a.getCheckOutTime(),
+                a.getIsAbsent(), a.getAttendanceWindow(),
                 a.getPeriodOutIn(), a.getDiffHour(),
                 a.getDailyBonus(), a.getDailyDeduction(),
                 a.getDailySalary(), a.getDailyNetSalary());
@@ -278,9 +291,16 @@ public class PayrollService {
     private TaskMonthlySalaryResponse toMonthlySalaryResponse(TaskMonthlySalary m) {
         return new TaskMonthlySalaryResponse(
                 m.getStaff().getId(), m.getDepartment().getId(), m.getShift().getId(),
-                m.getYear(), m.getMonth(),
+                m.getPayrollPeriod(),
                 m.getMonthlyDeduction(), m.getMonthlyBonus(), m.getTax(),
                 m.getMonthlySalary(), m.getMonthlyNetSalary());
+    }
+
+    private Money sumMoney(List<Attends> records, Function<Attends, Money> extractor, Money zero) {
+        return records.stream()
+                .map(extractor)
+                .filter(java.util.Objects::nonNull)
+                .reduce(zero, Money::add);
     }
 
     private StaffSalaryHistoryResponse toSalaryHistoryResponse(StaffSalaryHistory h) {

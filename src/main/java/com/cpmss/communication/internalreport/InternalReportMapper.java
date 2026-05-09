@@ -6,10 +6,18 @@ import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-/** MapStruct mapper for {@link InternalReport} entities. */
+/**
+ * MapStruct mapper for {@link InternalReport} entities.
+ */
 @Mapper(componentModel = "spring")
 public interface InternalReportMapper {
 
+    /**
+     * Converts an internal report entity to its API response DTO.
+     *
+     * @param entity the internal report entity
+     * @return the response DTO
+     */
     @BeanMapping(builder = @Builder(disableBuilder = true))
     @Mapping(source = "reporter.id", target = "reporterId")
     @Mapping(source = "readBy.id", target = "readById")

@@ -11,8 +11,10 @@ import com.cpmss.performance.staffkpimonthlysummary.StaffKpiMonthlySummary;
 import com.cpmss.performance.staffkpimonthlysummary.StaffKpiMonthlySummaryRepository;
 import com.cpmss.performance.staffkpimonthlysummary.StaffKpiMonthlySummaryRules;
 import com.cpmss.performance.staffkpimonthlysummary.dto.StaffKpiMonthlySummaryResponse;
+import com.cpmss.performance.common.KpiScore;
 import com.cpmss.performance.staffkpirecord.dto.CreateStaffKpiRecordRequest;
 import com.cpmss.performance.staffkpirecord.dto.StaffKpiRecordResponse;
+import com.cpmss.platform.common.value.YearMonthPeriod;
 import com.cpmss.platform.util.AuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,13 @@ import java.util.stream.Collectors;
 /**
  * Orchestrates KPI scoring and monthly close workflow (US-9).
  *
+ * <p>Request and response DTOs keep primitive score and period fields, while
+ * this service converts score input and monthly snapshot output through
+ * {@link KpiScore}. Month values are validated with
+ * {@link YearMonthPeriod}.
+ *
+ * @see KpiScore
+ * @see YearMonthPeriod
  * @see StaffKpiRecordRules
  * @see StaffKpiMonthlySummaryRules
  */
@@ -46,6 +55,16 @@ public class KpiService {
     private final StaffKpiRecordRules recordRules = new StaffKpiRecordRules();
     private final StaffKpiMonthlySummaryRules summaryRules = new StaffKpiMonthlySummaryRules();
 
+    /**
+     * Creates the KPI service.
+     *
+     * @param kpiRecordRepository repository for daily KPI records
+     * @param kpiSummaryRepository repository for monthly KPI summaries
+     * @param personRepository repository used to resolve staff, managers, and
+     *                         closers
+     * @param departmentRepository repository used to resolve departments
+     * @param kpiPolicyRepository repository used to resolve KPI policy tiers
+     */
     public KpiService(StaffKpiRecordRepository kpiRecordRepository,
                       StaffKpiMonthlySummaryRepository kpiSummaryRepository,
                       PersonRepository personRepository,
@@ -65,6 +84,12 @@ public class KpiService {
      *
      * @param request the KPI record details
      * @return the created KPI record response
+     * @throws ResourceNotFoundException if the referenced staff, department,
+     *                                   policy, or recorder does not exist
+     * @throws com.cpmss.platform.exception.BusinessException if the score is
+     *                                                        invalid or the
+     *                                                        policy is not
+     *                                                        active yet
      */
     @Transactional
     public StaffKpiRecordResponse recordDailyKpi(CreateStaffKpiRecordRequest request) {
@@ -78,12 +103,13 @@ public class KpiService {
                 .orElseThrow(() -> new ResourceNotFoundException("Person", request.recordedById()));
 
         recordRules.validatePolicyActiveForDate(policy, request.recordDate());
+        KpiScore score = KpiScore.of(request.kpiScore());
 
         StaffKpiRecord record = new StaffKpiRecord();
         record.setStaff(staff);
         record.setDepartment(department);
         record.setRecordDate(request.recordDate());
-        record.setKpiScore(request.kpiScore());
+        record.setKpiScore(score);
         record.setKpiPolicy(policy);
         record.setRecordedBy(recordedBy);
         record.setNotes(request.notes());
@@ -105,8 +131,9 @@ public class KpiService {
      */
     @Transactional(readOnly = true)
     public List<StaffKpiRecordResponse> getKpiByStaff(UUID staffId, int year, int month) {
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
         return kpiRecordRepository.findByStaffIdAndRecordDateBetween(staffId, from, to)
                 .stream().map(this::toKpiRecordResponse).toList();
     }
@@ -121,20 +148,25 @@ public class KpiService {
      * @param month        the month (1-12)
      * @param closedById   the manager/HR who is closing
      * @return list of created summary responses
+     * @throws ResourceNotFoundException if the department or closer does not
+     *                                   exist
+     * @throws com.cpmss.platform.exception.BusinessException if the closer or
+     *                                                        period is invalid
      */
     @Transactional
     public List<StaffKpiMonthlySummaryResponse> closeMonthlyKpi(
             UUID departmentId, int year, int month, UUID closedById) {
 
         summaryRules.validateCloserProvided(closedById != null);
+        YearMonthPeriod period = YearMonthPeriod.of(year, month);
 
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
         Person closedBy = personRepository.findById(closedById)
                 .orElseThrow(() -> new ResourceNotFoundException("Person", closedById));
 
-        LocalDate from = LocalDate.of(year, month, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        LocalDate from = period.firstDay();
+        LocalDate to = period.lastDay();
 
         List<StaffKpiRecord> records = kpiRecordRepository
                 .findByDepartmentIdAndRecordDateBetween(departmentId, from, to);
@@ -161,14 +193,14 @@ public class KpiService {
             StaffKpiMonthlySummary summary = new StaffKpiMonthlySummary();
             summary.setStaff(sample.getStaff());
             summary.setDepartment(department);
-            summary.setYear(year);
-            summary.setMonth(month);
-            summary.setAvgKpiScore(avgScore);
-            summary.setTotalKpiScore(totalScore);
+            summary.setYear(period.year());
+            summary.setMonth(period.month());
+            summary.setAvgKpiScore(KpiScore.of(avgScore));
+            summary.setTotalKpiScore(KpiScore.of(totalScore));
             summary.setDaysScored(daysScored);
-            summary.setApplicableTier(policy.getTierLabel());
-            summary.setPayrollBonusRate(policy.getBonusRate());
-            summary.setPayrollDeductRate(policy.getDeductionRate());
+            summary.setApplicableTier(policy.getTierLabelValue());
+            summary.setPayrollBonusRate(policy.getBonusRateValue());
+            summary.setPayrollDeductRate(policy.getDeductionRateValue());
             summary.setKpiPolicy(policy);
             summary.setClosedBy(closedBy);
             results.add(kpiSummaryRepository.save(summary));
@@ -181,6 +213,11 @@ public class KpiService {
 
     /**
      * Retrieves KPI summaries for a department in a given period.
+     *
+     * @param departmentId the department UUID
+     * @param year the calendar year
+     * @param month the calendar month number from 1 to 12
+     * @return KPI summary responses for the department and period
      */
     @Transactional(readOnly = true)
     public List<StaffKpiMonthlySummaryResponse> getKpiSummaries(

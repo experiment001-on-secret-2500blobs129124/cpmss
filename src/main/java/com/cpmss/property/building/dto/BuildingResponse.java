@@ -1,5 +1,8 @@
 package com.cpmss.property.building.dto;
 
+import com.cpmss.property.common.BuildingType;
+import com.cpmss.property.common.NonNegativeCount;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -25,8 +28,8 @@ public record BuildingResponse(
         UUID id,
         String buildingNo,
         String buildingName,
-        String buildingType,
-        Integer floorsCount,
+        BuildingType buildingType,
+        NonNegativeCount floorsCount,
         LocalDate constructionDate,
         UUID compoundId,
         String compoundName,

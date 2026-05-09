@@ -1,9 +1,14 @@
 package com.cpmss.property.unit;
 
 import com.cpmss.property.building.Building;
+import com.cpmss.property.common.Area;
+import com.cpmss.property.common.AreaConverter;
+import com.cpmss.property.common.NonNegativeCount;
+import com.cpmss.property.common.NonNegativeCountConverter;
 import com.cpmss.platform.common.BaseEntity;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -14,8 +19,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.math.BigDecimal;
 
 /**
  * Owned entity representing a residential or commercial unit within a building.
@@ -44,28 +47,34 @@ public class Unit extends BaseEntity {
     private Integer floorNo;
 
     /** Total number of rooms. */
+    @Convert(converter = NonNegativeCountConverter.class)
     @Column(name = "no_of_rooms")
-    private Integer noOfRooms;
+    private NonNegativeCount noOfRooms;
 
     /** Number of bathrooms. */
+    @Convert(converter = NonNegativeCountConverter.class)
     @Column(name = "no_of_bathrooms")
-    private Integer noOfBathrooms;
+    private NonNegativeCount noOfBathrooms;
 
     /** Number of bedrooms. */
+    @Convert(converter = NonNegativeCountConverter.class)
     @Column(name = "no_of_bedrooms")
-    private Integer noOfBedrooms;
+    private NonNegativeCount noOfBedrooms;
 
     /** Total room count (all types combined). */
+    @Convert(converter = NonNegativeCountConverter.class)
     @Column(name = "no_of_total_rooms")
-    private Integer noOfTotalRooms;
+    private NonNegativeCount noOfTotalRooms;
 
     /** Number of balconies. */
+    @Convert(converter = NonNegativeCountConverter.class)
     @Column(name = "no_of_balconies")
-    private Integer noOfBalconies;
+    private NonNegativeCount noOfBalconies;
 
     /** Area in square feet. */
+    @Convert(converter = AreaConverter.class)
     @Column(name = "square_foot", precision = 10, scale = 2)
-    private BigDecimal squareFoot;
+    private Area squareFoot;
 
     /** View orientation (e.g. North, Sea, Garden). */
     @Column(name = "view_orientation", length = 50)

@@ -9,9 +9,11 @@ import java.util.UUID;
  *
  * @param id             the permit's UUID primary key
  * @param permitNo       system-unique permit number
- * @param permitType     type (Staff Badge, Resident Card, etc.)
- * @param accessLevel    access level (may be {@code null})
- * @param permitStatus   lifecycle status
+ * @param permitType     type (Staff Badge, Resident Card, Visitor Pass,
+ *                       Contractor Pass, Vehicle Sticker)
+ * @param accessLevel    access level (Full Access, Restricted Areas,
+ *                       Common Areas Only; may be {@code null})
+ * @param permitStatus   lifecycle status (Active, Expired, Suspended, Revoked)
  * @param issueDate      date the permit was issued
  * @param expiryDate     expiry date (may be {@code null})
  * @param permitHolderId person holding the permit

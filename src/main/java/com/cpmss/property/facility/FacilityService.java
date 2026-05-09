@@ -206,8 +206,7 @@ public class FacilityService {
         FacilityHoursHistory history = new FacilityHoursHistory();
         history.setFacility(facility);
         history.setEffectiveDate(request.effectiveDate());
-        history.setOpeningTime(request.openingTime());
-        history.setClosingTime(request.closingTime());
+        history.setOperatingWindow(request.operatingWindow());
         history.setOperatingHours(request.operatingHours());
         history = hoursHistoryRepository.save(history);
         log.info("Hours history added: facility={}, effective={}",
@@ -286,7 +285,7 @@ public class FacilityService {
     private FacilityHoursHistoryResponse toHoursResponse(FacilityHoursHistory h) {
         return new FacilityHoursHistoryResponse(
                 h.getFacility().getId(), h.getEffectiveDate(),
-                h.getOpeningTime(), h.getClosingTime(), h.getOperatingHours());
+                h.getOperatingWindow(), h.getOperatingHours());
     }
 
     private FacilityManagerResponse toManagerResponse(FacilityManager m) {

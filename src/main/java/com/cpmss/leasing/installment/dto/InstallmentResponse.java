@@ -1,6 +1,9 @@
 package com.cpmss.leasing.installment.dto;
 
-import java.math.BigDecimal;
+import com.cpmss.finance.money.Money;
+import com.cpmss.leasing.common.InstallmentStatus;
+import com.cpmss.leasing.common.InstallmentType;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -12,17 +15,17 @@ import java.util.UUID;
  * @param installmentType   the category (Rent, Deposit, Penalty, Other)
  * @param dueDate           when this installment is due
  * @param installmentStatus lifecycle status
- * @param amountExpected    expected payment amount
+ * @param amountExpected    expected payment money
  * @param contractId        the owning contract UUID
  * @param createdAt         when the installment was created
  * @param updatedAt         when the installment was last modified
  */
 public record InstallmentResponse(
         UUID id,
-        String installmentType,
+        InstallmentType installmentType,
         LocalDate dueDate,
-        String installmentStatus,
-        BigDecimal amountExpected,
+        InstallmentStatus installmentStatus,
+        Money amountExpected,
         UUID contractId,
         Instant createdAt,
         Instant updatedAt

@@ -6,6 +6,7 @@ import com.cpmss.property.compound.Compound;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -41,12 +42,14 @@ public class BankAccount extends BaseEntity {
     private String bankName;
 
     /** International Bank Account Number. */
+    @Convert(converter = IbanConverter.class)
     @Column(name = "iban", length = 34)
-    private String iban;
+    private Iban iban;
 
     /** SWIFT/BIC code for international transfers. */
+    @Convert(converter = SwiftCodeConverter.class)
     @Column(name = "swift_code", length = 11)
-    private String swiftCode;
+    private SwiftCode swiftCode;
 
     /** Whether this is the primary account for the owner. */
     @Column(name = "is_primary", nullable = false)

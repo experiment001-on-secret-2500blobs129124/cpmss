@@ -106,11 +106,10 @@ public class AccessPermitService {
 
         AccessPermit permit = AccessPermit.builder()
                 .permitNo(request.permitNo())
-                .permitType(request.permitType())
-                .accessLevel(request.accessLevel())
-                .permitStatus(request.permitStatus())
-                .issueDate(request.issueDate())
-                .expiryDate(request.expiryDate())
+                .permitType(PermitType.fromLabel(request.permitType()))
+                .accessLevel(AccessLevel.fromNullableLabel(request.accessLevel()))
+                .permitStatus(PermitStatus.fromLabel(request.permitStatus()))
+                .validity(new PermitValidity(request.issueDate(), request.expiryDate()))
                 .permitHolder(resolvePerson(request.permitHolderId()))
                 .staffProfile(resolveStaffProfile(request.staffProfileId()))
                 .contract(resolveContract(request.contractId()))
@@ -136,9 +135,9 @@ public class AccessPermitService {
     public AccessPermitResponse update(UUID id, UpdateAccessPermitRequest request) {
         AccessPermit permit = findOrThrow(id);
 
-        permit.setAccessLevel(request.accessLevel());
-        permit.setPermitStatus(request.permitStatus());
-        permit.setExpiryDate(request.expiryDate());
+        permit.setAccessLevel(AccessLevel.fromNullableLabel(request.accessLevel()));
+        permit.setPermitStatus(PermitStatus.fromLabel(request.permitStatus()));
+        permit.setValidity(new PermitValidity(permit.getIssueDate(), request.expiryDate()));
         permit = repository.save(permit);
         log.info("Access permit updated: {} status={}", permit.getPermitNo(),
                 permit.getPermitStatus());

@@ -1,6 +1,6 @@
 package com.cpmss.property.unitstatushistory.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.cpmss.property.common.UnitStatus;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -13,5 +13,5 @@ import java.time.LocalDate;
  */
 public record CreateUnitStatusHistoryRequest(
         @NotNull LocalDate effectiveDate,
-        @NotBlank String unitStatus
+        @NotNull UnitStatus unitStatus
 ) {}

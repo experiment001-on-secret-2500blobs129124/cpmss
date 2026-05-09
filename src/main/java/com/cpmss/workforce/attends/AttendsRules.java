@@ -1,9 +1,7 @@
 package com.cpmss.workforce.attends;
 
 import com.cpmss.platform.exception.BusinessException;
-
-import java.time.LocalDate;
-import java.util.UUID;
+import com.cpmss.workforce.common.AttendanceTimeWindow;
 
 /**
  * Stateless business rules for attendance recording.
@@ -47,12 +45,11 @@ public class AttendsRules {
      * Validates that check-in and check-out times are provided when not absent.
      *
      * @param isAbsent    whether the staff member was absent
-     * @param hasCheckIn  whether check-in time is provided
-     * @param hasCheckOut whether check-out time is provided
+     * @param attendanceWindow actual attendance time window
      * @throws BusinessException if present but missing times
      */
-    public void validateTimesWhenPresent(boolean isAbsent, boolean hasCheckIn, boolean hasCheckOut) {
-        if (!isAbsent && (!hasCheckIn || !hasCheckOut)) {
+    public void validateTimesWhenPresent(boolean isAbsent, AttendanceTimeWindow attendanceWindow) {
+        if (!isAbsent && attendanceWindow == null) {
             throw new BusinessException(
                     "Check-in and check-out times are required when staff is not absent");
         }

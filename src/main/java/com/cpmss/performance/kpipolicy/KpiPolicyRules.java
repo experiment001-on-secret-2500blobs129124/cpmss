@@ -1,6 +1,7 @@
 package com.cpmss.performance.kpipolicy;
 
 import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.performance.common.KpiScoreRange;
 
 import java.math.BigDecimal;
 
@@ -14,18 +15,16 @@ import java.math.BigDecimal;
 public class KpiPolicyRules {
 
     /**
-     * Validates that min score is less than or equal to max score.
+     * Validates that min score is strictly less than max score.
      *
      * @param minKpiScore the minimum KPI score
      * @param maxKpiScore the maximum KPI score
-     * @throws BusinessException if min exceeds max
+     * @return the validated score range
+     * @throws BusinessException if either score is missing, negative, or if
+     *                           max is not greater than min
      */
-    public void validateScoreRange(BigDecimal minKpiScore, BigDecimal maxKpiScore) {
-        if (minKpiScore.compareTo(maxKpiScore) > 0) {
-            throw new BusinessException(
-                    "Min KPI score (" + minKpiScore + ") must be ≤ max KPI score ("
-                            + maxKpiScore + ")");
-        }
+    public KpiScoreRange validateScoreRange(BigDecimal minKpiScore, BigDecimal maxKpiScore) {
+        return KpiScoreRange.of(minKpiScore, maxKpiScore);
     }
 
     /**

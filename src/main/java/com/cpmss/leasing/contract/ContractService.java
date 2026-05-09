@@ -4,6 +4,7 @@ import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.leasing.contract.dto.ContractResponse;
 import com.cpmss.leasing.contract.dto.CreateContractRequest;
 import com.cpmss.leasing.contract.dto.UpdateContractRequest;
+import com.cpmss.leasing.common.ContractPartyRole;
 import com.cpmss.leasing.contractparty.ContractParty;
 import com.cpmss.leasing.contractparty.ContractPartyRepository;
 import com.cpmss.leasing.contractparty.dto.AddContractPartyRequest;
@@ -125,13 +126,12 @@ public class ContractService {
 
         Contract contract = Contract.builder()
                 .contractReference(request.contractReference())
-                .startDate(request.startDate())
-                .endDate(request.endDate())
+                .period(request.period())
                 .contractType(request.contractType())
                 .contractStatus(request.contractStatus())
                 .paymentFrequency(request.paymentFrequency())
                 .finalPrice(request.finalPrice())
-                .securityDepositAmount(request.securityDepositAmount())
+                .securityDeposit(request.securityDeposit())
                 .renewalTerms(request.renewalTerms())
                 .unit(resolveUnit(request.unitId()))
                 .facility(resolveFacility(request.facilityId()))
@@ -162,13 +162,12 @@ public class ContractService {
         }
 
         contract.setContractReference(request.contractReference());
-        contract.setStartDate(request.startDate());
-        contract.setEndDate(request.endDate());
+        contract.setPeriod(request.period());
         contract.setContractType(request.contractType());
         contract.setContractStatus(request.contractStatus());
         contract.setPaymentFrequency(request.paymentFrequency());
         contract.setFinalPrice(request.finalPrice());
-        contract.setSecurityDepositAmount(request.securityDepositAmount());
+        contract.setSecurityDeposit(request.securityDeposit());
         contract.setRenewalTerms(request.renewalTerms());
         contract.setUnit(resolveUnit(request.unitId()));
         contract.setFacility(resolveFacility(request.facilityId()));
@@ -197,9 +196,9 @@ public class ContractService {
         Person person = personRepository.findById(request.personId())
                 .orElseThrow(() -> new ResourceNotFoundException("Person", request.personId()));
 
-        if ("Primary Signer".equals(request.role())) {
+        if (request.role() == ContractPartyRole.PRIMARY_SIGNER) {
             boolean hasPrimary = contractPartyRepository.findByContractId(contractId)
-                    .stream().anyMatch(cp -> "Primary Signer".equals(cp.getRole()));
+                    .stream().anyMatch(cp -> cp.getRole() == ContractPartyRole.PRIMARY_SIGNER);
             if (hasPrimary) {
                 throw new BusinessException(
                         "Contract already has a Primary Signer — only one is allowed");
@@ -251,7 +250,7 @@ public class ContractService {
         PersonResidesUnder record = new PersonResidesUnder();
         record.setResident(resident);
         record.setContract(contract);
-        record.setMoveInDate(request.moveInDate());
+        record.setResidencyPeriod(request.residencyPeriod());
         record.setHouseholdRelationship(request.householdRelationship());
         record = residesUnderRepository.save(record);
         log.info("Resident added to contract {}: person {} as {}",
@@ -292,8 +291,7 @@ public class ContractService {
         return new PersonResidesUnderResponse(
                 r.getResident().getId(),
                 r.getContract().getId(),
-                r.getMoveInDate(),
-                r.getMoveOutDate(),
+                r.getResidencyPeriod(),
                 r.getHouseholdRelationship());
     }
 

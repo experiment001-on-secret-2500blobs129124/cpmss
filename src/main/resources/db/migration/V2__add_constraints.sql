@@ -36,6 +36,12 @@ ALTER TABLE Building
         building_type IN ('Residential', 'Non-Residential')
     );
 
+-- Structural check: floors_count cannot be negative when supplied.
+ALTER TABLE Building
+    ADD CONSTRAINT chk_building_floors_count CHECK (
+        floors_count IS NULL OR floors_count >= 0
+    );
+
 -- Structural check: a person cannot supervise themselves.
 ALTER TABLE Person_Supervision
     ADD CONSTRAINT chk_no_self_supervision CHECK (
@@ -48,6 +54,25 @@ ALTER TABLE Bank_Account
         (compound_id IS NOT NULL)::int +
         (account_owner_id IS NOT NULL)::int +
         (company_id IS NOT NULL)::int = 1
+    );
+
+-- Structural check: bank account names cannot be blank.
+ALTER TABLE Bank_Account
+    ADD CONSTRAINT chk_bank_name_not_blank CHECK (
+        BTRIM(bank_name) <> ''
+    );
+
+-- Structural check: IBAN must use a normalized ISO-style shape when present.
+-- Full IBAN checksum validation lives in the Iban value object.
+ALTER TABLE Bank_Account
+    ADD CONSTRAINT chk_bank_iban_format CHECK (
+        iban IS NULL OR iban ~ '^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$'
+    );
+
+-- Structural check: SWIFT/BIC must be an 8- or 11-character normalized code.
+ALTER TABLE Bank_Account
+    ADD CONSTRAINT chk_bank_swift_format CHECK (
+        swift_code IS NULL OR swift_code ~ '^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$'
     );
 
 -- Structural check: maximum salary must be positive.
@@ -72,6 +97,23 @@ ALTER TABLE Unit_Pricing_History
         listing_price >= 0
     );
 
+ALTER TABLE Unit_Pricing_History
+    ADD CONSTRAINT chk_listing_price_currency CHECK (
+        listing_price_currency ~ '^[A-Z]{3}$'
+    );
+
+-- Structural check: unit measurements cannot be negative and area must be positive when supplied.
+ALTER TABLE Unit
+    ADD CONSTRAINT chk_unit_measurements CHECK (
+        (floor_no IS NULL OR floor_no >= 0)
+        AND (no_of_rooms IS NULL OR no_of_rooms >= 0)
+        AND (no_of_bathrooms IS NULL OR no_of_bathrooms >= 0)
+        AND (no_of_bedrooms IS NULL OR no_of_bedrooms >= 0)
+        AND (no_of_total_rooms IS NULL OR no_of_total_rooms >= 0)
+        AND (no_of_balconies IS NULL OR no_of_balconies >= 0)
+        AND (square_foot IS NULL OR square_foot > 0)
+    );
+
 -- Business rule: unit_status must be one of the recognized occupancy states.
 ALTER TABLE Unit_Status_History
     ADD CONSTRAINT chk_unit_status CHECK (
@@ -91,6 +133,13 @@ ALTER TABLE Facility
         (management_type = 'Vendor'   AND managed_by_company_id IS NOT NULL)::int = 1
     );
 
+-- Structural check: opening and closing times must be set together and ordered.
+ALTER TABLE Facility_Hours_History
+    ADD CONSTRAINT chk_facility_hours_window CHECK (
+        (opening_time IS NULL AND closing_time IS NULL)
+        OR (opening_time IS NOT NULL AND closing_time IS NOT NULL AND closing_time > opening_time)
+    );
+
 -- ============================================================================
 -- CONTRACTS & OCCUPANCY
 -- ============================================================================
@@ -99,6 +148,24 @@ ALTER TABLE Facility
 ALTER TABLE Contract
     ADD CONSTRAINT chk_contract_dates CHECK (
         end_date IS NULL OR end_date > start_date
+    );
+
+-- Structural check: money values must carry currency when present and cannot be negative.
+ALTER TABLE Contract
+    ADD CONSTRAINT chk_contract_final_price_money CHECK (
+        (final_price IS NULL AND final_price_currency IS NULL)
+        OR (final_price IS NOT NULL AND final_price >= 0 AND final_price_currency ~ '^[A-Z]{3}$')
+    );
+
+-- Structural check: security deposit money must carry currency when present and cannot be negative.
+ALTER TABLE Contract
+    ADD CONSTRAINT chk_contract_security_deposit_money CHECK (
+        (security_deposit_amount IS NULL AND security_deposit_currency IS NULL)
+        OR (
+            security_deposit_amount IS NOT NULL
+            AND security_deposit_amount >= 0
+            AND security_deposit_currency ~ '^[A-Z]{3}$'
+        )
     );
 
 -- Business rule: contract type determines whether the target is a unit (Residential) or a facility (Commercial).
@@ -136,6 +203,12 @@ ALTER TABLE Installment
 ALTER TABLE Installment
     ADD CONSTRAINT chk_installment_amount CHECK (
         amount_expected > 0
+    );
+
+-- Structural check: installment money must carry an explicit ISO-style currency code.
+ALTER TABLE Installment
+    ADD CONSTRAINT chk_installment_amount_currency CHECK (
+        amount_expected_currency ~ '^[A-Z]{3}$'
     );
 
 -- Business rule: a party's role must be one of the recognized contract party designations.
@@ -241,6 +314,13 @@ ALTER TABLE Work_Order
         date_completed IS NULL OR date_completed >= date_scheduled
     );
 
+-- Structural check: work-order cost must carry currency when present and be positive.
+ALTER TABLE Work_Order
+    ADD CONSTRAINT chk_work_order_cost_money CHECK (
+        (cost_amount IS NULL AND cost_currency IS NULL)
+        OR (cost_amount IS NOT NULL AND cost_amount > 0 AND cost_currency ~ '^[A-Z]{3}$')
+    );
+
 -- Business rule: job_status must reflect one of the recognized lifecycle stages.
 ALTER TABLE Work_Order
     ADD CONSTRAINT chk_job_status CHECK (
@@ -277,6 +357,134 @@ ALTER TABLE Hire_Agreement
 ALTER TABLE Hire_Agreement
     ADD CONSTRAINT chk_offered_max_salary CHECK (
         offered_maximum_salary IS NULL OR offered_maximum_salary > 0
+    );
+
+-- Structural check: shift-law windows and expected hours must be positive.
+ALTER TABLE Law_of_Shift_Attendance
+    ADD CONSTRAINT chk_shift_law_time_and_hours CHECK (
+        end_time > start_time AND expected_hours > 0
+    );
+
+-- Structural check: hourly bonus/deduction rates must carry explicit currency when present.
+ALTER TABLE Law_of_Shift_Attendance
+    ADD CONSTRAINT chk_shift_law_money_rates CHECK (
+        (
+            (one_hour_extra_bonus IS NULL AND one_hour_extra_bonus_currency IS NULL)
+            OR (
+                one_hour_extra_bonus IS NOT NULL
+                AND one_hour_extra_bonus >= 0
+                AND one_hour_extra_bonus_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (one_hour_diff_discount IS NULL AND one_hour_diff_discount_currency IS NULL)
+            OR (
+                one_hour_diff_discount IS NOT NULL
+                AND one_hour_diff_discount >= 0
+                AND one_hour_diff_discount_currency ~ '^[A-Z]{3}$'
+            )
+        )
+    );
+
+-- Structural check: attendance windows are either absent or ordered.
+ALTER TABLE Attends
+    ADD CONSTRAINT chk_attends_time_window CHECK (
+        (check_in_time IS NULL AND check_out_time IS NULL)
+        OR (check_in_time IS NOT NULL AND check_out_time IS NOT NULL AND check_out_time > check_in_time)
+    );
+
+-- Structural check: daily payroll snapshots use non-negative money pairs.
+ALTER TABLE Attends
+    ADD CONSTRAINT chk_attends_daily_money CHECK (
+        (
+            (daily_bonus IS NULL AND daily_bonus_currency IS NULL)
+            OR (
+                daily_bonus IS NOT NULL
+                AND daily_bonus >= 0
+                AND daily_bonus_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (daily_deduction IS NULL AND daily_deduction_currency IS NULL)
+            OR (
+                daily_deduction IS NOT NULL
+                AND daily_deduction >= 0
+                AND daily_deduction_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (daily_salary IS NULL AND daily_salary_currency IS NULL)
+            OR (
+                daily_salary IS NOT NULL
+                AND daily_salary >= 0
+                AND daily_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (daily_net_salary IS NULL AND daily_net_salary_currency IS NULL)
+            OR (
+                daily_net_salary IS NOT NULL
+                AND daily_net_salary >= 0
+                AND daily_net_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+    );
+
+-- Structural check: payroll periods must be valid calendar month keys.
+ALTER TABLE Task_Monthly_Salary
+    ADD CONSTRAINT chk_task_monthly_salary_period CHECK (
+        year > 0 AND month BETWEEN 1 AND 12
+    );
+
+-- Structural check: monthly payroll snapshots use non-negative money pairs.
+ALTER TABLE Task_Monthly_Salary
+    ADD CONSTRAINT chk_task_monthly_salary_money CHECK (
+        (
+            (monthly_deduction IS NULL AND monthly_deduction_currency IS NULL)
+            OR (
+                monthly_deduction IS NOT NULL
+                AND monthly_deduction >= 0
+                AND monthly_deduction_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (monthly_bonus IS NULL AND monthly_bonus_currency IS NULL)
+            OR (
+                monthly_bonus IS NOT NULL
+                AND monthly_bonus >= 0
+                AND monthly_bonus_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (tax IS NULL AND tax_currency IS NULL)
+            OR (
+                tax IS NOT NULL
+                AND tax >= 0
+                AND tax_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (monthly_salary IS NULL AND monthly_salary_currency IS NULL)
+            OR (
+                monthly_salary IS NOT NULL
+                AND monthly_salary >= 0
+                AND monthly_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+        AND (
+            (monthly_net_salary IS NULL AND monthly_net_salary_currency IS NULL)
+            OR (
+                monthly_net_salary IS NOT NULL
+                AND monthly_net_salary >= 0
+                AND monthly_net_salary_currency ~ '^[A-Z]{3}$'
+            )
+        )
+    );
+
+-- Structural check: payroll payment periods must be valid calendar month keys.
+ALTER TABLE Payroll_Payment
+    ADD CONSTRAINT chk_payroll_payment_period CHECK (
+        year > 0 AND month BETWEEN 1 AND 12
     );
 
 -- ============================================================================
@@ -343,6 +551,22 @@ ALTER TABLE Gate_Guard_Assignment
 ALTER TABLE Payment
     ADD CONSTRAINT chk_payment_amount CHECK (amount > 0);
 
+-- Structural check: payment numbers must be non-blank normalized identifiers.
+ALTER TABLE Payment
+    ADD CONSTRAINT chk_payment_no_format CHECK (
+        payment_no ~ '^[A-Z0-9][A-Z0-9._/-]*$'
+    );
+
+-- Structural check: optional external references cannot be blank.
+ALTER TABLE Payment
+    ADD CONSTRAINT chk_payment_reference_not_blank CHECK (
+        reference_no IS NULL OR BTRIM(reference_no) <> ''
+    );
+
+-- Structural check: payment money must carry an explicit ISO-style currency code.
+ALTER TABLE Payment
+    ADD CONSTRAINT chk_payment_currency CHECK (currency ~ '^[A-Z]{3}$');
+
 -- Business rule: payment_type must be one of the three recognized payment categories.
 ALTER TABLE Payment
     ADD CONSTRAINT chk_payment_type CHECK (
@@ -371,4 +595,10 @@ ALTER TABLE Payment
 ALTER TABLE Installment_Payment
     ADD CONSTRAINT chk_late_fee_positive CHECK (
         late_fee_amount IS NULL OR late_fee_amount >= 0
+    );
+
+ALTER TABLE Installment_Payment
+    ADD CONSTRAINT chk_late_fee_money CHECK (
+        (late_fee_amount IS NULL AND late_fee_currency IS NULL)
+        OR (late_fee_amount IS NOT NULL AND late_fee_currency ~ '^[A-Z]{3}$')
     );

@@ -7,6 +7,7 @@ import com.cpmss.people.person.Person;
 import com.cpmss.security.accesspermit.AccessPermit;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -41,8 +42,10 @@ import java.util.Set;
 public class Vehicle extends BaseEntity {
 
     /** License plate number — the real-world identifier. */
+    @Convert(converter = LicensePlateConverter.class)
     @Column(name = "license_no", nullable = false, unique = true, length = 20)
-    private String licenseNo;
+    @Setter(lombok.AccessLevel.NONE)
+    private LicensePlate licenseNo;
 
     /** Vehicle model description. */
     @Column(name = "vehicle_model", length = 100)
@@ -71,4 +74,35 @@ public class Vehicle extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "permit_id"))
     @Builder.Default
     private Set<AccessPermit> permits = new HashSet<>();
+
+    /**
+     * Returns the license plate string for DTO compatibility.
+     *
+     * @return the normalized license plate value, or {@code null} when unset
+     */
+    public String getLicenseNo() {
+        return licenseNo != null ? licenseNo.value() : null;
+    }
+
+    /**
+     * Returns the typed license plate for domain logic.
+     *
+     * @return the typed license plate, or {@code null} when unset
+     */
+    public LicensePlate getLicenseNoValue() {
+        return licenseNo;
+    }
+
+    /**
+     * Assigns the typed license plate.
+     *
+     * @param licenseNo the typed license plate
+     * @throws IllegalArgumentException if the license plate is missing
+     */
+    public void setLicenseNo(LicensePlate licenseNo) {
+        if (licenseNo == null) {
+            throw new IllegalArgumentException("License plate is required");
+        }
+        this.licenseNo = licenseNo;
+    }
 }

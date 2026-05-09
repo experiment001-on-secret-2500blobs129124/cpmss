@@ -1,11 +1,11 @@
 package com.cpmss.leasing.installment.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.cpmss.finance.money.Money;
+import com.cpmss.leasing.common.InstallmentStatus;
+import com.cpmss.leasing.common.InstallmentType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
@@ -16,11 +16,11 @@ import java.time.LocalDate;
  * @param installmentType   the category
  * @param dueDate           when this installment is due
  * @param installmentStatus lifecycle status
- * @param amountExpected    expected payment amount (must be positive)
+ * @param amountExpected    expected payment money (must be positive)
  */
 public record UpdateInstallmentRequest(
-        @NotBlank @Size(max = 50) String installmentType,
+        @NotNull InstallmentType installmentType,
         @NotNull LocalDate dueDate,
-        @NotBlank @Size(max = 50) String installmentStatus,
-        @NotNull @Positive BigDecimal amountExpected
+        @NotNull InstallmentStatus installmentStatus,
+        @NotNull @Valid Money amountExpected
 ) {}

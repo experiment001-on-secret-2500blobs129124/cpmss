@@ -1,5 +1,7 @@
 package com.cpmss.property.building.dto;
 
+import com.cpmss.property.common.BuildingType;
+import com.cpmss.property.common.NonNegativeCount;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,7 +17,7 @@ import java.util.UUID;
  *
  * @param buildingNo       the building number within the compound
  * @param buildingName     optional display name
- * @param buildingType     optional classification (e.g. Residential)
+ * @param buildingType     optional classification
  * @param floorsCount      optional number of floors
  * @param constructionDate optional date of construction completion
  * @param compoundId       the owning compound's UUID
@@ -23,8 +25,8 @@ import java.util.UUID;
 public record CreateBuildingRequest(
         @NotBlank @Size(max = 20) String buildingNo,
         @Size(max = 100) String buildingName,
-        @Size(max = 50) String buildingType,
-        Integer floorsCount,
+        BuildingType buildingType,
+        NonNegativeCount floorsCount,
         LocalDate constructionDate,
         @NotNull UUID compoundId
 ) {}
