@@ -1,16 +1,19 @@
 package com.cpmss.performance.staffperformancereview;
 
-import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.performance.common.KpiScore;
+import com.cpmss.performance.common.PerformanceErrorCode;
 import com.cpmss.performance.common.PerformanceRating;
 import com.cpmss.performance.staffperformancereview.dto.CreateStaffPerformanceReviewRequest;
 import com.cpmss.performance.staffperformancereview.dto.StaffPerformanceReviewResponse;
 import com.cpmss.performance.staffperformancereview.dto.UpdateStaffPerformanceReviewRequest;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -62,7 +65,7 @@ public class StaffPerformanceReviewService {
      *
      * @param id the performance review UUID
      * @return the matching performance review response
-     * @throws ResourceNotFoundException if no review exists with this ID
+      * @throws ApiException if no review exists with this ID
      */
     @Transactional(readOnly = true)
     public StaffPerformanceReviewResponse getById(UUID id) {
@@ -85,13 +88,8 @@ public class StaffPerformanceReviewService {
      *
      * @param request the performance review creation request
      * @return the created performance review response
-     * @throws ResourceNotFoundException if the staff member, reviewer, or
-     *                                   department does not exist
-     * @throws com.cpmss.platform.exception.BusinessException if the rating or
-     *                                                        score is invalid
-     * @throws com.cpmss.platform.exception.ForbiddenException if the staff
-     *                                                         member reviews
-     *                                                         themselves
+      * @throws ApiException if the staff member, reviewer, or department does
+      *                      not exist, or the review is invalid
      */
     @Transactional
     public StaffPerformanceReviewResponse create(CreateStaffPerformanceReviewRequest request) {
@@ -103,11 +101,11 @@ public class StaffPerformanceReviewService {
         KpiScore overallScore = KpiScore.nullable(request.overallKpiScore());
 
         Person staff = personRepository.findById(request.staffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Person reviewer = personRepository.findById(request.reviewerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.reviewerId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Department dept = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         StaffPerformanceReview review = StaffPerformanceReview.builder()
                 .staff(staff)
@@ -131,9 +129,8 @@ public class StaffPerformanceReviewService {
      * @param id the performance review UUID
      * @param request the replacement review values
      * @return the updated performance review response
-     * @throws ResourceNotFoundException if no review exists with this ID
-     * @throws com.cpmss.platform.exception.BusinessException if the rating or
-     *                                                        score is invalid
+      * @throws ApiException if no review exists with this ID or the rating or
+      *                      score is invalid
      */
     @Transactional
     public StaffPerformanceReviewResponse update(UUID id, UpdateStaffPerformanceReviewRequest request) {
@@ -154,6 +151,6 @@ public class StaffPerformanceReviewService {
 
     private StaffPerformanceReview findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffPerformanceReview", id));
+                .orElseThrow(() -> new ApiException(PerformanceErrorCode.REVIEW_NOT_FOUND));
     }
 }

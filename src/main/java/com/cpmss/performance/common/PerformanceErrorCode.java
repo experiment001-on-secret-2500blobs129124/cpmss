@@ -58,7 +58,13 @@ public enum PerformanceErrorCode implements ErrorCode {
     KPI_TIER_OVERLAP(409, "KPI tier overlaps with an existing tier in this department"),
 
     /** Monthly KPI close requires a closer. */
-    KPI_CLOSER_REQUIRED(422, "Monthly KPI close requires a manager or HR officer");
+    KPI_CLOSER_REQUIRED(422, "Monthly KPI close requires a manager or HR officer"),
+
+    /** KPI policy not found. */
+    KPI_POLICY_NOT_FOUND(404, "KPI policy not found"),
+
+    /** Performance review not found. */
+    REVIEW_NOT_FOUND(404, "Performance review not found");
 
     private final int status;
     private final String defaultMessage;
