@@ -4,9 +4,9 @@ import com.cpmss.identity.auth.dto.AppUserResponse;
 import com.cpmss.identity.auth.dto.CreateAppUserRequest;
 import com.cpmss.identity.auth.dto.UpdateUserRoleRequest;
 import com.cpmss.people.common.EmailAddress;
+import com.cpmss.identity.common.IdentityErrorCode;
 import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ForbiddenException;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.platform.util.AuthUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +62,7 @@ public class AppUserService {
      *
      * @param id the user's UUID primary key
      * @return the matching user response
-     * @throws ResourceNotFoundException if no user exists with this ID
+     * @throws ApiException if no user exists with this ID
      */
     @Transactional(readOnly = true)
     public AppUserResponse getById(UUID id) {
@@ -85,13 +85,13 @@ public class AppUserService {
      *
      * @param email the login email to search for
      * @return the matching user response
-     * @throws ResourceNotFoundException if no active user exists with this email
+     * @throws ApiException if no active user exists with this email
      */
     @Transactional(readOnly = true)
     public AppUserResponse findByEmail(String email) {
         EmailAddress loginEmail = EmailAddress.of(email);
         AppUser user = repository.findByEmailAndActiveTrue(loginEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
+                .orElseThrow(() -> new ApiException(IdentityErrorCode.USER_NOT_FOUND));
         return mapper.toResponse(user);
     }
 
@@ -103,8 +103,8 @@ public class AppUserService {
      *
      * @param request the create request with email, password, role, and optional personId
      * @return the created user response
-     * @throws ForbiddenException if the actor lacks authority
-     * @throws com.cpmss.platform.exception.BusinessException if the email is already registered
+     * @throws ApiException if the actor lacks authority
+     * @throws ApiException if the email is already registered
      */
     @Transactional
     public AppUserResponse create(CreateAppUserRequest request) {
@@ -136,7 +136,7 @@ public class AppUserService {
      *
      * @param request the create request (systemRole is forced to APPLICANT)
      * @return the created user response
-     * @throws com.cpmss.platform.exception.BusinessException if the email is already registered
+     * @throws ApiException if the email is already registered
      */
     @Transactional
     public AppUserResponse register(CreateAppUserRequest request) {
@@ -165,8 +165,8 @@ public class AppUserService {
      * @param userId  the target user's UUID
      * @param request the new role to assign
      * @return the updated user response
-     * @throws ResourceNotFoundException if no user exists with this ID
-     * @throws ForbiddenException if the actor lacks authority
+     * @throws ApiException if no user exists with this ID
+     * @throws ApiException if the actor lacks authority
      */
     @Transactional
     public AppUserResponse updateRole(UUID userId, UpdateUserRoleRequest request) {
@@ -193,8 +193,8 @@ public class AppUserService {
      * @param userId the target user's UUID
      * @param active the new active status
      * @return the updated user response
-     * @throws ResourceNotFoundException if no user exists with this ID
-     * @throws ForbiddenException if the actor tries to deactivate themselves
+     * @throws ApiException if no user exists with this ID
+     * @throws ApiException if the actor tries to deactivate themselves
      */
     @Transactional
     public AppUserResponse updateStatus(UUID userId, boolean active) {
@@ -216,7 +216,7 @@ public class AppUserService {
 
     private AppUser findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", id));
+                .orElseThrow(() -> new ApiException(IdentityErrorCode.USER_NOT_FOUND));
     }
 
     /**
@@ -225,10 +225,10 @@ public class AppUserService {
      */
     private UUID getCurrentUserId() {
         String email = AuthUtils.getCurrentUserEmail()
-                .orElseThrow(() -> new ForbiddenException("No authenticated user"));
+                .orElseThrow(() -> new ApiException(IdentityErrorCode.NOT_AUTHENTICATED));
         EmailAddress loginEmail = EmailAddress.of(email);
         AppUser actor = repository.findByEmailAndActiveTrue(loginEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
+                .orElseThrow(() -> new ApiException(IdentityErrorCode.USER_NOT_FOUND));
         return actor.getId();
     }
 
@@ -239,13 +239,13 @@ public class AppUserService {
     private SystemRole getCurrentUserRole() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getAuthorities().isEmpty()) {
-            throw new ForbiddenException("No authenticated user");
+            throw new ApiException(IdentityErrorCode.NOT_AUTHENTICATED);
         }
         String authority = auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(a -> a.startsWith("ROLE_"))
                 .findFirst()
-                .orElseThrow(() -> new ForbiddenException("No role found in security context"));
+                .orElseThrow(() -> new ApiException(IdentityErrorCode.NO_ROLE_IN_CONTEXT));
         return SystemRole.valueOf(authority.substring("ROLE_".length()));
     }
 }
