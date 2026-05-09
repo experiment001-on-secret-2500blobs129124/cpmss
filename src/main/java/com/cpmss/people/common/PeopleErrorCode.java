@@ -53,6 +53,15 @@ public enum PeopleErrorCode implements ErrorCode {
     /** Passport number is already registered to another person. */
     PASSPORT_DUPLICATE(409, "Passport number is already registered"),
 
+    /** Person not found. */
+    PERSON_NOT_FOUND(404, "Person not found"),
+
+    /** Role not found. */
+    ROLE_NOT_FOUND(404, "Role not found"),
+
+    /** Qualification not found. */
+    QUALIFICATION_NOT_FOUND(404, "Qualification not found"),
+
     // --- Qualification Rules ---
 
     /** Qualification name already exists. */

@@ -4,12 +4,13 @@ import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.people.common.EgyptianNationalId;
 import com.cpmss.people.common.Gender;
 import com.cpmss.people.common.PassportNumber;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.dto.CreatePersonRequest;
 import com.cpmss.people.person.dto.PersonResponse;
 import com.cpmss.people.person.dto.UpdatePersonRequest;
 import com.cpmss.people.role.Role;
 import com.cpmss.people.role.RoleRepository;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -67,12 +68,12 @@ public class PersonService {
      *
      * @param id the person's UUID primary key
      * @return the matching person response
-     * @throws ResourceNotFoundException if no person exists with this ID
+     * @throws ApiException if no person exists with this ID
      */
     @Transactional(readOnly = true)
     public PersonResponse getById(UUID id) {
         Person person = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         return toResponse(person);
     }
 
@@ -96,8 +97,7 @@ public class PersonService {
      *
      * @param request the create request with person details and role IDs
      * @return the created person response
-     * @throws com.cpmss.platform.exception.BusinessException if a business rule is violated
-     * @throws com.cpmss.platform.exception.ConflictException  if the passport is already registered
+     * @throws ApiException if a person business rule is violated
      */
     @Transactional
     public PersonResponse create(CreatePersonRequest request) {
@@ -140,12 +140,12 @@ public class PersonService {
      * @param id      the person's UUID
      * @param request the update request with new values
      * @return the updated person response
-     * @throws ResourceNotFoundException if no person exists with this ID
+     * @throws ApiException if no person exists with this ID
      */
     @Transactional
     public PersonResponse update(UUID id, UpdatePersonRequest request) {
         Person person = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
         Gender gender = rules.validateGender(request.gender());
         EgyptianNationalId nationalId = rules.validateEgyptianNationalId(
@@ -192,12 +192,12 @@ public class PersonService {
      * Deletes a person and all their role assignments.
      *
      * @param id the person's UUID
-     * @throws ResourceNotFoundException if no person exists with this ID
+     * @throws ApiException if no person exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Person person = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         personRoleRepository.deleteByPersonId(id);
         repository.delete(person);
         log.info("Person deleted: {} {}", person.getFirstName(), person.getLastName());
@@ -208,7 +208,7 @@ public class PersonService {
     private void assignRoles(Person person, List<UUID> roleIds) {
         for (UUID roleId : roleIds) {
             Role role = roleRepository.findById(roleId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Role", roleId));
+                    .orElseThrow(() -> new ApiException(PeopleErrorCode.ROLE_NOT_FOUND));
             PersonRole pr = new PersonRole();
             pr.setPerson(person);
             pr.setRole(role);
