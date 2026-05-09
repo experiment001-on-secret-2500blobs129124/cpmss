@@ -1,6 +1,7 @@
 package com.cpmss.finance.bankaccount;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -21,20 +22,20 @@ public record Iban(String value) {
     /**
      * Creates a validated IBAN value.
      *
-     * @throws BusinessException if the value is missing, malformed, too long,
-     *                           or fails the IBAN checksum
+     * @throws ApiException if the value is missing, malformed, too long,
+     *                      or fails the IBAN checksum
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public Iban {
         value = normalize(value);
         if (value.length() > MAX_LENGTH) {
-            throw new BusinessException("IBAN must be at most 34 characters");
+            throw new ApiException(FinanceErrorCode.BANK_IBAN_TOO_LONG);
         }
         if (!value.matches("[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}")) {
-            throw new BusinessException("IBAN format is invalid");
+            throw new ApiException(FinanceErrorCode.BANK_IBAN_FORMAT_INVALID);
         }
         if (!hasValidChecksum(value)) {
-            throw new BusinessException("IBAN checksum is invalid");
+            throw new ApiException(FinanceErrorCode.BANK_IBAN_CHECKSUM_INVALID);
         }
     }
 
@@ -60,7 +61,7 @@ public record Iban(String value) {
 
     private static String normalize(String value) {
         if (value == null || value.isBlank()) {
-            throw new BusinessException("IBAN is required");
+            throw new ApiException(FinanceErrorCode.BANK_IBAN_REQUIRED);
         }
         return value.replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
     }

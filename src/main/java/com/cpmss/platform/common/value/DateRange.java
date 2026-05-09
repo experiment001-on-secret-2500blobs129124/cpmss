@@ -1,6 +1,7 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 
 import java.time.LocalDate;
 
@@ -20,15 +21,15 @@ public record DateRange(LocalDate startDate, LocalDate endDate) {
     /**
      * Creates a date range.
      *
-     * @throws BusinessException if the start date is missing or the end date
-     *                           is before the start date
+     * @throws ApiException if the start date is missing or the end date
+     *                      is before the start date
      */
     public DateRange {
         if (startDate == null) {
-            throw new BusinessException("Start date is required");
+            throw new ApiException(CommonErrorCode.DATE_RANGE_INVALID, "Start date is required");
         }
         if (endDate != null && endDate.isBefore(startDate)) {
-            throw new BusinessException("End date cannot be before start date");
+            throw new ApiException(CommonErrorCode.DATE_RANGE_INVALID, "End date cannot be before start date");
         }
     }
 
@@ -38,11 +39,11 @@ public record DateRange(LocalDate startDate, LocalDate endDate) {
      * @param date the date to test
      * @return true when the date is on or after the start and, when present,
      *         on or before the end
-     * @throws BusinessException if the date is missing
+     * @throws ApiException if the date is missing
      */
     public boolean contains(LocalDate date) {
         if (date == null) {
-            throw new BusinessException("Date is required");
+            throw new ApiException(CommonErrorCode.DATE_RANGE_INVALID, "Date is required");
         }
         return !date.isBefore(startDate) && (endDate == null || !date.isAfter(endDate));
     }

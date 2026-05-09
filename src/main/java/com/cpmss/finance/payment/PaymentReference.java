@@ -1,6 +1,7 @@
 package com.cpmss.finance.payment;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -19,16 +20,16 @@ public record PaymentReference(String value) {
     /**
      * Creates a payment reference.
      *
-     * @throws BusinessException if the reference is blank or too long
+     * @throws ApiException if the reference is blank or too long
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public PaymentReference {
         if (value == null || value.isBlank()) {
-            throw new BusinessException("Payment reference is required");
+            throw new ApiException(FinanceErrorCode.PAYMENT_REFERENCE_REQUIRED);
         }
         value = value.strip();
         if (value.length() > MAX_LENGTH) {
-            throw new BusinessException("Payment reference must be at most 100 characters");
+            throw new ApiException(FinanceErrorCode.PAYMENT_REFERENCE_INVALID);
         }
     }
 

@@ -5,9 +5,9 @@ import com.cpmss.identity.auth.dto.LoginResponse;
 import com.cpmss.identity.auth.dto.RefreshRequest;
 import com.cpmss.identity.auth.dto.SetupRequest;
 import com.cpmss.people.common.EmailAddress;
+import com.cpmss.identity.common.IdentityErrorCode;
 import com.cpmss.platform.config.JwtUtils;
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +60,7 @@ public class AuthService {
      *
      * @param request the setup request with email and password
      * @return the JWT pair for the newly created admin
-     * @throws BusinessException if users already exist in the system
+     * @throws ApiException if users already exist in the system
      */
     @Transactional
     public LoginResponse setup(SetupRequest request) {
@@ -88,17 +88,17 @@ public class AuthService {
      *
      * @param request the login credentials
      * @return a JWT pair (access + refresh tokens)
-     * @throws ResourceNotFoundException if no active user with this email exists
-     * @throws BusinessException         if the password is incorrect
+     * @throws ApiException if no active user with this email exists or
+     *                      the password is incorrect
      */
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         EmailAddress loginEmail = EmailAddress.of(request.email());
         AppUser user = repository.findByEmailAndActiveTrue(loginEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
+                .orElseThrow(() -> new ApiException(IdentityErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new BusinessException("Invalid credentials");
+            throw new ApiException(IdentityErrorCode.CREDENTIALS_INVALID);
         }
 
         log.info("User logged in: {}", user.getEmail());
@@ -116,20 +116,20 @@ public class AuthService {
      *
      * @param request the refresh request containing the refresh token
      * @return a new JWT pair
-     * @throws BusinessException         if the token is invalid or not a refresh token
-     * @throws ResourceNotFoundException if the user no longer exists or is inactive
+     * @throws ApiException if the token is invalid, not a refresh token,
+     *                      or the user no longer exists or is inactive
      */
     @Transactional(readOnly = true)
     public LoginResponse refresh(RefreshRequest request) {
         Claims claims = jwtUtils.validateToken(request.refreshToken());
         if (claims == null || !jwtUtils.isRefreshToken(claims)) {
-            throw new BusinessException("Invalid or expired refresh token");
+            throw new ApiException(IdentityErrorCode.TOKEN_INVALID);
         }
 
         String email = jwtUtils.getEmail(claims);
         EmailAddress loginEmail = EmailAddress.of(email);
         AppUser user = repository.findByEmailAndActiveTrue(loginEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
+                .orElseThrow(() -> new ApiException(IdentityErrorCode.USER_NOT_FOUND));
 
         rules.validateAccountActive(user.isActive());
 

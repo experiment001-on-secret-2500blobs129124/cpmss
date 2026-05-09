@@ -1,6 +1,7 @@
 package com.cpmss.security.entersat;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -16,15 +17,14 @@ public class EntersAtRules {
      *
      * @param permitId        the permit UUID (may be {@code null})
      * @param manualPlateEntry the manually entered plate (may be {@code null})
-     * @throws BusinessException if neither or both are set
+     * @throws ApiException if neither or both are set
      */
     public void validateExactlyOneEntryMethod(UUID permitId, String manualPlateEntry) {
         boolean hasPermit = permitId != null;
         boolean hasManualPlate = manualPlateEntry != null && !manualPlateEntry.isBlank();
 
         if (hasPermit == hasManualPlate) {
-            throw new BusinessException(
-                    "Exactly one of permit or manual plate entry must be provided");
+            throw new ApiException(SecurityErrorCode.GUARD_NOT_ASSIGNED);
         }
     }
 }

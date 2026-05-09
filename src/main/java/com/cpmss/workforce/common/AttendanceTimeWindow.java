@@ -1,6 +1,6 @@
 package com.cpmss.workforce.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
@@ -39,20 +39,20 @@ public class AttendanceTimeWindow {
      *
      * @param checkInTime actual check-in time
      * @param checkOutTime actual check-out time
-     * @throws BusinessException if either time is missing or check-out is not
+     * @throws ApiException if either time is missing or check-out is not
      *                           after check-in
      */
     @JsonCreator
     public AttendanceTimeWindow(@JsonProperty("checkInTime") LocalTime checkInTime,
                                 @JsonProperty("checkOutTime") LocalTime checkOutTime) {
         if (checkInTime == null) {
-            throw new BusinessException("Check-in time is required");
+            throw new ApiException(WorkforceErrorCode.CHECKIN_REQUIRED);
         }
         if (checkOutTime == null) {
-            throw new BusinessException("Check-out time is required");
+            throw new ApiException(WorkforceErrorCode.CHECKOUT_REQUIRED);
         }
         if (!checkOutTime.isAfter(checkInTime)) {
-            throw new BusinessException("Check-out time must be after check-in time");
+            throw new ApiException(WorkforceErrorCode.CHECKOUT_BEFORE_CHECKIN);
         }
         this.checkInTime = checkInTime;
         this.checkOutTime = checkOutTime;
@@ -64,7 +64,7 @@ public class AttendanceTimeWindow {
      * @param checkInTime optional check-in time
      * @param checkOutTime optional check-out time
      * @return the attendance window, or {@code null} when both times are absent
-     * @throws BusinessException if only one time is present or ordering is invalid
+     * @throws ApiException if only one time is present or ordering is invalid
      */
     public static AttendanceTimeWindow optional(LocalTime checkInTime, LocalTime checkOutTime) {
         if (checkInTime == null && checkOutTime == null) {

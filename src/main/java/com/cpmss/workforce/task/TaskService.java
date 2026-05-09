@@ -1,9 +1,11 @@
 package com.cpmss.workforce.task;
 
-import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.task.dto.CreateTaskRequest;
 import com.cpmss.workforce.task.dto.TaskResponse;
 import com.cpmss.workforce.task.dto.UpdateTaskRequest;
@@ -55,12 +57,12 @@ public class TaskService {
      *
      * @param id the task's UUID primary key
      * @return the matching task response
-     * @throws ResourceNotFoundException if not found
+        * @throws ApiException if not found
      */
     @Transactional(readOnly = true)
     public TaskResponse getById(UUID id) {
         Task task = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task", id));
+                .orElseThrow(() -> new ApiException(WorkforceErrorCode.TASK_NOT_FOUND));
         return mapper.toResponse(task);
     }
 
@@ -80,12 +82,12 @@ public class TaskService {
      *
      * @param request the create request with title and department ID
      * @return the created task response
-     * @throws ResourceNotFoundException if the department does not exist
+        * @throws ApiException if the department does not exist
      */
     @Transactional
     public TaskResponse create(CreateTaskRequest request) {
         Department department = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         rules.validateTitleUniqueInDepartment(
                 request.taskTitle(),
@@ -107,15 +109,15 @@ public class TaskService {
      * @param id      the task's UUID
      * @param request the update request
      * @return the updated task response
-     * @throws ResourceNotFoundException if not found
+        * @throws ApiException if not found
      */
     @Transactional
     public TaskResponse update(UUID id, UpdateTaskRequest request) {
         Task task = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task", id));
+                .orElseThrow(() -> new ApiException(WorkforceErrorCode.TASK_NOT_FOUND));
 
         Department department = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         boolean titleChanged = !task.getTaskTitle().equals(request.taskTitle());
         boolean deptChanged = !task.getDepartment().getId().equals(request.departmentId());
@@ -138,12 +140,12 @@ public class TaskService {
      * Deletes a task by ID.
      *
      * @param id the task's UUID
-     * @throws ResourceNotFoundException if not found
+        * @throws ApiException if not found
      */
     @Transactional
     public void delete(UUID id) {
         Task task = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task", id));
+                .orElseThrow(() -> new ApiException(WorkforceErrorCode.TASK_NOT_FOUND));
         repository.delete(task);
         log.info("Task deleted: {}", task.getTaskTitle());
     }

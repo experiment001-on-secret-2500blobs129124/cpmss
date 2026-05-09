@@ -1,6 +1,7 @@
 package com.cpmss.workforce.assignedtask;
 
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.workforce.common.WorkforceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -22,14 +23,12 @@ public class AssignedTaskRules {
      * @param taskId         the task UUID
      * @param assignmentDate the assignment date
      * @param exists         whether a matching assignment already exists
-     * @throws ConflictException if a duplicate assignment exists
+     * @throws ApiException if a duplicate assignment exists
      */
     public void validateNoDuplicateAssignment(UUID staffId, UUID taskId,
                                                LocalDate assignmentDate, boolean exists) {
         if (exists) {
-            throw new ConflictException(
-                    "Staff " + staffId + " is already assigned task " + taskId
-                            + " on " + assignmentDate);
+            throw new ApiException(WorkforceErrorCode.ASSIGNED_TASK_DUPLICATE);
         }
     }
 }

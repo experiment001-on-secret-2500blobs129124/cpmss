@@ -3,7 +3,8 @@ package com.cpmss.workforce.taskmonthlysalary;
 import com.cpmss.finance.money.Money;
 import com.cpmss.platform.common.BaseAuditEntity;
 import com.cpmss.platform.common.value.YearMonthPeriod;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.workforce.common.WorkforceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.organization.department.Department;
 import com.cpmss.people.person.Person;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
@@ -132,7 +133,7 @@ public class TaskMonthlySalary extends BaseAuditEntity {
      */
     public void setPayrollPeriod(YearMonthPeriod payrollPeriod) {
         if (payrollPeriod == null) {
-            throw new BusinessException("Payroll period is required");
+            throw new ApiException(WorkforceErrorCode.PAYROLL_PERIOD_REQUIRED);
         }
         this.year = payrollPeriod.year();
         this.month = payrollPeriod.month();

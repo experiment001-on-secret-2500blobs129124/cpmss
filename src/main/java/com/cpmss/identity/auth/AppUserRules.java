@@ -1,7 +1,7 @@
 package com.cpmss.identity.auth;
 
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.identity.common.IdentityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -26,11 +26,11 @@ public class AppUserRules {
      *
      * @param actorId  the UUID of the user performing the action
      * @param targetId the UUID of the user being modified
-     * @throws ForbiddenException if actor and target are the same user
+     * @throws ApiException if actor and target are the same user
      */
     public void validateCannotChangeOwnRole(UUID actorId, UUID targetId) {
         if (actorId.equals(targetId)) {
-            throw new ForbiddenException("Cannot change your own system role");
+            throw new ApiException(IdentityErrorCode.SELF_ROLE_CHANGE_FORBIDDEN);
         }
     }
 
@@ -39,11 +39,11 @@ public class AppUserRules {
      *
      * @param actorId  the UUID of the user performing the action
      * @param targetId the UUID of the user being deactivated
-     * @throws ForbiddenException if actor and target are the same user
+     * @throws ApiException if actor and target are the same user
      */
     public void validateCannotDeactivateSelf(UUID actorId, UUID targetId) {
         if (actorId.equals(targetId)) {
-            throw new ForbiddenException("Cannot deactivate your own account");
+            throw new ApiException(IdentityErrorCode.SELF_DEACTIVATION_FORBIDDEN);
         }
     }
 
@@ -60,7 +60,7 @@ public class AppUserRules {
      *
      * @param actorRole  the system role of the user performing the action
      * @param targetRole the system role being assigned
-     * @throws ForbiddenException if the actor lacks authority for this role assignment
+     * @throws ApiException if the actor lacks authority for this role assignment
      */
     public void validateAuthorityLevel(SystemRole actorRole, SystemRole targetRole) {
         if (actorRole == SystemRole.ADMIN) {
@@ -71,8 +71,7 @@ public class AppUserRules {
         int targetLevel = authorityLevel(targetRole);
 
         if (targetLevel >= actorLevel) {
-            throw new ForbiddenException(
-                    "Cannot assign role " + targetRole + " — insufficient authority");
+            throw new ApiException(IdentityErrorCode.AUTHORITY_INSUFFICIENT);
         }
     }
 
@@ -84,16 +83,15 @@ public class AppUserRules {
      *
      * @param actorRole  the system role of the user performing the action
      * @param targetRole the system role being assigned to the new account
-     * @throws ForbiddenException if a DEPARTMENT_MANAGER tries to create
-     *                            a role other than STAFF or GATE_GUARD
+     * @throws ApiException if a DEPARTMENT_MANAGER tries to create
+     *                      a role other than STAFF or GATE_GUARD
      */
     public void validateDeptManagerCanOnlyCreateStaffOrGuard(SystemRole actorRole,
                                                              SystemRole targetRole) {
         if (actorRole == SystemRole.DEPARTMENT_MANAGER
                 && targetRole != SystemRole.STAFF
                 && targetRole != SystemRole.GATE_GUARD) {
-            throw new ForbiddenException(
-                    "Department managers can only create STAFF and GATE_GUARD accounts");
+            throw new ApiException(IdentityErrorCode.DEPT_MANAGER_SCOPE);
         }
     }
 
@@ -102,11 +100,11 @@ public class AppUserRules {
      *
      * @param email  the email to check
      * @param exists whether a user with this email already exists
-     * @throws BusinessException if the email is already in use
+     * @throws ApiException if the email is already in use
      */
     public void validateEmailUnique(String email, boolean exists) {
         if (exists) {
-            throw new BusinessException("Email '" + email + "' is already registered");
+            throw new ApiException(IdentityErrorCode.EMAIL_DUPLICATE);
         }
     }
 

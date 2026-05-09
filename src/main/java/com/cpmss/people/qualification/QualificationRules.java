@@ -1,5 +1,6 @@
 package com.cpmss.people.qualification;
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.platform.exception.ApiException;
 /**
  * Business rules for {@link Qualification} operations.
  *
@@ -11,11 +12,11 @@ public class QualificationRules {
      *
      * @param name   the desired qualification name
      * @param exists whether a qualification with this name already exists
-     * @throws ConflictException if the name is already in use
+     * @throws ApiException if the name is already in use
      */
     public void validateNameUnique(String name, boolean exists) {
         if (exists) {
-            throw new ConflictException("Qualification '" + name + "' already exists");
+            throw new ApiException(PeopleErrorCode.QUALIFICATION_DUPLICATE);
         }
     }
 }

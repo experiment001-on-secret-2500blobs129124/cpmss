@@ -1,6 +1,6 @@
 package com.cpmss.property.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -21,8 +21,10 @@ class PropertyValueTest {
     @Test
     void rejectsNonPositiveArea() {
         assertThatThrownBy(() -> new Area(BigDecimal.ZERO))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Area must be positive");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PropertyErrorCode.AREA_NOT_POSITIVE);
+                    assertThat(ex).hasMessage("Area must be positive");
+                });
     }
 
     @Test
@@ -35,8 +37,10 @@ class PropertyValueTest {
     @Test
     void rejectsNegativeCount() {
         assertThatThrownBy(() -> new NonNegativeCount(-1))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Count cannot be negative");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PropertyErrorCode.COUNT_NEGATIVE);
+                    assertThat(ex).hasMessage("Count cannot be negative");
+                });
     }
 
     @Test
@@ -52,8 +56,10 @@ class PropertyValueTest {
     @Test
     void rejectsIncompleteOperatingHours() {
         assertThatThrownBy(() -> new OperatingHours(LocalTime.of(8, 0), null))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Opening and closing time must be set together");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PropertyErrorCode.OPERATING_HOURS_INCOMPLETE);
+                    assertThat(ex).hasMessage("Opening and closing time must be set together");
+                });
     }
 
     @Test
@@ -61,8 +67,10 @@ class PropertyValueTest {
         assertThatThrownBy(() -> new OperatingHours(
                 LocalTime.of(8, 0),
                 LocalTime.of(8, 0)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Closing time must be after opening time");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PropertyErrorCode.OPERATING_HOURS_INVALID);
+                    assertThat(ex).hasMessage("Closing time must be after opening time");
+                });
     }
 
     @Test
@@ -78,11 +86,20 @@ class PropertyValueTest {
     @Test
     void rejectsUnknownPropertyVocabularyLabels() {
         assertThatThrownBy(() -> BuildingType.fromLabel("Mixed"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Building type must be one of: Residential, Non-Residential");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PropertyErrorCode.BUILDING_TYPE_INVALID);
+                    assertThat(ex).hasMessage("Building type is not allowed");
+                });
+        assertThatThrownBy(() -> FacilityManagementType.fromLabel("Hybrid"))
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PropertyErrorCode.FACILITY_MGMT_TYPE_INVALID);
+                    assertThat(ex).hasMessage("Facility management type is not allowed");
+                });
         assertThatThrownBy(() -> UnitStatus.fromLabel("Blocked"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Unit status must be one of: Vacant, Occupied, Under Maintenance, Reserved");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PropertyErrorCode.UNIT_STATUS_INVALID);
+                    assertThat(ex).hasMessage("Unit status is not allowed");
+                });
     }
 
     @Test

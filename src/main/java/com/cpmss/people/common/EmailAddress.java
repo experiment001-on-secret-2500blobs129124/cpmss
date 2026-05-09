@@ -1,6 +1,6 @@
 package com.cpmss.people.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -29,7 +29,7 @@ public record EmailAddress(String value) {
      * Creates an email address with the login-column length limit.
      *
      * @param value the raw email address
-     * @throws BusinessException if the email is missing, too long, or invalid
+     * @throws ApiException if the email is missing, too long, or invalid
      */
     public EmailAddress {
         value = normalize(value, MAX_LOGIN_LENGTH);
@@ -40,7 +40,7 @@ public record EmailAddress(String value) {
      *
      * @param value the raw email address
      * @return the normalized email address
-     * @throws BusinessException if the email is missing, too long, or invalid
+     * @throws ApiException if the email is missing, too long, or invalid
      */
     public static EmailAddress of(String value) {
         return new EmailAddress(value);
@@ -51,7 +51,7 @@ public record EmailAddress(String value) {
      *
      * @param value the raw email address
      * @return the normalized contact email address
-     * @throws BusinessException if the email is missing, too long, or invalid
+     * @throws ApiException if the email is missing, too long, or invalid
      */
     public static EmailAddress contact(String value) {
         return new EmailAddress(normalize(value, MAX_CONTACT_LENGTH));
@@ -59,15 +59,15 @@ public record EmailAddress(String value) {
 
     private static String normalize(String value, int maxLength) {
         if (value == null || value.isBlank()) {
-            throw new BusinessException("Email address is required");
+            throw new ApiException(PeopleErrorCode.EMAIL_REQUIRED);
         }
 
         String normalized = value.strip().toLowerCase(Locale.ROOT);
         if (normalized.length() > maxLength) {
-            throw new BusinessException("Email address is too long");
+            throw new ApiException(PeopleErrorCode.EMAIL_TOO_LONG);
         }
         if (!BASIC_EMAIL_PATTERN.matcher(normalized).matches()) {
-            throw new BusinessException("Email address is invalid");
+            throw new ApiException(PeopleErrorCode.EMAIL_INVALID);
         }
         return normalized;
     }

@@ -179,7 +179,7 @@ class SomeServiceTest {
     void shouldThrowWhenNotFound() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.getById(id));
+        assertThrows(ApiException.class, () -> service.getById(id));
     }
 }
 ```

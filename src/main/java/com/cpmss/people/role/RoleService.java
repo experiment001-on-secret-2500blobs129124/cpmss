@@ -1,7 +1,8 @@
 package com.cpmss.people.role;
 
 import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.people.role.dto.CreateRoleRequest;
 import com.cpmss.people.role.dto.RoleResponse;
 import com.cpmss.people.role.dto.UpdateRoleRequest;
@@ -47,12 +48,12 @@ public class RoleService {
      *
      * @param id the role's UUID primary key
      * @return the matching role response
-     * @throws ResourceNotFoundException if no role exists with this ID
+     * @throws ApiException if no role exists with this ID
      */
     @Transactional(readOnly = true)
     public RoleResponse getById(UUID id) {
         Role role = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Role", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.ROLE_NOT_FOUND));
         return mapper.toResponse(role);
     }
 
@@ -88,12 +89,12 @@ public class RoleService {
      * @param id      the role's UUID
      * @param request the update request with the new name
      * @return the updated role response
-     * @throws ResourceNotFoundException if no role exists with this ID
+     * @throws ApiException if no role exists with this ID
      */
     @Transactional
     public RoleResponse update(UUID id, UpdateRoleRequest request) {
         Role role = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Role", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.ROLE_NOT_FOUND));
         if (!role.getRoleName().equals(request.roleName())) {
             rules.validateNameUnique(request.roleName(), repository.existsByRoleName(request.roleName()));
         }
@@ -107,12 +108,12 @@ public class RoleService {
      * Deletes a role by ID.
      *
      * @param id the role's UUID
-     * @throws ResourceNotFoundException if no role exists with this ID
+     * @throws ApiException if no role exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Role role = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Role", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.ROLE_NOT_FOUND));
         repository.delete(role);
         log.info("Role deleted: {}", role.getRoleName());
     }

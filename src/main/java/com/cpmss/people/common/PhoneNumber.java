@@ -1,6 +1,6 @@
 package com.cpmss.people.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -35,7 +35,7 @@ public class PhoneNumber {
      *
      * @param countryCode the country dialing code
      * @param phone the phone number
-     * @throws BusinessException if either value is missing or too long
+     * @throws ApiException if either value is missing or too long
      */
     public PhoneNumber(String countryCode, String phone) {
         this.countryCode = normalize(countryCode, 5, "Phone country code");
@@ -44,12 +44,12 @@ public class PhoneNumber {
 
     private static String normalize(String value, int maxLength, String label) {
         if (value == null || value.isBlank()) {
-            throw new BusinessException(label + " is required");
+            throw new ApiException(PeopleErrorCode.PHONE_REQUIRED);
         }
 
         String normalized = value.strip();
         if (normalized.length() > maxLength) {
-            throw new BusinessException(label + " is too long");
+            throw new ApiException(PeopleErrorCode.PHONE_TOO_LONG);
         }
         return normalized;
     }

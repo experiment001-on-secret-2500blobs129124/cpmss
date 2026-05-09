@@ -1,6 +1,6 @@
 package com.cpmss.performance.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -40,17 +40,16 @@ public enum PerformanceRating {
      *
      * @param label the performance rating label
      * @return the matching rating
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     public static PerformanceRating fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Performance rating is required");
+            throw new ApiException(PerformanceErrorCode.PERFORMANCE_RATING_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Performance rating must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(PerformanceErrorCode.PERFORMANCE_RATING_INVALID));
     }
 
     /**
@@ -58,7 +57,7 @@ public enum PerformanceRating {
      *
      * @param label the optional performance rating label
      * @return the matching rating, or {@code null} when absent
-     * @throws BusinessException if the label is blank or unsupported
+     * @throws ApiException if the label is blank or unsupported
      */
     public static PerformanceRating fromNullableLabel(String label) {
         return label != null ? fromLabel(label) : null;

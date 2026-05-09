@@ -2,7 +2,7 @@ package com.cpmss.property.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.math.BigDecimal;
 
@@ -20,15 +20,15 @@ public record Area(BigDecimal value) {
     /**
      * Creates an area value.
      *
-     * @throws BusinessException if the area is missing, zero, or negative
+     * @throws ApiException if the area is missing, zero, or negative
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public Area {
         if (value == null) {
-            throw new BusinessException("Area is required");
+            throw new ApiException(PropertyErrorCode.AREA_REQUIRED);
         }
         if (value.signum() <= 0) {
-            throw new BusinessException("Area must be positive");
+            throw new ApiException(PropertyErrorCode.AREA_NOT_POSITIVE);
         }
     }
 

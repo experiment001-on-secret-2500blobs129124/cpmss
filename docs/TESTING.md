@@ -44,7 +44,7 @@ class MoneyTest {
         Money egp = Money.of("10.00", "EGP");
         Money usd = Money.of("10.00", "USD");
 
-        assertThrows(BusinessException.class, () -> egp.add(usd));
+        assertThrows(ApiException.class, () -> egp.add(usd));
     }
 }
 ```
@@ -141,7 +141,7 @@ collaborators.
 Cover:
 
 - right rule method is called with loaded domain data,
-- missing dependency raises `ResourceNotFoundException`,
+- missing dependency raises `ApiException` with a not-found error code,
 - ownership denial happens before mutation,
 - duplicate/conflict path,
 - service returns stable DTO shape.

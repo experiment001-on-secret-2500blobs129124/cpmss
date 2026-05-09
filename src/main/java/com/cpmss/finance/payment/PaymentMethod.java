@@ -1,6 +1,7 @@
 package com.cpmss.finance.payment;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -44,20 +45,19 @@ public enum PaymentMethod {
      * @param label the optional payment method label
      * @return the matching payment method, or {@code null} when the label is
      *         {@code null}
-     * @throws BusinessException if the label is blank or unsupported
+     * @throws ApiException if the label is blank or unsupported
      */
     public static PaymentMethod fromNullableLabel(String label) {
         if (label == null) {
             return null;
         }
         if (label.isBlank()) {
-            throw new BusinessException("Payment method cannot be blank");
+            throw new ApiException(FinanceErrorCode.PAYMENT_METHOD_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Payment method must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYMENT_METHOD_INVALID));
     }
 
     /**

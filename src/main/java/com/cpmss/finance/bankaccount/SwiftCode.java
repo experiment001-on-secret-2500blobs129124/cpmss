@@ -1,6 +1,7 @@
 package com.cpmss.finance.bankaccount;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -19,13 +20,13 @@ public record SwiftCode(String value) {
     /**
      * Creates a validated SWIFT/BIC code.
      *
-     * @throws BusinessException if the code is missing or malformed
+     * @throws ApiException if the code is missing or malformed
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public SwiftCode {
         value = normalize(value);
         if (!value.matches("[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?")) {
-            throw new BusinessException("SWIFT/BIC code format is invalid");
+            throw new ApiException(FinanceErrorCode.BANK_SWIFT_INVALID);
         }
     }
 
@@ -51,7 +52,7 @@ public record SwiftCode(String value) {
 
     private static String normalize(String value) {
         if (value == null || value.isBlank()) {
-            throw new BusinessException("SWIFT/BIC code is required");
+            throw new ApiException(FinanceErrorCode.BANK_SWIFT_REQUIRED);
         }
         return value.replaceAll("\\s+", "").toUpperCase(Locale.ROOT);
     }

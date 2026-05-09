@@ -3,8 +3,8 @@ package com.cpmss.people.person;
 import com.cpmss.people.common.EgyptianNationalId;
 import com.cpmss.people.common.Gender;
 import com.cpmss.people.common.PassportNumber;
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,11 +20,11 @@ public class PersonRules {
      * Validates that at least one role ID is provided.
      *
      * @param roleIds the list of role UUIDs
-     * @throws BusinessException if the list is empty
+     * @throws ApiException if the list is empty
      */
     public void validateAtLeastOneRole(List<UUID> roleIds) {
         if (roleIds == null || roleIds.isEmpty()) {
-            throw new BusinessException("A person must have at least one role");
+            throw new ApiException(PeopleErrorCode.PERSON_ROLE_REQUIRED);
         }
     }
 
@@ -33,7 +33,7 @@ public class PersonRules {
      *
      * @param gender the gender string
      * @return the typed gender, or {@code null} when absent
-     * @throws BusinessException if invalid
+     * @throws ApiException if invalid
      */
     public Gender validateGender(String gender) {
         return Gender.fromNullableLabel(gender);
@@ -45,7 +45,7 @@ public class PersonRules {
      * @param nationality        the person's nationality
      * @param egyptianNationalId the national ID
      * @return the typed national ID, or {@code null} when not required
-     * @throws BusinessException if an Egyptian person has no valid national ID
+     * @throws ApiException if an Egyptian person has no valid national ID
      */
     public EgyptianNationalId validateEgyptianNationalId(String nationality, String egyptianNationalId) {
         return EgyptianNationalId.forNationality(nationality, egyptianNationalId);
@@ -56,11 +56,11 @@ public class PersonRules {
      *
      * @param passportNo the passport number
      * @param exists     whether a person with this passport already exists
-     * @throws ConflictException if duplicate
+     * @throws ApiException if duplicate
      */
     public void validatePassportUnique(PassportNumber passportNo, boolean exists) {
         if (exists) {
-            throw new ConflictException("Passport number '" + passportNo.value() + "' is already registered");
+            throw new ApiException(PeopleErrorCode.PASSPORT_DUPLICATE);
         }
     }
 }

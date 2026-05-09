@@ -1,10 +1,12 @@
 package com.cpmss.performance.staffkpirecord;
 
+import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.performance.kpipolicy.KpiPolicy;
 import com.cpmss.performance.kpipolicy.KpiPolicyRepository;
+import com.cpmss.performance.common.PerformanceErrorCode;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.performance.staffkpimonthlysummary.StaffKpiMonthlySummary;
@@ -15,7 +17,7 @@ import com.cpmss.performance.common.KpiScore;
 import com.cpmss.performance.staffkpirecord.dto.CreateStaffKpiRecordRequest;
 import com.cpmss.performance.staffkpirecord.dto.StaffKpiRecordResponse;
 import com.cpmss.platform.common.value.YearMonthPeriod;
-import com.cpmss.platform.util.AuthUtils;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -84,23 +86,20 @@ public class KpiService {
      *
      * @param request the KPI record details
      * @return the created KPI record response
-     * @throws ResourceNotFoundException if the referenced staff, department,
-     *                                   policy, or recorder does not exist
-     * @throws com.cpmss.platform.exception.BusinessException if the score is
-     *                                                        invalid or the
-     *                                                        policy is not
-     *                                                        active yet
+     * @throws ApiException if the referenced staff, department, policy, or
+     *                      recorder does not exist, or if the score or policy
+     *                      state is invalid
      */
     @Transactional
     public StaffKpiRecordResponse recordDailyKpi(CreateStaffKpiRecordRequest request) {
         Person staff = personRepository.findById(request.staffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Department department = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         KpiPolicy policy = kpiPolicyRepository.findById(request.kpiPolicyId())
-                .orElseThrow(() -> new ResourceNotFoundException("KpiPolicy", request.kpiPolicyId()));
+                .orElseThrow(() -> new ApiException(PerformanceErrorCode.KPI_POLICY_NOT_FOUND));
         Person recordedBy = personRepository.findById(request.recordedById())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.recordedById()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
         recordRules.validatePolicyActiveForDate(policy, request.recordDate());
         KpiScore score = KpiScore.of(request.kpiScore());
@@ -148,10 +147,8 @@ public class KpiService {
      * @param month        the month (1-12)
      * @param closedById   the manager/HR who is closing
      * @return list of created summary responses
-     * @throws ResourceNotFoundException if the department or closer does not
-     *                                   exist
-     * @throws com.cpmss.platform.exception.BusinessException if the closer or
-     *                                                        period is invalid
+          * @throws ApiException if the department or closer does not exist, or the
+          *                      closer/period is invalid
      */
     @Transactional
     public List<StaffKpiMonthlySummaryResponse> closeMonthlyKpi(
@@ -161,9 +158,9 @@ public class KpiService {
         YearMonthPeriod period = YearMonthPeriod.of(year, month);
 
         Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         Person closedBy = personRepository.findById(closedById)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", closedById));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
         LocalDate from = period.firstDay();
         LocalDate to = period.lastDay();

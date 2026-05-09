@@ -1,8 +1,9 @@
 package com.cpmss.communication.internalreport;
 
+import com.cpmss.communication.common.CommunicationErrorCode;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -43,18 +44,17 @@ public enum ReportStatus {
      *
      * @param label the status label
      * @return the matching status
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     @JsonCreator
     public static ReportStatus fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Report status is required");
+            throw new ApiException(CommunicationErrorCode.REPORT_STATUS_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Report status must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(CommunicationErrorCode.REPORT_STATUS_INVALID));
     }
 
     /**

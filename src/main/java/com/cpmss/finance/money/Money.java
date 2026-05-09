@@ -2,7 +2,8 @@ package com.cpmss.finance.money;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -51,17 +52,17 @@ public class Money implements Serializable {
      *
      * @param amount the monetary amount; must be zero or greater
      * @param currency the ISO-4217 currency code
-     * @throws BusinessException if the amount is missing or negative, or if
-     *                           the currency is missing or invalid
+     * @throws ApiException if the amount is missing or negative, or if
+     *                      the currency is missing or invalid
      */
     @JsonCreator
     public Money(@JsonProperty("amount") BigDecimal amount,
                  @JsonProperty("currency") String currency) {
         if (amount == null) {
-            throw new BusinessException("Money amount is required");
+            throw new ApiException(FinanceErrorCode.MONEY_AMOUNT_REQUIRED);
         }
         if (amount.signum() < 0) {
-            throw new BusinessException("Money amount cannot be negative");
+            throw new ApiException(FinanceErrorCode.MONEY_AMOUNT_NEGATIVE);
         }
         this.amount = amount;
         this.currency = normalizeCurrency(currency);
@@ -76,13 +77,13 @@ public class Money implements Serializable {
      * @param amount the monetary amount; must be greater than zero
      * @param currency the ISO-4217 currency code
      * @return a normalized money value
-     * @throws BusinessException if the amount is missing, zero, or negative,
-     *                           or if the currency is missing or invalid
+     * @throws ApiException if the amount is missing, zero, or negative,
+     *                      or if the currency is missing or invalid
      */
     public static Money positive(BigDecimal amount, String currency) {
         Money money = new Money(amount, currency);
         if (money.amount.signum() <= 0) {
-            throw new BusinessException("Money amount must be positive");
+            throw new ApiException(FinanceErrorCode.MONEY_AMOUNT_NOT_POSITIVE);
         }
         return money;
     }
@@ -92,15 +93,15 @@ public class Money implements Serializable {
      *
      * @param other the money value to add
      * @return a new money value containing the combined amount
-     * @throws BusinessException if {@code other} is missing or uses a
-     *                           different currency
+     * @throws ApiException if {@code other} is missing or uses a
+     *                      different currency
      */
     public Money add(Money other) {
         if (other == null) {
-            throw new BusinessException("Money to add is required");
+            throw new ApiException(FinanceErrorCode.MONEY_ADD_REQUIRED);
         }
         if (!currency.equals(other.currency)) {
-            throw new BusinessException("Cannot add money with different currencies");
+            throw new ApiException(FinanceErrorCode.MONEY_CURRENCY_MISMATCH);
         }
         return new Money(amount.add(other.amount), currency);
     }
@@ -110,19 +111,19 @@ public class Money implements Serializable {
      *
      * @param currency the currency code supplied by an API request or entity
      * @return the uppercase ISO-4217 currency code
-     * @throws BusinessException if the currency is missing, blank, or not a
-     *                           valid ISO-4217 code
+     * @throws ApiException if the currency is missing, blank, or not a
+     *                      valid ISO-4217 code
      */
     private static String normalizeCurrency(String currency) {
         if (currency == null || currency.isBlank()) {
-            throw new BusinessException("Money currency is required");
+            throw new ApiException(FinanceErrorCode.MONEY_CURRENCY_REQUIRED);
         }
 
         String normalized = currency.strip().toUpperCase(Locale.ROOT);
         try {
             Currency.getInstance(normalized);
         } catch (IllegalArgumentException ex) {
-            throw new BusinessException("Money currency must be a valid ISO-4217 code");
+            throw new ApiException(FinanceErrorCode.MONEY_CURRENCY_INVALID);
         }
         return normalized;
     }

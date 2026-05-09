@@ -1,6 +1,6 @@
 package com.cpmss.leasing.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.time.LocalDate;
 
@@ -19,15 +19,15 @@ public record ResidencyPeriod(LocalDate moveInDate, LocalDate moveOutDate) {
     /**
      * Creates a residency period.
      *
-     * @throws BusinessException if the move-in date is missing or the
+     * @throws ApiException if the move-in date is missing or the
      *                           move-out date is not after it
      */
     public ResidencyPeriod {
         if (moveInDate == null) {
-            throw new BusinessException("Move-in date is required");
+            throw new ApiException(LeasingErrorCode.MOVE_IN_DATE_REQUIRED);
         }
         if (moveOutDate != null && !moveOutDate.isAfter(moveInDate)) {
-            throw new BusinessException("Move-out date must be after move-in date");
+            throw new ApiException(LeasingErrorCode.MOVE_OUT_DATE_INVALID);
         }
     }
 }

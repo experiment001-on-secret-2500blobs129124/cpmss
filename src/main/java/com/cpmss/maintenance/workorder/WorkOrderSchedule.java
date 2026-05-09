@@ -1,8 +1,9 @@
 package com.cpmss.maintenance.workorder;
 
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -38,13 +39,13 @@ public class WorkOrderSchedule {
      *
      * @param dateScheduled the optional scheduled date
      * @param dateCompleted the optional completed date
-     * @throws BusinessException if completion is before scheduling
+     * @throws ApiException if completion is before scheduling
      */
     @JsonCreator
     public WorkOrderSchedule(@JsonProperty("dateScheduled") LocalDate dateScheduled,
                              @JsonProperty("dateCompleted") LocalDate dateCompleted) {
         if (dateScheduled != null && dateCompleted != null && dateCompleted.isBefore(dateScheduled)) {
-            throw new BusinessException("Work order completion date cannot be before scheduled date");
+            throw new ApiException(MaintenanceErrorCode.WORK_ORDER_SCHEDULE_INVALID);
         }
         this.dateScheduled = dateScheduled;
         this.dateCompleted = dateCompleted;

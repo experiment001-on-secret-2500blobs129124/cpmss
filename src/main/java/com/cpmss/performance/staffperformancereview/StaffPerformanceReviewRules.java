@@ -1,7 +1,7 @@
 package com.cpmss.performance.staffperformancereview;
 
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.performance.common.PerformanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.performance.common.PerformanceRating;
 
 import java.util.UUID;
@@ -20,11 +20,11 @@ public class StaffPerformanceReviewRules {
      *
      * @param staffId    the staff member being reviewed
      * @param reviewerId the reviewing manager
-     * @throws ForbiddenException if staff and reviewer are the same person
+     * @throws ApiException if staff and reviewer are the same person
      */
     public void validateReviewerIsNotSelf(UUID staffId, UUID reviewerId) {
         if (staffId.equals(reviewerId)) {
-            throw new ForbiddenException("A staff member cannot review themselves");
+            throw new ApiException(PerformanceErrorCode.SELF_REVIEW_FORBIDDEN);
         }
     }
 
@@ -38,7 +38,7 @@ public class StaffPerformanceReviewRules {
      * @param resultedInPromotion  whether the review resulted in a promotion
      * @param resultedInRaise      whether the review resulted in a raise
      * @return the typed performance rating, or {@code null} when absent
-     * @throws BusinessException if flags are inconsistent with rating
+     * @throws ApiException if flags are inconsistent with rating
      */
     public PerformanceRating validatePromotionConsistency(String overallRating,
                                                           boolean resultedInPromotion,
@@ -46,8 +46,7 @@ public class StaffPerformanceReviewRules {
         PerformanceRating rating = PerformanceRating.fromNullableLabel(overallRating);
         if (rating == PerformanceRating.POOR
                 && (resultedInPromotion || resultedInRaise)) {
-            throw new BusinessException(
-                    "A 'Poor' rating cannot result in a promotion or raise");
+            throw new ApiException(PerformanceErrorCode.POOR_RATING_INCONSISTENT);
         }
         return rating;
     }

@@ -1,6 +1,6 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -29,7 +29,7 @@ class DateRangeTest {
     @Test
     void rejectsEndBeforeStart() {
         assertThatThrownBy(() -> new DateRange(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 1, 31)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("End date cannot be before start date");
     }
 }

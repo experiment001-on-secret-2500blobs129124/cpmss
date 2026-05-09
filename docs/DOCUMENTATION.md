@@ -53,7 +53,7 @@ Rules:
  *
  * @param id the person's UUID primary key
  * @return the matching person entity
- * @throws ResourceNotFoundException if no person exists with this ID
+ * @throws ApiException if no person exists with this ID
  */
 public Person getById(UUID id) { ... }
 ```
@@ -67,7 +67,7 @@ public Person getById(UUID id) { ... }
  *
  * @param person the person to validate
  * @param role the role being assigned
- * @throws BusinessException if the role is already assigned
+ * @throws ApiException if the role is already assigned
  */
 public void validateCanAssign(Person person, Role role) { ... }
 ```
@@ -259,7 +259,7 @@ Javadoc always goes **above** the element — no trailing comment syntax.
 | `<p>` | Extended description | `<p>Loads from cache first.` |
 | `@param name desc` | Parameter | `@param id the person's UUID` |
 | `@return desc` | Return value | `@return the matching entity` |
-| `@throws Type desc` | Exception | `@throws ResourceNotFoundException if not found` |
+| `@throws Type desc` | Exception | `@throws ApiException if not found` |
 | `@see` | Cross-reference | `@see PersonRules#validateCanAssign` |
 | `{@link Class}` | Inline reference | `Delegates to {@link PersonRules}` |
 | `{@code expr}` | Inline code | `Returns {@code null} if empty` |

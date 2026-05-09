@@ -1,9 +1,11 @@
 package com.cpmss.security.gate;
 
-import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.property.compound.Compound;
 import com.cpmss.property.compound.CompoundRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.property.common.PropertyErrorCode;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
 import com.cpmss.security.gate.dto.CreateGateRequest;
 import com.cpmss.security.gate.dto.GateResponse;
 import com.cpmss.security.gate.dto.UpdateGateRequest;
@@ -54,12 +56,12 @@ public class GateService {
      *
      * @param id the gate's UUID primary key
      * @return the matching gate response
-     * @throws ResourceNotFoundException if no gate exists with this ID
+     * @throws ApiException if no gate exists with this ID
      */
     @Transactional(readOnly = true)
     public GateResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Gate", id)));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND)));
     }
 
     /**
@@ -78,12 +80,12 @@ public class GateService {
      *
      * @param request the create request with gate details and compound ID
      * @return the created gate response
-     * @throws ResourceNotFoundException if the compound does not exist
+     * @throws ApiException if the compound does not exist
      */
     @Transactional
     public GateResponse create(CreateGateRequest request) {
         Compound compound = compoundRepository.findById(request.compoundId())
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", request.compoundId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
 
         rules.validateGateNoUnique(request.gateNo(), repository.existsByGateNo(request.gateNo()));
 
@@ -105,15 +107,15 @@ public class GateService {
      * @param id      the gate's UUID
      * @param request the update request with new values
      * @return the updated gate response
-     * @throws ResourceNotFoundException if the gate or compound does not exist
+     * @throws ApiException if the gate or compound does not exist
      */
     @Transactional
     public GateResponse update(UUID id, UpdateGateRequest request) {
         Gate gate = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Gate", id));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND));
 
         Compound compound = compoundRepository.findById(request.compoundId())
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", request.compoundId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
 
         if (!gate.getGateNo().equals(request.gateNo())) {
             rules.validateGateNoUnique(request.gateNo(), repository.existsByGateNo(request.gateNo()));
@@ -133,12 +135,12 @@ public class GateService {
      * Deletes a gate by ID.
      *
      * @param id the gate's UUID
-     * @throws ResourceNotFoundException if no gate exists with this ID
+     * @throws ApiException if no gate exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Gate gate = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Gate", id));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND));
         repository.delete(gate);
         log.info("Gate deleted: {}", gate.getGateNo());
     }

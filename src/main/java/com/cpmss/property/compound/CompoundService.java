@@ -1,10 +1,11 @@
 package com.cpmss.property.compound;
 
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.property.common.PropertyErrorCode;
 import com.cpmss.property.compound.dto.CompoundResponse;
 import com.cpmss.property.compound.dto.CreateCompoundRequest;
 import com.cpmss.property.compound.dto.UpdateCompoundRequest;
-import com.cpmss.platform.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -46,12 +47,12 @@ public class CompoundService {
      *
      * @param id the compound's UUID primary key
      * @return the matching compound response
-     * @throws ResourceNotFoundException if no compound exists with this ID
+     * @throws ApiException if no compound exists with this ID
      */
     @Transactional(readOnly = true)
     public CompoundResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", id)));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND)));
     }
 
     /**
@@ -85,12 +86,12 @@ public class CompoundService {
      * @param id      the compound's UUID
      * @param request the update request with new values
      * @return the updated compound response
-     * @throws ResourceNotFoundException if no compound exists with this ID
+     * @throws ApiException if no compound exists with this ID
      */
     @Transactional
     public CompoundResponse update(UUID id, UpdateCompoundRequest request) {
         Compound compound = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
         compound.setCompoundName(request.compoundName());
         compound.setCountry(request.country());
         compound.setCity(request.city());
@@ -104,12 +105,12 @@ public class CompoundService {
      * Deletes a compound by ID.
      *
      * @param id the compound's UUID
-     * @throws ResourceNotFoundException if no compound exists with this ID
+     * @throws ApiException if no compound exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Compound compound = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
         repository.delete(compound);
         log.info("Compound deleted: {}", compound.getCompoundName());
     }

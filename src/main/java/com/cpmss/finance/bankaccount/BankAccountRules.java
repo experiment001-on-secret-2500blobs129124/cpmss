@@ -1,6 +1,7 @@
 package com.cpmss.finance.bankaccount;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -23,7 +24,7 @@ public class BankAccountRules {
      * @param compoundId     the compound owner UUID (may be {@code null})
      * @param accountOwnerId the person owner UUID (may be {@code null})
      * @param companyId      the company owner UUID (may be {@code null})
-     * @throws BusinessException if zero or more than one owner is set
+     * @throws ApiException if zero or more than one owner is set
      */
     public void validateExactlyOneOwner(UUID compoundId, UUID accountOwnerId, UUID companyId) {
         int count = 0;
@@ -32,8 +33,7 @@ public class BankAccountRules {
         if (companyId != null) count++;
 
         if (count != 1) {
-            throw new BusinessException(
-                    "A bank account must have exactly one owner (compound, person, or company)");
+            throw new ApiException(FinanceErrorCode.BANK_ACCOUNT_OWNER_INVALID);
         }
     }
 }

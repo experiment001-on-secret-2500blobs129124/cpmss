@@ -1,8 +1,9 @@
 package com.cpmss.maintenance.workorder;
 
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -65,18 +66,17 @@ public enum WorkOrderStatus {
      *
      * @param label the status label
      * @return the matching status
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     @JsonCreator
     public static WorkOrderStatus fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Work order status is required");
+            throw new ApiException(MaintenanceErrorCode.WORK_ORDER_STATUS_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Work order status must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.WORK_ORDER_STATUS_INVALID));
     }
 
     /**

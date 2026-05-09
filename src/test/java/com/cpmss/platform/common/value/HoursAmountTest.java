@@ -1,6 +1,6 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -20,7 +20,7 @@ class HoursAmountTest {
     @Test
     void rejectsNegativeHoursAmount() {
         assertThatThrownBy(() -> HoursAmount.positive(new BigDecimal("-1.00")))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Hours amount must be positive");
     }
 

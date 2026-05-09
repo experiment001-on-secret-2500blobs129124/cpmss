@@ -1,7 +1,7 @@
 package com.cpmss.hr.staffprofile;
 
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -19,12 +19,11 @@ public class StaffProfileRules {
      *
      * @param personId the person's UUID
      * @param exists   whether a profile already exists
-     * @throws ConflictException if a profile already exists for this person
+     * @throws ApiException if a profile already exists for this person
      */
     public void validateProfileNotExists(UUID personId, boolean exists) {
         if (exists) {
-            throw new ConflictException(
-                    "Staff profile already exists for person " + personId);
+            throw new ApiException(HrErrorCode.STAFF_PROFILE_DUPLICATE);
         }
     }
 }

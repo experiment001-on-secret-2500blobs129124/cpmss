@@ -42,7 +42,7 @@ public class PersonPhone {
      *
      * @param countryCode the country dialing code
      * @param phone the phone number
-     * @throws com.cpmss.platform.exception.BusinessException if either value is
+     * @throws com.cpmss.platform.exception.ApiException if either value is
      *                                                        missing or too long
      */
     public PersonPhone(String countryCode, String phone) {

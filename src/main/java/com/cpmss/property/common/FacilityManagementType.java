@@ -2,7 +2,7 @@ package com.cpmss.property.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -39,18 +39,17 @@ public enum FacilityManagementType {
      *
      * @param label the management type label
      * @return the matching type
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     @JsonCreator
     public static FacilityManagementType fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Facility management type is required");
+            throw new ApiException(PropertyErrorCode.FACILITY_MGMT_TYPE_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Facility management type must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_MGMT_TYPE_INVALID));
     }
 
     /**

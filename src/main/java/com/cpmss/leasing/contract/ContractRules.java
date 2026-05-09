@@ -1,7 +1,7 @@
 package com.cpmss.leasing.contract;
 
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.leasing.common.LeasingErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -22,7 +22,7 @@ public class ContractRules {
      *
      * @param unitId     the unit UUID (may be {@code null})
      * @param facilityId the facility UUID (may be {@code null})
-     * @throws BusinessException if zero or both targets are set
+     * @throws ApiException if zero or both targets are set
      */
     public void validateExactlyOneTarget(UUID unitId, UUID facilityId) {
         int count = 0;
@@ -30,8 +30,7 @@ public class ContractRules {
         if (facilityId != null) count++;
 
         if (count != 1) {
-            throw new BusinessException(
-                    "A contract must cover exactly one target (unit or facility)");
+            throw new ApiException(LeasingErrorCode.CONTRACT_TARGET_INVALID);
         }
     }
 
@@ -40,12 +39,11 @@ public class ContractRules {
      *
      * @param contractReference the desired reference
      * @param exists            whether a contract with this reference already exists
-     * @throws ConflictException if the reference is already registered
+     * @throws ApiException if the reference is already registered
      */
     public void validateReferenceUnique(String contractReference, boolean exists) {
         if (exists) {
-            throw new ConflictException(
-                    "Contract reference '" + contractReference + "' is already registered");
+            throw new ApiException(LeasingErrorCode.CONTRACT_REFERENCE_DUPLICATE);
         }
     }
 }

@@ -14,7 +14,8 @@ import com.cpmss.organization.departmentmanagers.DepartmentManagers;
 import com.cpmss.organization.departmentmanagers.DepartmentManagersRepository;
 import com.cpmss.organization.departmentmanagers.dto.CreateDeptManagerRequest;
 import com.cpmss.organization.departmentmanagers.dto.DeptManagerResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.organization.common.OrganizationErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import org.slf4j.Logger;
@@ -77,12 +78,12 @@ public class DepartmentService {
      *
      * @param id the department's UUID primary key
      * @return the matching department response
-     * @throws ResourceNotFoundException if no department exists with this ID
+     * @throws ApiException if no department exists with this ID
      */
     @Transactional(readOnly = true)
     public DepartmentResponse getById(UUID id) {
         Department department = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", id));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         return mapper.toResponse(department);
     }
 
@@ -121,12 +122,12 @@ public class DepartmentService {
      * @param id      the department's UUID
      * @param request the update request with the new name
      * @return the updated department response
-     * @throws ResourceNotFoundException if no department exists with this ID
+     * @throws ApiException if no department exists with this ID
      */
     @Transactional
     public DepartmentResponse update(UUID id, UpdateDepartmentRequest request) {
         Department department = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", id));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         if (!department.getDepartmentName().equals(request.departmentName())) {
             rules.validateNameUnique(
@@ -144,12 +145,12 @@ public class DepartmentService {
      * Deletes a department by ID.
      *
      * @param id the department's UUID
-     * @throws ResourceNotFoundException if no department exists with this ID
+     * @throws ApiException if no department exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Department department = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", id));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         repository.delete(department);
         log.info("Department deleted: {}", department.getDepartmentName());
     }
@@ -165,15 +166,15 @@ public class DepartmentService {
      * @param departmentId the department's UUID
      * @param request      the location details
      * @return the created location history response
-     * @throws ResourceNotFoundException if the department or building does not exist
+     * @throws ApiException if the department or building does not exist
      */
     @Transactional
     public DeptLocationHistoryResponse addLocationHistory(
             UUID departmentId, CreateDeptLocationHistoryRequest request) {
         Department department = repository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         Building building = buildingRepository.findById(request.buildingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Building", request.buildingId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         // Close current active location
         locationHistoryRepository
@@ -200,12 +201,12 @@ public class DepartmentService {
      *
      * @param departmentId the department's UUID
      * @return location history entries, most recent first
-     * @throws ResourceNotFoundException if the department does not exist
+     * @throws ApiException if the department does not exist
      */
     @Transactional(readOnly = true)
     public List<DeptLocationHistoryResponse> getLocationHistory(UUID departmentId) {
         if (!repository.existsById(departmentId)) {
-            throw new ResourceNotFoundException("Department", departmentId);
+            throw new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND);
         }
         return locationHistoryRepository
                 .findByDepartmentIdOrderByLocationStartDateInBuildingDesc(departmentId)
@@ -223,15 +224,15 @@ public class DepartmentService {
      * @param departmentId the department's UUID
      * @param request      the manager assignment details
      * @return the created manager assignment response
-     * @throws ResourceNotFoundException if the department or person does not exist
+     * @throws ApiException if the department or person does not exist
      */
     @Transactional
     public DeptManagerResponse assignManager(UUID departmentId,
                                               CreateDeptManagerRequest request) {
         Department department = repository.findById(departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", departmentId));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         Person manager = personRepository.findById(request.managerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.managerId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         // Close current active assignment
         managersRepository.findByDepartmentIdOrderByManagementStartDateDesc(departmentId)
@@ -256,12 +257,12 @@ public class DepartmentService {
      *
      * @param departmentId the department's UUID
      * @return manager assignments, most recent first
-     * @throws ResourceNotFoundException if the department does not exist
+     * @throws ApiException if the department does not exist
      */
     @Transactional(readOnly = true)
     public List<DeptManagerResponse> getManagers(UUID departmentId) {
         if (!repository.existsById(departmentId)) {
-            throw new ResourceNotFoundException("Department", departmentId);
+            throw new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND);
         }
         return managersRepository.findByDepartmentIdOrderByManagementStartDateDesc(departmentId)
                 .stream().map(this::toManagerResponse).toList();

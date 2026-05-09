@@ -1,6 +1,6 @@
 package com.cpmss.finance.bankaccount;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,14 +18,14 @@ class BankAccountReferenceValueTest {
     @Test
     void ibanRejectsInvalidChecksum() {
         assertThatThrownBy(() -> new Iban("GB00WEST12345698765432"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("IBAN checksum is invalid");
     }
 
     @Test
     void ibanRejectsInvalidFormat() {
         assertThatThrownBy(() -> new Iban("1234WEST"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("IBAN format is invalid");
     }
 
@@ -39,7 +39,7 @@ class BankAccountReferenceValueTest {
     @Test
     void swiftCodeRejectsMalformedValues() {
         assertThatThrownBy(() -> new SwiftCode("DEUT123"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("SWIFT/BIC code format is invalid");
     }
 

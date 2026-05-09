@@ -1,16 +1,19 @@
 package com.cpmss.maintenance.workorder;
 
-import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.property.facility.Facility;
 import com.cpmss.property.facility.FacilityRepository;
+import com.cpmss.property.common.PropertyErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.maintenance.workorder.dto.CreateWorkOrderRequest;
 import com.cpmss.maintenance.workorder.dto.UpdateWorkOrderRequest;
 import com.cpmss.maintenance.workorder.dto.WorkOrderResponse;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -65,7 +68,7 @@ public class WorkOrderService {
      *
      * @param id the work order's UUID primary key
      * @return the matching work order response
-     * @throws ResourceNotFoundException if no work order exists with this ID
+        * @throws ApiException if no work order exists with this ID
      */
     @Transactional(readOnly = true)
     public WorkOrderResponse getById(UUID id) {
@@ -88,13 +91,14 @@ public class WorkOrderService {
      *
      * @param request the work order details
      * @return the created work order response
+        * @throws ApiException if requester, facility, or company does not exist
      */
     @Transactional
     public WorkOrderResponse create(CreateWorkOrderRequest request) {
         rules.validateCostPositive(request.cost());
 
         Person requester = personRepository.findById(request.requesterId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.requesterId()));
+            .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
         WorkOrder workOrder = WorkOrder.builder()
                 .workOrderNo(request.workOrderNo())
@@ -119,7 +123,7 @@ public class WorkOrderService {
      * @param id      the work order's UUID
      * @param request the updated values
      * @return the updated work order response
-     * @throws ResourceNotFoundException if no work order exists with this ID
+    * @throws ApiException if no work order exists with this ID
      */
     @Transactional
     public WorkOrderResponse update(UUID id, UpdateWorkOrderRequest request) {
@@ -145,7 +149,7 @@ public class WorkOrderService {
 
     private WorkOrder findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkOrder", id));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.WORK_ORDER_NOT_FOUND));
     }
 
     private Facility resolveFacility(UUID id) {
@@ -153,7 +157,7 @@ public class WorkOrderService {
             return null;
         }
         return facilityRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Facility", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
     }
 
     private Company resolveCompany(UUID id) {
@@ -161,6 +165,6 @@ public class WorkOrderService {
             return null;
         }
         return companyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", id));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
     }
 }

@@ -1,6 +1,6 @@
 package com.cpmss.people.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.regex.Pattern;
 
@@ -21,16 +21,16 @@ public record EgyptianNationalId(String value) {
      * Creates an Egyptian national ID.
      *
      * @param value the raw national ID
-     * @throws BusinessException if the value is missing or is not 14 digits
+     * @throws ApiException if the value is missing or is not 14 digits
      */
     public EgyptianNationalId {
         if (value == null || value.isBlank()) {
-            throw new BusinessException("Egyptian national ID is required");
+            throw new ApiException(PeopleErrorCode.NATIONAL_ID_REQUIRED);
         }
 
         value = value.strip();
         if (!NATIONAL_ID_PATTERN.matcher(value).matches()) {
-            throw new BusinessException("Egyptian national ID must be 14 digits");
+            throw new ApiException(PeopleErrorCode.NATIONAL_ID_INVALID);
         }
     }
 
@@ -39,7 +39,7 @@ public record EgyptianNationalId(String value) {
      *
      * @param value the raw national ID
      * @return the validated national ID
-     * @throws BusinessException if the value is missing or is not 14 digits
+     * @throws ApiException if the value is missing or is not 14 digits
      */
     public static EgyptianNationalId of(String value) {
         return new EgyptianNationalId(value);
@@ -50,7 +50,7 @@ public record EgyptianNationalId(String value) {
      *
      * @param value the optional raw national ID
      * @return the validated national ID, or {@code null} when absent
-     * @throws BusinessException if the value is present but invalid
+     * @throws ApiException if the value is present but invalid
      */
     public static EgyptianNationalId nullable(String value) {
         return value == null || value.isBlank() ? null : new EgyptianNationalId(value);
@@ -62,7 +62,7 @@ public record EgyptianNationalId(String value) {
      * @param nationality the person's nationality
      * @param value the optional raw national ID
      * @return the validated national ID, or {@code null} when not required
-     * @throws BusinessException if an Egyptian person has no valid national ID
+     * @throws ApiException if an Egyptian person has no valid national ID
      */
     public static EgyptianNationalId forNationality(String nationality, String value) {
         if ("Egyptian".equalsIgnoreCase(nationality)) {

@@ -1,6 +1,6 @@
 package com.cpmss.workforce.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
@@ -37,20 +37,20 @@ public class ShiftTimeWindow {
      *
      * @param startTime shift start time
      * @param endTime shift end time
-     * @throws BusinessException if either time is missing or the end is not
+     * @throws ApiException if either time is missing or the end is not
      *                           after the start
      */
     @JsonCreator
     public ShiftTimeWindow(@JsonProperty("startTime") LocalTime startTime,
                            @JsonProperty("endTime") LocalTime endTime) {
         if (startTime == null) {
-            throw new BusinessException("Shift start time is required");
+            throw new ApiException(WorkforceErrorCode.SHIFT_START_REQUIRED);
         }
         if (endTime == null) {
-            throw new BusinessException("Shift end time is required");
+            throw new ApiException(WorkforceErrorCode.SHIFT_END_REQUIRED);
         }
         if (!endTime.isAfter(startTime)) {
-            throw new BusinessException("Shift end time must be after start time");
+            throw new ApiException(WorkforceErrorCode.SHIFT_END_BEFORE_START);
         }
         this.startTime = startTime;
         this.endTime = endTime;

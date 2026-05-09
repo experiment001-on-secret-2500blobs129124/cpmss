@@ -1,6 +1,6 @@
 package com.cpmss.performance.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.math.BigDecimal;
 
@@ -17,15 +17,15 @@ public record KpiScoreRange(KpiScore min, KpiScore max) {
      *
      * @param min the inclusive lower score
      * @param max the inclusive upper score
-     * @throws BusinessException if either bound is missing or max is not
+     * @throws ApiException if either bound is missing or max is not
      *                           greater than min
      */
     public KpiScoreRange {
         if (min == null || max == null) {
-            throw new BusinessException("KPI score range bounds are required");
+            throw new ApiException(PerformanceErrorCode.KPI_SCORE_RANGE_REQUIRED);
         }
         if (max.value().compareTo(min.value()) <= 0) {
-            throw new BusinessException("KPI score range max must be greater than min");
+            throw new ApiException(PerformanceErrorCode.KPI_SCORE_RANGE_INVALID);
         }
     }
 
@@ -35,7 +35,7 @@ public record KpiScoreRange(KpiScore min, KpiScore max) {
      * @param min the inclusive lower score
      * @param max the inclusive upper score
      * @return the validated KPI score range
-     * @throws BusinessException if either bound is missing or invalid, or if
+     * @throws ApiException if either bound is missing or invalid, or if
      *                           max is not greater than min
      */
     public static KpiScoreRange of(BigDecimal min, BigDecimal max) {
@@ -47,11 +47,11 @@ public record KpiScoreRange(KpiScore min, KpiScore max) {
      *
      * @param score the score to check
      * @return true when the score is within the range
-     * @throws BusinessException if the score is missing
+     * @throws ApiException if the score is missing
      */
     public boolean contains(KpiScore score) {
         if (score == null) {
-            throw new BusinessException("KPI score is required");
+            throw new ApiException(PerformanceErrorCode.KPI_SCORE_REQUIRED);
         }
         return score.value().compareTo(min.value()) >= 0
                 && score.value().compareTo(max.value()) <= 0;

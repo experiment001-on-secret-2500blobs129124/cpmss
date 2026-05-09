@@ -1,9 +1,10 @@
 package com.cpmss.leasing.installment;
 
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.leasing.common.LeasingErrorCode;
 import com.cpmss.leasing.contract.Contract;
 import com.cpmss.leasing.contract.ContractRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.leasing.installment.dto.CreateInstallmentRequest;
 import com.cpmss.leasing.installment.dto.InstallmentResponse;
 import com.cpmss.leasing.installment.dto.UpdateInstallmentRequest;
@@ -53,7 +54,7 @@ public class InstallmentService {
      *
      * @param id the installment's UUID primary key
      * @return the matching installment response
-     * @throws ResourceNotFoundException if no installment exists with this ID
+     * @throws ApiException if no installment exists with this ID
      */
     @Transactional(readOnly = true)
     public InstallmentResponse getById(UUID id) {
@@ -76,14 +77,14 @@ public class InstallmentService {
      *
      * @param request the create request with installment details and contract ID
      * @return the created installment response
-     * @throws ResourceNotFoundException if the contract does not exist
+     * @throws ApiException if the contract does not exist
      */
     @Transactional
     public InstallmentResponse create(CreateInstallmentRequest request) {
         rules.validateAmountPositive(request.amountExpected());
 
         Contract contract = contractRepository.findById(request.contractId())
-                .orElseThrow(() -> new ResourceNotFoundException("Contract", request.contractId()));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND));
 
         Installment installment = Installment.builder()
                 .installmentType(request.installmentType())
@@ -105,7 +106,7 @@ public class InstallmentService {
      * @param id      the installment's UUID
      * @param request the update request with new values
      * @return the updated installment response
-     * @throws ResourceNotFoundException if no installment exists with this ID
+     * @throws ApiException if no installment exists with this ID
      */
     @Transactional
     public InstallmentResponse update(UUID id, UpdateInstallmentRequest request) {
@@ -128,6 +129,6 @@ public class InstallmentService {
 
     private Installment findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Installment", id));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.INSTALLMENT_NOT_FOUND));
     }
 }

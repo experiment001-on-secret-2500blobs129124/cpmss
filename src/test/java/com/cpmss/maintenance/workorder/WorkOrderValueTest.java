@@ -1,6 +1,7 @@
 package com.cpmss.maintenance.workorder;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -25,8 +26,9 @@ class WorkOrderValueTest {
         assertThatThrownBy(() -> new WorkOrderSchedule(
                 LocalDate.of(2026, 5, 8),
                 LocalDate.of(2026, 5, 7)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Work order completion date cannot be before scheduled date");
+            .isInstanceOfSatisfying(ApiException.class,
+                ex -> assertThat(ex.getErrorCode())
+                    .isEqualTo(MaintenanceErrorCode.WORK_ORDER_SCHEDULE_INVALID));
     }
 
     @Test
@@ -40,11 +42,13 @@ class WorkOrderValueTest {
     @Test
     void rejectsUnknownWorkOrderVocabularyLabels() {
         assertThatThrownBy(() -> WorkOrderStatus.fromLabel("Open"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Work order status must be one of: Pending, Assigned, In Progress, Completed, Paid, Cancelled");
+            .isInstanceOfSatisfying(ApiException.class,
+                ex -> assertThat(ex.getErrorCode())
+                    .isEqualTo(MaintenanceErrorCode.WORK_ORDER_STATUS_INVALID));
         assertThatThrownBy(() -> WorkOrderPriority.fromLabel("Critical"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Work order priority must be one of: Low, Normal, High, Emergency");
+            .isInstanceOfSatisfying(ApiException.class,
+                ex -> assertThat(ex.getErrorCode())
+                    .isEqualTo(MaintenanceErrorCode.WORK_ORDER_PRIORITY_INVALID));
     }
 
     @Test

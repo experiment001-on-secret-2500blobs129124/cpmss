@@ -2,12 +2,13 @@ package com.cpmss.finance.payment;
 
 import com.cpmss.finance.bankaccount.BankAccount;
 import com.cpmss.finance.bankaccount.BankAccountRepository;
+import com.cpmss.finance.common.FinanceErrorCode;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.leasing.installment.Installment;
 import com.cpmss.leasing.installment.InstallmentRepository;
+import com.cpmss.leasing.common.LeasingErrorCode;
 import com.cpmss.finance.installmentpayment.InstallmentPayment;
 import com.cpmss.finance.installmentpayment.InstallmentPaymentRepository;
 import com.cpmss.finance.installmentpayment.dto.CreateInstallmentPaymentRequest;
@@ -17,11 +18,14 @@ import com.cpmss.finance.payment.dto.PaymentResponse;
 import com.cpmss.finance.payrollpayment.PayrollPayment;
 import com.cpmss.finance.payrollpayment.PayrollPaymentRepository;
 import com.cpmss.finance.payrollpayment.dto.CreatePayrollPaymentRequest;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
+import com.cpmss.organization.common.OrganizationErrorCode;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.maintenance.workorder.WorkOrder;
 import com.cpmss.maintenance.workorder.WorkOrderRepository;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.finance.workorderpayment.WorkOrderPayment;
 import com.cpmss.finance.workorderpayment.WorkOrderPaymentRepository;
 import com.cpmss.finance.workorderpayment.dto.CreateWorkOrderPaymentRequest;
@@ -116,17 +120,16 @@ public class PaymentService {
      * @param request the installment payment request, including parent payment
      *                data and the target installment
      * @return the created payment response
-     * @throws ResourceNotFoundException if the referenced bank account,
-     *                                   processor, or installment does not
-     *                                   exist
-     * @throws BusinessException if the payment money or direction is invalid
+     * @throws ApiException if the referenced bank account, processor, or
+     *                      installment does not exist, or if the payment
+     *                      money or direction is invalid
      */
     @Transactional
     public PaymentResponse createInstallmentPayment(CreateInstallmentPaymentRequest request) {
         Payment payment = createParentPayment(request.payment(), PaymentType.INSTALLMENT);
 
         Installment installment = installmentRepository.findById(request.installmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Installment", request.installmentId()));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.INSTALLMENT_NOT_FOUND));
 
         InstallmentPayment child = new InstallmentPayment();
         child.setPayment(payment);
@@ -152,17 +155,16 @@ public class PaymentService {
      * @param request the work-order payment request, including parent payment
      *                data and the target work order
      * @return the created payment response
-     * @throws ResourceNotFoundException if the referenced bank account,
-     *                                   processor, or work order does not
-     *                                   exist
-     * @throws BusinessException if the payment money or direction is invalid
+     * @throws ApiException if the referenced bank account, processor, or
+     *                      work order does not exist, or if the payment money
+     *                      or direction is invalid
      */
     @Transactional
     public PaymentResponse createWorkOrderPayment(CreateWorkOrderPaymentRequest request) {
         Payment payment = createParentPayment(request.payment(), PaymentType.WORK_ORDER);
 
         WorkOrder workOrder = workOrderRepository.findById(request.workOrderId())
-                .orElseThrow(() -> new ResourceNotFoundException("WorkOrder", request.workOrderId()));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.WORK_ORDER_NOT_FOUND));
 
         WorkOrderPayment child = new WorkOrderPayment();
         child.setPayment(payment);
@@ -188,19 +190,18 @@ public class PaymentService {
      * @param request the payroll payment request, including parent payment
      *                data, staff, department, and period
      * @return the created payment response
-     * @throws ResourceNotFoundException if the referenced bank account,
-     *                                   processor, staff member, or department
-     *                                   does not exist
-     * @throws BusinessException if the payment money or direction is invalid
+     * @throws ApiException if the referenced bank account, processor, staff
+     *                      member, or department does not exist, or if the
+     *                      payment money or direction is invalid
      */
     @Transactional
     public PaymentResponse createPayrollPayment(CreatePayrollPaymentRequest request) {
         Payment payment = createParentPayment(request.payment(), PaymentType.PAYROLL);
 
         Person staff = personRepository.findById(request.staffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.staffId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Department department = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         PayrollPayment child = new PayrollPayment();
         child.setPayment(payment);
@@ -233,12 +234,12 @@ public class PaymentService {
      *
      * @param id the payment UUID primary key
      * @return the matching payment response
-     * @throws ResourceNotFoundException if no payment exists with this ID
+     * @throws ApiException if no payment exists with this ID
      */
     @Transactional(readOnly = true)
     public PaymentResponse findById(UUID id) {
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment", id));
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYMENT_NOT_FOUND));
         return toResponse(payment);
     }
 
@@ -250,10 +251,10 @@ public class PaymentService {
         Money money = Money.positive(req.money().getAmount(), req.money().getCurrency());
 
         BankAccount bankAccount = bankAccountRepository.findById(req.bankAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("BankAccount", req.bankAccountId()));
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.BANK_ACCOUNT_NOT_FOUND));
         Person processedBy = req.processedById() != null
                 ? personRepository.findById(req.processedById())
-                        .orElseThrow(() -> new ResourceNotFoundException("Person", req.processedById()))
+                        .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND))
                 : null;
 
         Payment payment = Payment.builder()

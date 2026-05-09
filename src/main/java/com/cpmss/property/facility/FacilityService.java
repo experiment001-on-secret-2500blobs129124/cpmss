@@ -5,7 +5,8 @@ import com.cpmss.property.building.BuildingRepository;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.property.common.PropertyErrorCode;
 import com.cpmss.property.facility.dto.CreateFacilityRequest;
 import com.cpmss.property.facility.dto.FacilityResponse;
 import com.cpmss.property.facility.dto.UpdateFacilityRequest;
@@ -84,12 +85,12 @@ public class FacilityService {
      *
      * @param id the facility's UUID primary key
      * @return the matching facility response
-     * @throws ResourceNotFoundException if no facility exists with this ID
+     * @throws ApiException if no facility exists with this ID
      */
     @Transactional(readOnly = true)
     public FacilityResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Facility", id)));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND)));
     }
 
     /**
@@ -110,14 +111,14 @@ public class FacilityService {
      *
      * @param request the create request with facility details
      * @return the created facility response
-     * @throws ResourceNotFoundException if the building or company does not exist
+     * @throws ApiException if the building or company does not exist
      */
     @Transactional
     public FacilityResponse create(CreateFacilityRequest request) {
         rules.validateManagementType(request.managementType(), request.managedByCompanyId());
 
         Building building = buildingRepository.findById(request.buildingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Building", request.buildingId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
 
         Company company = resolveCompany(request.managedByCompanyId());
 
@@ -139,17 +140,17 @@ public class FacilityService {
      * @param id      the facility's UUID
      * @param request the update request with new values
      * @return the updated facility response
-     * @throws ResourceNotFoundException if the facility, building, or company does not exist
+     * @throws ApiException if the facility, building, or company does not exist
      */
     @Transactional
     public FacilityResponse update(UUID id, UpdateFacilityRequest request) {
         Facility facility = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Facility", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
 
         rules.validateManagementType(request.managementType(), request.managedByCompanyId());
 
         Building building = buildingRepository.findById(request.buildingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Building", request.buildingId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
 
         Company company = resolveCompany(request.managedByCompanyId());
 
@@ -167,12 +168,12 @@ public class FacilityService {
      * Deletes a facility by ID.
      *
      * @param id the facility's UUID
-     * @throws ResourceNotFoundException if no facility exists with this ID
+     * @throws ApiException if no facility exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Facility facility = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Facility", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
         repository.delete(facility);
         log.info("Facility deleted: {}", facility.getFacilityName());
     }
@@ -184,7 +185,7 @@ public class FacilityService {
             return null;
         }
         return companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", companyId));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
     }
 
     // ── Hours History Sub-Resource ──────────────────────────────────────
@@ -195,13 +196,13 @@ public class FacilityService {
      * @param facilityId the facility's UUID
      * @param request    the hours details
      * @return the created hours history response
-     * @throws ResourceNotFoundException if the facility does not exist
+     * @throws ApiException if the facility does not exist
      */
     @Transactional
     public FacilityHoursHistoryResponse addHoursHistory(UUID facilityId,
                                                         CreateFacilityHoursHistoryRequest request) {
         Facility facility = repository.findById(facilityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Facility", facilityId));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
 
         FacilityHoursHistory history = new FacilityHoursHistory();
         history.setFacility(facility);
@@ -219,12 +220,12 @@ public class FacilityService {
      *
      * @param facilityId the facility's UUID
      * @return hours history entries, most recent first
-     * @throws ResourceNotFoundException if the facility does not exist
+     * @throws ApiException if the facility does not exist
      */
     @Transactional(readOnly = true)
     public List<FacilityHoursHistoryResponse> getHoursHistory(UUID facilityId) {
         if (!repository.existsById(facilityId)) {
-            throw new ResourceNotFoundException("Facility", facilityId);
+            throw new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND);
         }
         return hoursHistoryRepository.findByFacilityIdOrderByEffectiveDateDesc(facilityId)
                 .stream().map(this::toHoursResponse).toList();
@@ -238,15 +239,15 @@ public class FacilityService {
      * @param facilityId the facility's UUID
      * @param request    the manager assignment details
      * @return the created manager assignment response
-     * @throws ResourceNotFoundException if the facility or person does not exist
+     * @throws ApiException if the facility or person does not exist
      */
     @Transactional
     public FacilityManagerResponse assignManager(UUID facilityId,
                                                   CreateFacilityManagerRequest request) {
         Facility facility = repository.findById(facilityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Facility", facilityId));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
         Person manager = personRepository.findById(request.managerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.managerId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
 
         // Close current active assignment
         facilityManagerRepository.findByFacilityIdOrderByManagementStartDateDesc(facilityId)
@@ -271,12 +272,12 @@ public class FacilityService {
      *
      * @param facilityId the facility's UUID
      * @return manager assignments, most recent first
-     * @throws ResourceNotFoundException if the facility does not exist
+     * @throws ApiException if the facility does not exist
      */
     @Transactional(readOnly = true)
     public List<FacilityManagerResponse> getManagers(UUID facilityId) {
         if (!repository.existsById(facilityId)) {
-            throw new ResourceNotFoundException("Facility", facilityId);
+            throw new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND);
         }
         return facilityManagerRepository.findByFacilityIdOrderByManagementStartDateDesc(facilityId)
                 .stream().map(this::toManagerResponse).toList();

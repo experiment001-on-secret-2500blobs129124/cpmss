@@ -1,6 +1,7 @@
 package com.cpmss.performance.kpipolicy;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.performance.common.PerformanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.performance.common.KpiScoreRange;
 
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public class KpiPolicyRules {
      * @param minKpiScore the minimum KPI score
      * @param maxKpiScore the maximum KPI score
      * @return the validated score range
-     * @throws BusinessException if either score is missing, negative, or if
+     * @throws ApiException if either score is missing, negative, or if
      *                           max is not greater than min
      */
     public KpiScoreRange validateScoreRange(BigDecimal minKpiScore, BigDecimal maxKpiScore) {
@@ -36,14 +37,12 @@ public class KpiPolicyRules {
      * @param newMin  the proposed tier's min score
      * @param newMax  the proposed tier's max score
      * @param overlapExists whether an overlapping tier already exists
-     * @throws BusinessException if tiers overlap
+     * @throws ApiException if tiers overlap
      */
     public void validateNoTierOverlap(BigDecimal newMin, BigDecimal newMax,
                                        boolean overlapExists) {
         if (overlapExists) {
-            throw new BusinessException(
-                    "KPI tier [" + newMin + ", " + newMax
-                            + "] overlaps with an existing tier in this department");
+            throw new ApiException(PerformanceErrorCode.KPI_TIER_OVERLAP);
         }
     }
 }

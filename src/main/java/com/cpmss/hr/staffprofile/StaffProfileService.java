@@ -1,11 +1,13 @@
 package com.cpmss.hr.staffprofile;
 
 import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.people.qualification.Qualification;
 import com.cpmss.people.qualification.QualificationRepository;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.hr.staffprofile.dto.CreateStaffProfileRequest;
 import com.cpmss.hr.staffprofile.dto.StaffProfileResponse;
 import com.cpmss.hr.staffprofile.dto.UpdateStaffProfileRequest;
@@ -61,12 +63,12 @@ public class StaffProfileService {
      *
      * @param personId the person's UUID (also the profile PK)
      * @return the matching staff profile response
-     * @throws ResourceNotFoundException if no profile exists for this person
+     * @throws ApiException if no profile exists for this person
      */
     @Transactional(readOnly = true)
     public StaffProfileResponse getById(UUID personId) {
         return mapper.toResponse(repository.findById(personId)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffProfile", personId)));
+                .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_PROFILE_NOT_FOUND)));
     }
 
     /**
@@ -88,8 +90,8 @@ public class StaffProfileService {
      *
      * @param request the create request with person ID and qualification details
      * @return the created staff profile response
-     * @throws com.cpmss.platform.exception.ConflictException if a profile already exists
-     * @throws ResourceNotFoundException if the person or qualification does not exist
+     * @throws ApiException if the profile already exists or if the person or
+     *                      qualification does not exist
      */
     @Transactional
     public StaffProfileResponse create(CreateStaffProfileRequest request) {
@@ -97,11 +99,10 @@ public class StaffProfileService {
                 repository.existsById(request.personId()));
 
         Person person = personRepository.findById(request.personId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.personId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
         Qualification qualification = qualificationRepository.findById(request.qualificationId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Qualification", request.qualificationId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.QUALIFICATION_NOT_FOUND));
 
         StaffProfile profile = StaffProfile.builder()
                 .person(person)
@@ -120,16 +121,15 @@ public class StaffProfileService {
      * @param personId the person's UUID (profile PK)
      * @param request  the update request with new qualification details
      * @return the updated staff profile response
-     * @throws ResourceNotFoundException if the profile or qualification does not exist
+     * @throws ApiException if the profile or qualification does not exist
      */
     @Transactional
     public StaffProfileResponse update(UUID personId, UpdateStaffProfileRequest request) {
         StaffProfile profile = repository.findById(personId)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffProfile", personId));
+                .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_PROFILE_NOT_FOUND));
 
         Qualification qualification = qualificationRepository.findById(request.qualificationId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Qualification", request.qualificationId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.QUALIFICATION_NOT_FOUND));
 
         profile.setQualification(qualification);
         profile.setQualificationDate(request.qualificationDate());
@@ -143,12 +143,12 @@ public class StaffProfileService {
      * Deletes a staff profile by person ID.
      *
      * @param personId the person's UUID (profile PK)
-     * @throws ResourceNotFoundException if no profile exists for this person
+     * @throws ApiException if no profile exists for this person
      */
     @Transactional
     public void delete(UUID personId) {
         StaffProfile profile = repository.findById(personId)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffProfile", personId));
+                .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_PROFILE_NOT_FOUND));
         repository.delete(profile);
         log.info("StaffProfile deleted for person: {}", personId);
     }

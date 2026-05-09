@@ -2,7 +2,8 @@ package com.cpmss.leasing.installment;
 
 import com.cpmss.finance.money.Money;
 import com.cpmss.leasing.common.InstallmentStatus;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.leasing.common.LeasingErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Business rules for {@link Installment} operations.
@@ -17,11 +18,11 @@ public class InstallmentRules {
      * Validates that the expected amount is positive.
      *
      * @param amountExpected the expected payment money
-     * @throws BusinessException if the amount is not positive
+     * @throws ApiException if the amount is not positive
      */
     public void validateAmountPositive(Money amountExpected) {
         if (amountExpected == null || amountExpected.getAmount().signum() <= 0) {
-            throw new BusinessException("Installment amount must be positive");
+            throw new ApiException(LeasingErrorCode.INSTALLMENT_AMOUNT_NOT_POSITIVE);
         }
     }
 
@@ -39,12 +40,11 @@ public class InstallmentRules {
      *
      * @param currentStatus the current lifecycle status
      * @param newStatus the requested new status
-     * @throws BusinessException if the transition is invalid
+     * @throws ApiException if the transition is invalid
      */
     public void validateStatusTransition(InstallmentStatus currentStatus, InstallmentStatus newStatus) {
         if (currentStatus == null || newStatus == null || !currentStatus.canTransitionTo(newStatus)) {
-            throw new BusinessException(
-                    "Invalid status transition: " + label(currentStatus) + " → " + label(newStatus));
+            throw new ApiException(LeasingErrorCode.INSTALLMENT_STATUS_TRANSITION_INVALID);
         }
     }
 

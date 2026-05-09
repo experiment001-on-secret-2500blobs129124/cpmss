@@ -1,6 +1,7 @@
 package com.cpmss.performance.staffkpimonthlysummary;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.performance.common.PerformanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Stateless business rules for monthly KPI summary close.
@@ -16,12 +17,11 @@ public class StaffKpiMonthlySummaryRules {
      * Validates that a closer (manager/HR) is specified.
      *
      * @param closedById whether the closer ID is present
-     * @throws BusinessException if no closer specified
+     * @throws ApiException if no closer specified
      */
     public void validateCloserProvided(boolean closedById) {
         if (!closedById) {
-            throw new BusinessException(
-                    "Monthly KPI close requires a manager or HR officer (closedById)");
+            throw new ApiException(PerformanceErrorCode.KPI_CLOSER_REQUIRED);
         }
     }
 }
