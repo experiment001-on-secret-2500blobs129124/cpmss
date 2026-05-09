@@ -1,6 +1,7 @@
 package com.cpmss.hr.compensation;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.math.BigDecimal;
 
@@ -18,14 +19,14 @@ public record SalaryAmount(BigDecimal amount) {
     /**
      * Creates a positive salary amount.
      *
-     * @throws BusinessException if the amount is missing, zero, or negative
+     * @throws ApiException if the amount is missing, zero, or negative
      */
     public SalaryAmount {
         if (amount == null) {
-            throw new BusinessException("Salary amount is required");
+            throw new ApiException(HrErrorCode.SALARY_REQUIRED);
         }
         if (amount.signum() <= 0) {
-            throw new BusinessException("Salary amount must be positive");
+            throw new ApiException(HrErrorCode.SALARY_NOT_POSITIVE);
         }
     }
 
@@ -34,7 +35,7 @@ public record SalaryAmount(BigDecimal amount) {
      *
      * @param amount the raw salary amount
      * @return the validated salary amount
-     * @throws BusinessException if the amount is missing, zero, or negative
+     * @throws ApiException if the amount is missing, zero, or negative
      */
     public static SalaryAmount positive(BigDecimal amount) {
         return new SalaryAmount(amount);
@@ -45,7 +46,7 @@ public record SalaryAmount(BigDecimal amount) {
      *
      * @param amount the optional raw salary amount
      * @return the validated salary amount, or {@code null} when absent
-     * @throws BusinessException if the amount is present but not positive
+     * @throws ApiException if the amount is present but not positive
      */
     public static SalaryAmount nullablePositive(BigDecimal amount) {
         return amount != null ? positive(amount) : null;

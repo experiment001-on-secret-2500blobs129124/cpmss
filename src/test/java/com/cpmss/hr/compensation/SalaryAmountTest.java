@@ -1,6 +1,6 @@
 package com.cpmss.hr.compensation;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -25,7 +25,7 @@ class SalaryAmountTest {
     @Test
     void rejectsZeroSalaryAmount() {
         assertThatThrownBy(() -> SalaryAmount.positive(BigDecimal.ZERO))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Salary amount must be positive");
     }
 
