@@ -1,6 +1,6 @@
 package com.cpmss.finance.payment;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,14 +18,14 @@ class PaymentReferenceValueTest {
     @Test
     void paymentNumberRejectsUnsupportedCharacters() {
         assertThatThrownBy(() -> new PaymentNumber("PAY 2026"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Payment number format is invalid");
     }
 
     @Test
     void paymentNumberRejectsOverlongValues() {
         assertThatThrownBy(() -> new PaymentNumber("PAY-12345678901234567890"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Payment number must be at most 20 characters");
     }
 
@@ -39,7 +39,7 @@ class PaymentReferenceValueTest {
     @Test
     void paymentReferenceRejectsBlankValues() {
         assertThatThrownBy(() -> new PaymentReference(" "))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Payment reference is required");
     }
 

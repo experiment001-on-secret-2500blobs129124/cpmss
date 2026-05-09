@@ -2,6 +2,7 @@ package com.cpmss.workforce.common;
 
 import com.cpmss.finance.payrollpayment.PayrollPayment;
 import com.cpmss.platform.common.value.YearMonthPeriod;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.platform.exception.BusinessException;
 import com.cpmss.workforce.attends.AttendsRules;
 import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalary;
@@ -112,7 +113,7 @@ class WorkforcePayrollValueTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Payroll period is required");
         assertThatThrownBy(() -> new PayrollPayment().setPayrollPeriod(null))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Payroll period is required");
     }
 }

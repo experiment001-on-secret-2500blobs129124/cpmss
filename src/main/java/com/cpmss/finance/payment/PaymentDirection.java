@@ -1,6 +1,7 @@
 package com.cpmss.finance.payment;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -38,17 +39,16 @@ public enum PaymentDirection {
      *
      * @param label the payment direction label
      * @return the matching payment direction
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     public static PaymentDirection fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Payment direction is required");
+            throw new ApiException(FinanceErrorCode.PAYMENT_DIRECTION_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Payment direction must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYMENT_DIRECTION_INVALID));
     }
 
     /**
