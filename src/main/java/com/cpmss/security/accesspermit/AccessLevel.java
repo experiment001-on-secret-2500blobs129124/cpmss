@@ -52,7 +52,7 @@ public enum AccessLevel {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.ACCESS_LEVEL_REQUIRED));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.ACCESS_LEVEL_INVALID));
     }
 
     /**

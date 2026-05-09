@@ -1,6 +1,7 @@
 package com.cpmss.security.gate;
 
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +19,9 @@ class GateStatusTest {
     @Test
     void rejectsUnknownStatus() {
         assertThatThrownBy(() -> GateStatus.fromNullableLabel("Open"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Gate status cannot be blank");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(SecurityErrorCode.GATE_STATUS_INVALID);
+                    assertThat(ex).hasMessage("Gate status is not allowed");
+                });
     }
 }

@@ -33,6 +33,9 @@ public enum PerformanceErrorCode implements ErrorCode {
     /** Performance rating is missing. */
     PERFORMANCE_RATING_REQUIRED(422, "Performance rating is required"),
 
+    /** Performance rating label is unsupported. */
+    PERFORMANCE_RATING_INVALID(422, "Performance rating is not allowed"),
+
     /** KPI policy already exists for this department. */
     KPI_POLICY_DUPLICATE(409, "KPI policy already exists for this department and KPI type"),
 

@@ -20,8 +20,10 @@ class PerformanceValueTest {
     @Test
     void rejectsNegativeKpiScores() {
         assertThatThrownBy(() -> KpiScore.of(new BigDecimal("-0.01")))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("KPI score cannot be negative");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PerformanceErrorCode.KPI_SCORE_NEGATIVE);
+                    assertThat(ex).hasMessage("KPI score cannot be negative");
+                });
     }
 
     @Test
@@ -36,8 +38,10 @@ class PerformanceValueTest {
     @Test
     void rejectsInvalidKpiScoreRanges() {
         assertThatThrownBy(() -> KpiScoreRange.of(new BigDecimal("90.00"), new BigDecimal("90.00")))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("KPI score range max must be greater than min");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PerformanceErrorCode.KPI_SCORE_RANGE_INVALID);
+                    assertThat(ex).hasMessage("KPI score range max must be greater than min");
+                });
     }
 
     @Test
@@ -48,8 +52,10 @@ class PerformanceValueTest {
     @Test
     void rejectsNegativePercentageRates() {
         assertThatThrownBy(() -> PercentageRate.of(new BigDecimal("-0.0001")))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Percentage rate cannot be negative");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PerformanceErrorCode.PERCENTAGE_RATE_NEGATIVE);
+                    assertThat(ex).hasMessage("Percentage rate cannot be negative");
+                });
     }
 
     @Test
@@ -63,8 +69,10 @@ class PerformanceValueTest {
     @Test
     void rejectsUnknownPerformanceRatingLabels() {
         assertThatThrownBy(() -> PerformanceRating.fromLabel("Satisfactory"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Performance rating is required");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PerformanceErrorCode.PERFORMANCE_RATING_INVALID);
+                    assertThat(ex).hasMessage("Performance rating is not allowed");
+                });
     }
 
     @Test

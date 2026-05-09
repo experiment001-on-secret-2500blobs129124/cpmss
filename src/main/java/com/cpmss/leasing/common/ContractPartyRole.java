@@ -55,7 +55,7 @@ public enum ContractPartyRole {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_PARTY_ROLE_REQUIRED));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_PARTY_ROLE_INVALID));
     }
 
     /**

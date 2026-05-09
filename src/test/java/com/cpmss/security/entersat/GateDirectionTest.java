@@ -1,6 +1,7 @@
 package com.cpmss.security.entersat;
 
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,7 +18,9 @@ class GateDirectionTest {
     @Test
     void rejectsUnknownDirection() {
         assertThatThrownBy(() -> GateDirection.fromLabel("Inside"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Gate direction is required");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(SecurityErrorCode.GATE_DIRECTION_INVALID);
+                    assertThat(ex).hasMessage("Gate direction is not allowed");
+                });
     }
 }

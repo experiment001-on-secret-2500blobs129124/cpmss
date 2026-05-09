@@ -6,11 +6,10 @@ import java.util.Map;
 /**
  * Single exception class for all API error responses.
  *
- * <p>Replaces the previous hierarchy of {@code BusinessException},
- * {@code ConflictException}, {@code ForbiddenException}, and
- * {@code ResourceNotFoundException}. The HTTP status, stable error code,
- * and default message are all carried by the {@link ErrorCode}, making
- * the exception a delivery mechanism rather than a status decision point.
+ * <p>Consolidates status-specific application failures behind one
+ * exception type. The HTTP status, stable error code, and default message
+ * are all carried by the {@link ErrorCode}, making the exception a delivery
+ * mechanism rather than a status decision point.
  *
  * <p>Throw sites use one of three patterns:
  * <pre>{@code

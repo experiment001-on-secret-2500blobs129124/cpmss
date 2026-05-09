@@ -37,12 +37,23 @@ public class GateGuardAssignmentService {
     private final ShiftAttendanceTypeRepository shiftRepository;
     private final GateGuardAssignmentMapper mapper;
 
+    /**
+     * Creates the service with repositories needed to resolve gate, guard,
+     * task, and optional shift references.
+     *
+     * @param repository the gate guard assignment repository
+     * @param personRepository repository used to load the assigned guard
+     * @param gateRepository repository used to load the assigned gate
+     * @param assignedTaskRepository repository used to load the backing task
+     * @param shiftRepository repository used to load the optional shift type
+     * @param mapper mapper converting entities to API responses
+     */
     public GateGuardAssignmentService(GateGuardAssignmentRepository repository,
-                                       PersonRepository personRepository,
-                                       GateRepository gateRepository,
-                                       AssignedTaskRepository assignedTaskRepository,
-                                       ShiftAttendanceTypeRepository shiftRepository,
-                                       GateGuardAssignmentMapper mapper) {
+                                      PersonRepository personRepository,
+                                      GateRepository gateRepository,
+                                      AssignedTaskRepository assignedTaskRepository,
+                                      ShiftAttendanceTypeRepository shiftRepository,
+                                      GateGuardAssignmentMapper mapper) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.gateRepository = gateRepository;
@@ -51,16 +62,37 @@ public class GateGuardAssignmentService {
         this.mapper = mapper;
     }
 
+    /**
+     * Retrieves one gate guard assignment by its identifier.
+     *
+     * @param id the assignment identifier
+     * @return the matching gate guard assignment response
+     * @throws ApiException if the assignment does not exist
+     */
     @Transactional(readOnly = true)
     public GateGuardAssignmentResponse getById(UUID id) {
         return mapper.toResponse(findOrThrow(id));
     }
 
+    /**
+     * Lists gate guard assignments using pageable repository access.
+     *
+     * @param pageable the paging configuration for the result set
+     * @return a page of gate guard assignment responses
+     */
     @Transactional(readOnly = true)
     public PagedResponse<GateGuardAssignmentResponse> listAll(Pageable pageable) {
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
+    /**
+     * Creates a gate guard assignment after resolving the referenced guard,
+     * gate, task assignment, and optional shift type.
+     *
+     * @param request the requested gate guard assignment values
+     * @return the created gate guard assignment response
+     * @throws ApiException if any referenced record does not exist
+     */
     @Transactional
     public GateGuardAssignmentResponse create(CreateGateGuardAssignmentRequest request) {
         Person guard = personRepository.findById(request.guardId())
@@ -83,6 +115,14 @@ public class GateGuardAssignmentService {
         return mapper.toResponse(assignment);
     }
 
+    /**
+     * Updates the recorded end of an existing gate guard assignment.
+     *
+     * @param id the assignment identifier
+     * @param request the new assignment values
+     * @return the updated gate guard assignment response
+     * @throws ApiException if the assignment does not exist
+     */
     @Transactional
     public GateGuardAssignmentResponse update(UUID id, UpdateGateGuardAssignmentRequest request) {
         GateGuardAssignment assignment = findOrThrow(id);

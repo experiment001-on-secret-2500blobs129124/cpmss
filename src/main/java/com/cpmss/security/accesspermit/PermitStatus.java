@@ -51,7 +51,7 @@ public enum PermitStatus {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.PERMIT_STATUS_REQUIRED));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.PERMIT_STATUS_INVALID));
     }
 
     /**

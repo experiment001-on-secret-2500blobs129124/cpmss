@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Factory for consistent {@link ErrorResponse} construction.
@@ -19,7 +20,8 @@ import java.util.Map;
  *
  * <p>The request ID is read from the SLF4J MDC {@code requestId} key,
  * which is set by the request ID filter. If no request ID is available
- * (e.g. the error occurs before the filter runs), the field is null.
+ * (e.g. the error occurs before the filter runs), a new UUID is generated
+ * so the envelope still satisfies the request ID contract.
  *
  * @see ErrorResponse
  * @see com.cpmss.platform.config.RequestIdFilter
@@ -89,8 +91,13 @@ public final class ErrorResponseFactory {
                 HttpStatus.valueOf(errorCode.status()).getReasonPhrase(),
                 message,
                 fields,
-                MDC.get(MDC_REQUEST_ID),
+                requestId(),
                 Instant.now()
         );
+    }
+
+    private static String requestId() {
+        String requestId = MDC.get(MDC_REQUEST_ID);
+        return requestId != null ? requestId : UUID.randomUUID().toString();
     }
 }

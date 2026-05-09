@@ -49,7 +49,7 @@ public enum PerformanceRating {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(PerformanceErrorCode.PERFORMANCE_RATING_REQUIRED));
+                .orElseThrow(() -> new ApiException(PerformanceErrorCode.PERFORMANCE_RATING_INVALID));
     }
 
     /**

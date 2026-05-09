@@ -45,6 +45,9 @@ public enum PeopleErrorCode implements ErrorCode {
     /** Gender value is missing. */
     GENDER_REQUIRED(422, "Gender is required"),
 
+    /** Gender label is unsupported. */
+    GENDER_INVALID(422, "Gender is not allowed"),
+
     // --- Person Rules ---
 
     /** A person must have at least one assigned role. */

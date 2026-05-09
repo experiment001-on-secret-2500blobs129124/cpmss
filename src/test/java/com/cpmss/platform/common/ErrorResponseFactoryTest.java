@@ -120,11 +120,11 @@ class ErrorResponseFactoryTest {
     }
 
     @Test
-    @DisplayName("Request ID is null when MDC is empty")
-    void requestIdNullWhenMdcEmpty() {
+    @DisplayName("Request ID is generated when MDC is empty")
+    void requestIdGeneratedWhenMdcEmpty() {
         MDC.clear();
         ErrorResponse response = ErrorResponseFactory.fromErrorCode(
                 CommonErrorCode.RESOURCE_NOT_FOUND);
-        assertNull(response.requestId());
+        assertNotNull(response.requestId());
     }
 }

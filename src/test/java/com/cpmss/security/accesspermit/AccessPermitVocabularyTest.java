@@ -1,6 +1,7 @@
 package com.cpmss.security.accesspermit;
 
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -27,11 +28,20 @@ class AccessPermitVocabularyTest {
     @Test
     void rejectsUnknownPermitVocabulary() {
         assertThatThrownBy(() -> PermitType.fromLabel("Temporary Badge"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Permit type is required");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(SecurityErrorCode.PERMIT_TYPE_INVALID);
+                    assertThat(ex).hasMessage("Permit type is not allowed");
+                });
         assertThatThrownBy(() -> AccessLevel.fromNullableLabel("VIP"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Access level cannot be blank");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(SecurityErrorCode.ACCESS_LEVEL_INVALID);
+                    assertThat(ex).hasMessage("Access level is not allowed");
+                });
+        assertThatThrownBy(() -> PermitStatus.fromLabel("Paused"))
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(SecurityErrorCode.PERMIT_STATUS_INVALID);
+                    assertThat(ex).hasMessage("Permit status is not allowed");
+                });
     }
 
     @Test
@@ -49,7 +59,9 @@ class AccessPermitVocabularyTest {
         assertThatThrownBy(() -> new PermitValidity(
                 LocalDate.of(2026, 5, 8),
                 LocalDate.of(2026, 5, 7)))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Permit expiry date cannot be before issue date");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(SecurityErrorCode.PERMIT_DATE_RANGE_INVALID);
+                    assertThat(ex).hasMessage("Permit expiry date cannot be before issue date");
+                });
     }
 }

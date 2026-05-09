@@ -46,7 +46,7 @@ public enum GateDirection {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_DIRECTION_REQUIRED));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_DIRECTION_INVALID));
     }
 
     /**

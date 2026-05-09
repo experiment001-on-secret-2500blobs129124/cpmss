@@ -52,7 +52,7 @@ public enum UnitStatus {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_STATUS_REQUIRED));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_STATUS_INVALID));
     }
 
     /**

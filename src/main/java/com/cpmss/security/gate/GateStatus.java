@@ -52,7 +52,7 @@ public enum GateStatus {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_STATUS_REQUIRED));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_STATUS_INVALID));
     }
 
     /**

@@ -48,7 +48,7 @@ public enum BuildingType {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_TYPE_REQUIRED));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_TYPE_INVALID));
     }
 
     /**

@@ -52,7 +52,7 @@ public enum PermitType {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.PERMIT_TYPE_REQUIRED));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.PERMIT_TYPE_INVALID));
     }
 
     /**

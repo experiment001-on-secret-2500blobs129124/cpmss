@@ -17,11 +17,20 @@ public enum SecurityErrorCode implements ErrorCode {
     /** Access level is missing. */
     ACCESS_LEVEL_REQUIRED(422, "Access level cannot be blank"),
 
+    /** Access level label is unsupported. */
+    ACCESS_LEVEL_INVALID(422, "Access level is not allowed"),
+
     /** Permit status is missing. */
     PERMIT_STATUS_REQUIRED(422, "Permit status is required"),
 
+    /** Permit status label is unsupported. */
+    PERMIT_STATUS_INVALID(422, "Permit status is not allowed"),
+
     /** Permit type is missing. */
     PERMIT_TYPE_REQUIRED(422, "Permit type is required"),
+
+    /** Permit type label is unsupported. */
+    PERMIT_TYPE_INVALID(422, "Permit type is not allowed"),
 
     /** Permit issue date is missing. */
     PERMIT_ISSUE_DATE_REQUIRED(422, "Permit issue date is required"),
@@ -43,8 +52,14 @@ public enum SecurityErrorCode implements ErrorCode {
     /** Gate status is missing. */
     GATE_STATUS_REQUIRED(422, "Gate status cannot be blank"),
 
+    /** Gate status label is unsupported. */
+    GATE_STATUS_INVALID(422, "Gate status is not allowed"),
+
     /** Gate direction is missing. */
     GATE_DIRECTION_REQUIRED(422, "Gate direction is required"),
+
+    /** Gate direction label is unsupported. */
+    GATE_DIRECTION_INVALID(422, "Gate direction is not allowed"),
 
     // --- Gate Entry ---
 

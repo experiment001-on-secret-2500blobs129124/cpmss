@@ -45,7 +45,7 @@ public enum Gender {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(PeopleErrorCode.GENDER_REQUIRED));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.GENDER_INVALID));
     }
 
     /**

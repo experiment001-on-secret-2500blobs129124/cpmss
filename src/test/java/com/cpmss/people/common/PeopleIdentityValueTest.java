@@ -18,8 +18,10 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsInvalidEmailAddresses() {
         assertThatThrownBy(() -> EmailAddress.of("user-at-example.com"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Email address is invalid");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.EMAIL_INVALID);
+                    assertThat(ex).hasMessage("Email address is invalid");
+                });
     }
 
     @Test
@@ -27,8 +29,10 @@ class PeopleIdentityValueTest {
         String tooLong = "a".repeat(142) + "@example.com";
 
         assertThatThrownBy(() -> EmailAddress.contact(tooLong))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Email address is too long");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.EMAIL_TOO_LONG);
+                    assertThat(ex).hasMessage("Email address is too long");
+                });
     }
 
     @Test
@@ -42,11 +46,15 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsMissingPhoneNumberParts() {
         assertThatThrownBy(() -> new PhoneNumber(null, "01000000000"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Phone number is required");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.PHONE_REQUIRED);
+                    assertThat(ex).hasMessage("Phone number is required");
+                });
         assertThatThrownBy(() -> new PhoneNumber("+20", " "))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Phone number is required");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.PHONE_REQUIRED);
+                    assertThat(ex).hasMessage("Phone number is required");
+                });
     }
 
     @Test
@@ -60,8 +68,10 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsInvalidEgyptianNationalIds() {
         assertThatThrownBy(() -> EgyptianNationalId.of("123"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Egyptian national ID must be 14 digits");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.NATIONAL_ID_INVALID);
+                    assertThat(ex).hasMessage("Egyptian national ID must be 14 digits");
+                });
     }
 
     @Test
@@ -74,11 +84,15 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsInvalidPassportNumbers() {
         assertThatThrownBy(() -> PassportNumber.of(" "))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Passport number is required");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.PASSPORT_REQUIRED);
+                    assertThat(ex).hasMessage("Passport number is required");
+                });
         assertThatThrownBy(() -> PassportNumber.of("A".repeat(21)))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Passport number is too long");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.PASSPORT_TOO_LONG);
+                    assertThat(ex).hasMessage("Passport number is too long");
+                });
     }
 
     @Test
@@ -91,8 +105,10 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsUnknownGenderLabels() {
         assertThatThrownBy(() -> Gender.fromLabel("Other"))
-                .isInstanceOf(ApiException.class)
-                .hasMessage("Gender is required");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(PeopleErrorCode.GENDER_INVALID);
+                    assertThat(ex).hasMessage("Gender is not allowed");
+                });
     }
 
     @Test

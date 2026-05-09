@@ -15,20 +15,38 @@ public enum LeasingErrorCode implements ErrorCode {
     /** Contract type is missing. */
     CONTRACT_TYPE_REQUIRED(422, "Contract type is required"),
 
+    /** Contract type label is unsupported. */
+    CONTRACT_TYPE_INVALID(422, "Contract type is not allowed"),
+
     /** Contract status is missing. */
     CONTRACT_STATUS_REQUIRED(422, "Contract status is required"),
+
+    /** Contract status label is unsupported. */
+    CONTRACT_STATUS_INVALID(422, "Contract status is not allowed"),
 
     /** Installment type is missing. */
     INSTALLMENT_TYPE_REQUIRED(422, "Installment type is required"),
 
+    /** Installment type label is unsupported. */
+    INSTALLMENT_TYPE_INVALID(422, "Installment type is not allowed"),
+
     /** Installment status is missing. */
     INSTALLMENT_STATUS_REQUIRED(422, "Installment status is required"),
+
+    /** Installment status label is unsupported. */
+    INSTALLMENT_STATUS_INVALID(422, "Installment status is not allowed"),
 
     /** Contract party role is missing. */
     CONTRACT_PARTY_ROLE_REQUIRED(422, "Contract party role is required"),
 
+    /** Contract party role label is unsupported. */
+    CONTRACT_PARTY_ROLE_INVALID(422, "Contract party role is not allowed"),
+
     /** Household relationship is missing. */
     HOUSEHOLD_RELATIONSHIP_REQUIRED(422, "Household relationship is required"),
+
+    /** Household relationship label is unsupported. */
+    HOUSEHOLD_RELATIONSHIP_INVALID(422, "Household relationship is not allowed"),
 
     /** Contract period is missing or invalid. */
     CONTRACT_PERIOD_INVALID(422, "Contract period is invalid"),

@@ -27,11 +27,20 @@ public enum PropertyErrorCode implements ErrorCode {
     /** Building type is missing. */
     BUILDING_TYPE_REQUIRED(422, "Building type is required"),
 
+    /** Building type label is unsupported. */
+    BUILDING_TYPE_INVALID(422, "Building type is not allowed"),
+
     /** Facility management type is missing. */
     FACILITY_MGMT_TYPE_REQUIRED(422, "Facility management type is required"),
 
+    /** Facility management type label is unsupported. */
+    FACILITY_MGMT_TYPE_INVALID(422, "Facility management type is not allowed"),
+
     /** Unit status is missing. */
     UNIT_STATUS_REQUIRED(422, "Unit status is required"),
+
+    /** Unit status label is unsupported. */
+    UNIT_STATUS_INVALID(422, "Unit status is not allowed"),
 
     /** Operating hours are incomplete. */
     OPERATING_HOURS_INCOMPLETE(422, "Opening and closing time must be set together"),

@@ -49,7 +49,7 @@ public enum FacilityManagementType {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_MGMT_TYPE_REQUIRED));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_MGMT_TYPE_INVALID));
     }
 
     /**

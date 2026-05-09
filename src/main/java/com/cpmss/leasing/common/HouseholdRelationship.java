@@ -59,7 +59,7 @@ public enum HouseholdRelationship {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(LeasingErrorCode.HOUSEHOLD_RELATIONSHIP_REQUIRED));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.HOUSEHOLD_RELATIONSHIP_INVALID));
     }
 
     /**

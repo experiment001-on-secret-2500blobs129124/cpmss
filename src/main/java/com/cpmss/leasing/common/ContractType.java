@@ -50,7 +50,7 @@ public enum ContractType {
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_TYPE_REQUIRED));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_TYPE_INVALID));
     }
 
     /**
