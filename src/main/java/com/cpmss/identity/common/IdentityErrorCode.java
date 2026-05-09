@@ -57,7 +57,10 @@ public enum IdentityErrorCode implements ErrorCode {
     NOT_AUTHENTICATED(403, "No authenticated user"),
 
     /** No role found in security context. */
-    NO_ROLE_IN_CONTEXT(403, "No role found in security context");
+    NO_ROLE_IN_CONTEXT(403, "No role found in security context"),
+
+    /** User cannot access this account record. */
+    IDENTITY_RECORD_ACCESS_DENIED(403, "Identity record access denied");
 
     private final int status;
     private final String defaultMessage;

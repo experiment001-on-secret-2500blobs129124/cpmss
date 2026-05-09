@@ -40,7 +40,9 @@ public class AppUserService {
     private final AppUserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final AppUserMapper mapper;
+    private final CurrentUserService currentUserService;
     private final AppUserRules rules = new AppUserRules();
+    private final AppUserAccessRules accessRules = new AppUserAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -51,10 +53,12 @@ public class AppUserService {
      */
     public AppUserService(AppUserRepository repository,
                           PasswordEncoder passwordEncoder,
-                          AppUserMapper mapper) {
+                          AppUserMapper mapper,
+                          CurrentUserService currentUserService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -66,6 +70,7 @@ public class AppUserService {
      */
     @Transactional(readOnly = true)
     public AppUserResponse getById(UUID id) {
+        accessRules.requireCanViewAccount(currentUserService.currentUser(), id);
         return mapper.toResponse(findOrThrow(id));
     }
 
@@ -77,6 +82,7 @@ public class AppUserService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<AppUserResponse> listAll(Pageable pageable) {
+        accessRules.requireAccountManager(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -89,6 +95,7 @@ public class AppUserService {
      */
     @Transactional(readOnly = true)
     public AppUserResponse findByEmail(String email) {
+        accessRules.requireAccountManager(currentUserService.currentUser());
         EmailAddress loginEmail = EmailAddress.of(email);
         AppUser user = repository.findByEmailAndActiveTrue(loginEmail)
                 .orElseThrow(() -> new ApiException(IdentityErrorCode.USER_NOT_FOUND));
@@ -108,6 +115,7 @@ public class AppUserService {
      */
     @Transactional
     public AppUserResponse create(CreateAppUserRequest request) {
+        accessRules.requireAccountManager(currentUserService.currentUser());
         SystemRole actorRole = getCurrentUserRole();
         EmailAddress loginEmail = EmailAddress.of(request.email());
 
@@ -170,6 +178,7 @@ public class AppUserService {
      */
     @Transactional
     public AppUserResponse updateRole(UUID userId, UpdateUserRoleRequest request) {
+        accessRules.requireAccountManager(currentUserService.currentUser());
         UUID actorId = getCurrentUserId();
         SystemRole actorRole = getCurrentUserRole();
 
@@ -198,6 +207,7 @@ public class AppUserService {
      */
     @Transactional
     public AppUserResponse updateStatus(UUID userId, boolean active) {
+        accessRules.requireAccountManager(currentUserService.currentUser());
         UUID actorId = getCurrentUserId();
 
         if (!active) {

@@ -1,5 +1,7 @@
 package com.cpmss.organization.department;
 
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.property.building.Building;
 import com.cpmss.property.building.BuildingRepository;
 import com.cpmss.platform.common.PagedResponse;
@@ -14,6 +16,8 @@ import com.cpmss.organization.departmentmanagers.DepartmentManagers;
 import com.cpmss.organization.departmentmanagers.DepartmentManagersRepository;
 import com.cpmss.organization.departmentmanagers.dto.CreateDeptManagerRequest;
 import com.cpmss.organization.departmentmanagers.dto.DeptManagerResponse;
+import com.cpmss.organization.common.DepartmentScopeService;
+import com.cpmss.organization.common.OrganizationAccessRules;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.platform.exception.ApiException;
 import com.cpmss.people.person.Person;
@@ -47,7 +51,10 @@ public class DepartmentService {
     private final DepartmentManagersRepository managersRepository;
     private final PersonRepository personRepository;
     private final DepartmentMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final DepartmentScopeService departmentScopeService;
     private final DepartmentRules rules = new DepartmentRules();
+    private final OrganizationAccessRules accessRules = new OrganizationAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -64,13 +71,17 @@ public class DepartmentService {
                              DepartmentLocationHistoryRepository locationHistoryRepository,
                              DepartmentManagersRepository managersRepository,
                              PersonRepository personRepository,
-                             DepartmentMapper mapper) {
+                             DepartmentMapper mapper,
+                             CurrentUserService currentUserService,
+                             DepartmentScopeService departmentScopeService) {
         this.repository = repository;
         this.buildingRepository = buildingRepository;
         this.locationHistoryRepository = locationHistoryRepository;
         this.managersRepository = managersRepository;
         this.personRepository = personRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
+        this.departmentScopeService = departmentScopeService;
     }
 
     /**
@@ -82,6 +93,8 @@ public class DepartmentService {
      */
     @Transactional(readOnly = true)
     public DepartmentResponse getById(UUID id) {
+        accessRules.requireCanViewDepartment(
+                currentUserService.currentUser(), id, departmentScopeService);
         Department department = repository.findById(id)
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         return mapper.toResponse(department);
@@ -95,7 +108,14 @@ public class DepartmentService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<DepartmentResponse> listAll(Pageable pageable) {
-        return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+        CurrentUser user = currentUserService.currentUser();
+        List<DepartmentResponse> content = repository.findAll(pageable).getContent()
+                .stream()
+                .filter(department -> canViewDepartment(user, department.getId()))
+                .map(mapper::toResponse)
+                .toList();
+        return new PagedResponse<>(
+                content, content.size(), 1, pageable.getPageNumber(), pageable.getPageSize());
     }
 
     /**
@@ -106,6 +126,7 @@ public class DepartmentService {
      */
     @Transactional
     public DepartmentResponse create(CreateDepartmentRequest request) {
+        accessRules.requireOrganizationAdministrator(currentUserService.currentUser());
         rules.validateNameUnique(
                 request.departmentName(),
                 repository.existsByDepartmentName(request.departmentName()));
@@ -126,6 +147,7 @@ public class DepartmentService {
      */
     @Transactional
     public DepartmentResponse update(UUID id, UpdateDepartmentRequest request) {
+        accessRules.requireOrganizationAdministrator(currentUserService.currentUser());
         Department department = repository.findById(id)
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
@@ -149,6 +171,7 @@ public class DepartmentService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requireOrganizationAdministrator(currentUserService.currentUser());
         Department department = repository.findById(id)
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         repository.delete(department);
@@ -171,6 +194,7 @@ public class DepartmentService {
     @Transactional
     public DeptLocationHistoryResponse addLocationHistory(
             UUID departmentId, CreateDeptLocationHistoryRequest request) {
+        accessRules.requireOrganizationAdministrator(currentUserService.currentUser());
         Department department = repository.findById(departmentId)
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         Building building = buildingRepository.findById(request.buildingId())
@@ -205,6 +229,8 @@ public class DepartmentService {
      */
     @Transactional(readOnly = true)
     public List<DeptLocationHistoryResponse> getLocationHistory(UUID departmentId) {
+        accessRules.requireCanViewDepartment(
+                currentUserService.currentUser(), departmentId, departmentScopeService);
         if (!repository.existsById(departmentId)) {
             throw new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND);
         }
@@ -229,6 +255,7 @@ public class DepartmentService {
     @Transactional
     public DeptManagerResponse assignManager(UUID departmentId,
                                               CreateDeptManagerRequest request) {
+        accessRules.requireOrganizationAdministrator(currentUserService.currentUser());
         Department department = repository.findById(departmentId)
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         Person manager = personRepository.findById(request.managerId())
@@ -261,6 +288,8 @@ public class DepartmentService {
      */
     @Transactional(readOnly = true)
     public List<DeptManagerResponse> getManagers(UUID departmentId) {
+        accessRules.requireCanViewDepartment(
+                currentUserService.currentUser(), departmentId, departmentScopeService);
         if (!repository.existsById(departmentId)) {
             throw new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND);
         }
@@ -269,6 +298,15 @@ public class DepartmentService {
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private boolean canViewDepartment(CurrentUser user, UUID departmentId) {
+        try {
+            accessRules.requireCanViewDepartment(user, departmentId, departmentScopeService);
+            return true;
+        } catch (ApiException ex) {
+            return false;
+        }
+    }
 
     private DeptLocationHistoryResponse toLocationResponse(DepartmentLocationHistory h) {
         return new DeptLocationHistoryResponse(

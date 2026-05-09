@@ -1,9 +1,11 @@
 package com.cpmss.people.person;
 
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.people.common.EgyptianNationalId;
 import com.cpmss.people.common.Gender;
 import com.cpmss.people.common.PassportNumber;
+import com.cpmss.people.common.PeopleAccessRules;
 import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.dto.CreatePersonRequest;
 import com.cpmss.people.person.dto.PersonResponse;
@@ -43,7 +45,9 @@ public class PersonService {
     private final PersonRepository repository;
     private final PersonRoleRepository personRoleRepository;
     private final RoleRepository roleRepository;
+    private final CurrentUserService currentUserService;
     private final PersonRules rules = new PersonRules();
+    private final PeopleAccessRules accessRules = new PeopleAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -54,10 +58,12 @@ public class PersonService {
      */
     public PersonService(PersonRepository repository,
                          PersonRoleRepository personRoleRepository,
-                         RoleRepository roleRepository) {
+                         RoleRepository roleRepository,
+                         CurrentUserService currentUserService) {
         this.repository = repository;
         this.personRoleRepository = personRoleRepository;
         this.roleRepository = roleRepository;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -72,6 +78,7 @@ public class PersonService {
      */
     @Transactional(readOnly = true)
     public PersonResponse getById(UUID id) {
+        accessRules.requireCanViewPerson(currentUserService.currentUser(), id);
         Person person = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         return toResponse(person);
@@ -85,6 +92,7 @@ public class PersonService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<PersonResponse> listAll(Pageable pageable) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), this::toResponse);
     }
 
@@ -101,6 +109,7 @@ public class PersonService {
      */
     @Transactional
     public PersonResponse create(CreatePersonRequest request) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         rules.validateAtLeastOneRole(request.roleIds());
         Gender gender = rules.validateGender(request.gender());
         EgyptianNationalId nationalId = rules.validateEgyptianNationalId(
@@ -144,6 +153,7 @@ public class PersonService {
      */
     @Transactional
     public PersonResponse update(UUID id, UpdatePersonRequest request) {
+        accessRules.requireCanUpdatePerson(currentUserService.currentUser());
         Person person = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
@@ -196,6 +206,7 @@ public class PersonService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         Person person = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         personRoleRepository.deleteByPersonId(id);

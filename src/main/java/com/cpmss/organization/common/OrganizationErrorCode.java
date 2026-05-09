@@ -21,7 +21,10 @@ public enum OrganizationErrorCode implements ErrorCode {
     DEPARTMENT_NOT_FOUND(404, "Department not found"),
 
     /** Compound not found. */
-    COMPOUND_NOT_FOUND(404, "Compound not found");
+    COMPOUND_NOT_FOUND(404, "Compound not found"),
+
+    /** User cannot access this organization record. */
+    ORGANIZATION_RECORD_ACCESS_DENIED(403, "Organization record access denied");
 
     private final int status;
     private final String defaultMessage;
