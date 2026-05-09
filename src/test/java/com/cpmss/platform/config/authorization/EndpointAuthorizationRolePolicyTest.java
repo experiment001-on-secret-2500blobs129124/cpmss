@@ -20,8 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Verifies business role decisions in the endpoint authorization registry.
  *
- * <p>The tests protect important negative permissions while allowing Phase D
- * service-owned routes where resource authorization is enforced inside the
+ * <p>The tests protect important negative permissions while allowing service-owned routes where resource authorization is enforced inside the
  * owning bounded-context service.
  */
 class EndpointAuthorizationRolePolicyTest {
@@ -29,7 +28,7 @@ class EndpointAuthorizationRolePolicyTest {
     /**
      * Confirms self-scoped roles do not receive unowned broad access.
      *
-     * <p>Phase D allows a few broad-looking routes when the service narrows
+     * <p>Some broad-looking routes are allowed when the service narrows
      * rows or records by current-user ownership.
      */
     @Test

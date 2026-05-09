@@ -26,9 +26,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Protects Phase D service-owned authorization rules across bounded contexts.
+ * Protects service-owned authorization rules across bounded contexts.
  */
-class PhaseDOwnershipAccessRulesTest {
+class BoundedContextOwnershipAccessRulesTest {
 
     @Test
     void hrProfileReadAllowsOwnPersonButRejectsOtherStaff() {
