@@ -24,6 +24,7 @@ src/main/resources/db/migration/
 |---|---|---|
 | `V1`–`V7` | All environments | Current schema structure, auth tables, constraints, and internal reports |
 | Future `V8+` | All environments | New schema changes or required reference data |
+| Future `V8__seed_catalog_data.sql` | All environments | Required startup catalog/reference rows after the catalog list is reviewed |
 | Future `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
 
 **Rules:**
@@ -49,6 +50,22 @@ Every new batch of tables follows the same DDL → constraints → seed sequence
 | `Vn+2__seed_{feature}_data.sql` | Catalog/reference data for those tables — **only if the feature requires it** |
 
 Seeding is optional. Not every feature needs reference data. Add a seed migration only when the app cannot function without those rows.
+
+---
+
+## Planned Schema Areas
+
+These are accepted schema areas, not committed migrations yet:
+
+| Area | Planned storage |
+|---|---|
+| Applicant/application documents | Metadata table linked to applicant/application records; binary files in MinIO |
+| Payment attempts/provider transactions | Provider reference, status, attempt time, masked display data if needed |
+| Seed catalog data | Required startup rows for catalogs after review |
+| Slugs | URL-friendly identifiers for selected named/catalog resources |
+
+Payment provider data must not include raw card numbers, CVV values, or
+provider secrets. Store provider references and statuses, not card data.
 
 ---
 
@@ -264,18 +281,20 @@ Some facts change over time and the history must be preserved. Instead of updati
 The first admin user is created via a **first-run HTTP endpoint** (`POST /setup`):
 
 - Accessible only when the user table is empty — returns `404` permanently after first use.
-- Usable from a browser (IT person on deployment day) or via `curl` from Jenkins.
+- Usable from a browser (IT person on deployment day) or via `curl` from
+  planned deployment automation.
 - The created account is flagged `force_password_change = true` — first login forces a password change.
 
 ```bash
-# Jenkins deploy stage — automated first-admin creation
+# Target deploy stage — automated first-admin creation
 sleep 10
 curl -sf -X POST http://localhost:8080/setup \
      -H "Content-Type: application/json" \
      -d "{\"email\": \"admin@compound.com\", \"password\": \"${BOOTSTRAP_PASSWORD}\"}"
 ```
 
-`BOOTSTRAP_PASSWORD` is a Jenkins credential — never hardcoded.
+`BOOTSTRAP_PASSWORD` is provided by the deployment secret store — never
+hardcoded.
 
 ---
 
@@ -347,6 +366,10 @@ The service layer bridges them: when `PersonService` assigns the Staff role to a
 Binary files (CVs, documents, images) should be stored in **MinIO**, not in
 PostgreSQL. The database column holds only the object path or presigned URL —
 never file bytes.
+
+For document-style uploads, the database should store metadata such as owner,
+business record link, storage key, content type, original filename, size,
+created timestamp, and authorization scope. MinIO stores the binary object.
 
 ```sql
 file_url VARCHAR(500)  -- object path, e.g. "resource-type/record-id/filename.ext"

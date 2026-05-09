@@ -40,8 +40,8 @@ Cover:
 - edge case,
 - exception type/message when it is part of API behavior.
 
-Rules tests should be the first target when Phase C workflows or Phase D
-ownership logic changes.
+Rules tests should be the first target when workflow or ownership logic
+changes.
 
 ### Service Tests
 

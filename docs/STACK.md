@@ -15,6 +15,22 @@ Every tool, library, and framework used in this project.
 | File Storage | ![MinIO](https://img.shields.io/badge/MinIO-latest-C72E49?logo=minio&logoColor=white) |
 | Build | ![Gradle](https://img.shields.io/badge/Gradle-8-02303A?logo=gradle) |
 
+See also:
+
+- [`NON_FUNCTIONAL_REQUIREMENTS.md`](./NON_FUNCTIONAL_REQUIREMENTS.md)
+- [`TESTING.md`](./TESTING.md)
+- [`ERRORS.md`](./ERRORS.md)
+- [`LOGGING.md`](./LOGGING.md)
+
+Current status notes:
+
+- REST JSON is implemented. Thymeleaf web views are optional future work.
+- PostgreSQL/Flyway are implemented for the backend schema.
+- MinIO is present as dependency/local service, but upload/download workflows
+  are planned.
+- Dockerfile, Jenkinsfile, Yaak automated runner, and Testcontainers-backed
+  integration tests are planned until committed.
+
 ---
 
 ## Code Quality & Boilerplate
@@ -124,6 +140,8 @@ See [DATABASE.md](./DATABASE.md) for the full migration convention and rationale
 environment verification. The `tests/api/` runner is not committed yet.
 Until then, use `./gradlew test` for committed backend tests.
 
+Planned target shape:
+
 - Location: `tests/api/`
 - Runtime: Python 3.14, `venv`-managed
 - Dependencies: `tests/api/requirements.txt`
@@ -136,7 +154,7 @@ Until then, use `./gradlew test` for committed backend tests.
   python3 tests/api/run_tests.py
   ```
 
-Workflow:
+Planned workflow:
 1. Spring controllers define endpoints
 2. springdoc-openapi generates OpenAPI spec at `/v3/api-docs`
 3. Yaak imports spec (collection stays in sync)
@@ -170,10 +188,14 @@ class SomeServiceTest {
 ```
 
 **Spring Boot Test + MockMvc** — integration tests that spin up the Spring
-context and hit controllers via HTTP.
+context and hit controllers via HTTP. Planned for broader API coverage.
 
 **Testcontainers** — spins up a real PostgreSQL Docker container during tests.
 Ensures Flyway migrations and queries work against the actual database engine.
+Planned for database-backed integration coverage.
+
+See [`TESTING.md`](./TESTING.md) for the current testing policy and layer
+definitions.
 
 ---
 
@@ -193,7 +215,8 @@ request via `Authorization: Bearer` header.
 is the engine behind it. They always work together. You write `log.info(...)`
 using SLF4J, Logback handles the output.
 
-
+See [`LOGGING.md`](./LOGGING.md) for project logging rules and
+[`ERRORS.md`](./ERRORS.md) for exception response behavior.
 
 ## Future: Caching
 

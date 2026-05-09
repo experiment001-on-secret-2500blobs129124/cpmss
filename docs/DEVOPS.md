@@ -54,6 +54,27 @@ Docker Compose loads the `.env` file automatically (dev only).
 
 ---
 
+## Local Gradle Configuration
+
+`gradle.properties.example` is committed as a template for machines where
+Gradle cannot automatically find Java 21.
+
+Use it by copying the needed keys into a local `gradle.properties` file:
+
+```properties
+org.gradle.java.home=/path/to/jdk-21
+org.gradle.java.installations.paths=/path/to/jdk-21
+```
+
+Rules:
+
+- `gradle.properties.example` is tracked.
+- `gradle.properties` is local and ignored.
+- Do not commit machine-specific Java paths.
+- Do not put secrets in Gradle property files.
+
+---
+
 ## Docker
 
 ### Current Local Services
@@ -169,7 +190,8 @@ http {
 ## CI/CD — Jenkins
 
 Jenkins is the planned CI/CD runner. A `Jenkinsfile` is not committed yet; the
-pipeline below is the target shape for the deployment phase.
+pipeline below is the target shape for the deployment phase. Until a
+`Jenkinsfile` is committed, CI/CD behavior is documentation only.
 
 ### Running Jenkins
 

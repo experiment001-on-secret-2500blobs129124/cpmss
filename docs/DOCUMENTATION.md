@@ -3,7 +3,9 @@
 > Based on [Javadoc](https://docs.oracle.com/en/java/javase/21/docs/specs/javadoc/doc-comment-spec.html).
 > Designed for Java 21 / Spring Boot 3.x projects.
 >
-> **See also**: [CODING_STYLE.md](CODING_STYLE.md) · [NAMING.md](NAMING.md)
+> **See also**: [CODING_STYLE.md](CODING_STYLE.md) · [NAMING.md](NAMING.md) ·
+> [TESTING.md](TESTING.md) · [ERRORS.md](ERRORS.md) · [LOGGING.md](LOGGING.md) ·
+> [NON_FUNCTIONAL_REQUIREMENTS.md](NON_FUNCTIONAL_REQUIREMENTS.md)
 
 ---
 

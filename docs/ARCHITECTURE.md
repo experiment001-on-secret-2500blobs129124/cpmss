@@ -14,7 +14,28 @@ swap out your controller style without touching your service layer.
 
 ---
 
-## Request Lifecycle
+## Current Implementation Status
+
+- The committed backend is REST-first. JSON `@RestController` classes are the
+  implemented API surface.
+- Authentication is implemented with stateless JWT. Public auth/setup/health
+  and OpenAPI routes are explicitly permitted; other routes require an
+  authenticated request.
+- Full requirements-level route role rules and service-level ownership checks
+  are the target authorization architecture. Do not document them as complete
+  until the corresponding code is merged.
+- The source tree follows the DDD-lite bounded-context package strategy below.
+- Domain value types are used for many validated primitives while workflow
+  rules remain in services/rules classes.
+
+---
+
+## Target Secured Request Lifecycle
+
+This diagram shows the intended lifecycle after authorization is complete.
+The current committed implementation has JWT authentication and broad
+authenticated-route protection, but not the full role matrix or ownership
+matrix from `docs/REQUIREMENTS.md`.
 
 ```mermaid
 flowchart TD
@@ -23,7 +44,7 @@ flowchart TD
     subgraph SEC ["Security Middleware"]
         B["Security Filter Chain"]
         B -->|"Invalid token"| B1["401 Unauthorized"]
-        B -->|"Valid token"| C["@PreAuthorize"]
+        B -->|"Valid token"| C["Role policy / @PreAuthorize"]
         C -->|"Wrong role"| C1["403 Forbidden"]
     end
 
@@ -320,7 +341,8 @@ Validation error format (format validation failures):
   "fields": {
     "email": "Must be a valid email address",
     "age": "Must be at least 18"
-  }
+  },
+  "timestamp": "2026-03-24T07:00:00Z"
 }
 ```
 
@@ -354,19 +376,27 @@ These apply across all layers and are not owned by any single layer.
 
 | Concern | Implementation |
 |---|---|
-| Logging | SLF4J / Logback. Controller logs request entry. Service logs decisions. Exception handler logs errors with stack traces. |
-| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) — catches all custom exceptions and maps them to structured JSON. HTML error pages are future Thymeleaf work. |
+| Logging | SLF4J / Logback. See [`LOGGING.md`](./LOGGING.md) for level and sensitive-data rules. |
+| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) maps custom exceptions to JSON error responses. See [`ERRORS.md`](./ERRORS.md). HTML error pages are future Thymeleaf work. |
 | CORS | Configured in `SecurityConfig`. |
 | Authentication | Stateless JWT. Token issued on login, validated on every request via Spring Security filter chain. CSRF disabled — no session cookies are issued. |
-| Authorization | `@PreAuthorize` for role-based. Explicit ownership checks in service for resource-based. |
+| Authorization | Current: public auth/setup/health/OpenAPI routes, all other routes authenticated. Target: explicit role policies first, then service-level ownership/resource checks. |
 | Password Hashing | BCrypt via Spring Security. Raw passwords are never stored. |
 | Refresh Tokens | Access token (short-lived) + refresh token (long-lived). Client uses refresh token to silently obtain a new access token. |
-| Rate Limiting | Applied at Nginx level on auth endpoints (`/api/v1/auth/login`, `/api/v1/auth/refresh`). |
+| Rate Limiting | Planned at Nginx level on auth endpoints (`/api/v1/auth/login`, `/api/v1/auth/refresh`). |
 | Audit Fields | `BaseEntity` with `@CreatedDate`, `@LastModifiedDate`, `@CreatedBy`, `@LastModifiedBy`. Requires `AuditorAware` bean and `@EnableJpaAuditing`. |
-| Data Masking | Sensitive fields returned masked in Response DTOs via `MaskingUtils`. Role-specific DTOs for different access levels. |
+| Data Masking | Use `MaskingUtils` and role-specific DTOs where a response contains sensitive data. |
 | Input Validation | Format: `@Valid` annotations on Request DTOs. Business: explicit Rules class per feature. |
 | Pagination | All list endpoints accept `Pageable`. Service returns `PagedResponse<T>`. |
 | Slugs | Planned URL-friendly identifiers for named/catalog resources. `SlugUtils` exists, but slug columns and lookup endpoints are future work. |
+
+---
+
+## Workflow Diagrams
+
+Sequence diagrams are planned after workflow behavior stabilizes. Add diagrams
+only when the service behavior, transaction boundary, authorization checks, and
+error cases are clear enough that the diagram will not become a stale guess.
 
 ---
 

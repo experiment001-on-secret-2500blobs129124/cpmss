@@ -5,6 +5,51 @@ decisions live in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ---
 
+## Requirements-First Development
+
+Before implementing workflow, authorization, persistence, or domain behavior,
+read the relevant section of [`REQUIREMENTS.md`](./REQUIREMENTS.md).
+
+Rules:
+
+- Implement specific requirements directly.
+- Do not invent broad behavior when the requirement is marked planned, future,
+  partial, or open question.
+- If an implementation decision affects permissions, data scope, workflow
+  state, money, time, or ownership, document the rule in code and tests.
+- If the requirement is missing or ambiguous, record the product question
+  before coding the behavior.
+
+---
+
+## Default-Deny Authorization
+
+Authorization is default deny. A user may perform an action only when the
+backend has an explicit rule allowing both:
+
+- the route/action for their role, and
+- the specific record scope for their identity.
+
+Frontend UI hiding is not security. Service/rules checks must enforce
+ownership for records such as own profile, own department, own supervisees,
+assigned gate, assigned role inbox, own application, and own investment stake.
+
+---
+
+## No Catch-All Architecture Files
+
+Do not solve business or security behavior with one large catch-all class when
+the DDD-lite package layout provides a clear owner.
+
+Preferred shapes:
+
+- context-specific policy/rules classes,
+- small shared interfaces or helpers only when multiple contexts use the same
+  concept,
+- explicit tests beside the domain behavior they protect.
+
+---
+
 ## Entity Annotations
 
 Never use `@Data` on JPA entities. Lombok's `@Data` generates `equals()` and
@@ -139,6 +184,9 @@ Examples:
 Rules:
 
 - Keep database labels stable unless a migration is part of the task.
+- Before adding a raw `String`, `BigDecimal`, `Integer`, date, or boolean for a
+  domain concept, check whether it should be a primitive, enum, value object,
+  embeddable, or repository-backed workflow rule.
 - Put pure checks in the value object constructor or enum converter.
 - Keep cross-aggregate checks in service/rules classes.
 - Preserve existing JSON shapes by using `@JsonCreator` and `@JsonValue` when a
