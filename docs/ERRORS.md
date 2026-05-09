@@ -3,12 +3,10 @@
 CPMSS uses a centralized REST exception handler at
 `com.cpmss.platform.common.GlobalExceptionHandler`.
 
-Successful controller responses use `ApiResponse<T>`. Error responses do not
-use that envelope today; they use the handler-specific shapes documented here.
+Successful controller responses use `ApiResponse<T>`. Error responses use the
+standard error envelope documented here.
 
-## Current Implementation Baseline
-
-Current implementation:
+## Exception Sources
 
 - `GlobalExceptionHandler` handles application exceptions raised after a
   request reaches Spring MVC.
@@ -20,20 +18,8 @@ Current implementation:
 - `ResourceNotFoundException` returns status `404`.
 - A fallback `Exception` handler returns status `500`.
 - `401` responses are produced by Spring Security before controller handling.
-- Custom exceptions currently carry a human message only; they do not carry a
-  stable machine-readable code.
-- No request/correlation ID is currently added to error responses.
-- Business-rule errors are currently single-message errors, not field-level
-  errors.
 
-Implementation gaps to close before calling error handling finished:
-
-- stable error codes,
-- request/correlation IDs,
-- field-level business errors,
-- custom `401` response shape.
-
-## Current HTTP Mapping
+## HTTP Mapping
 
 | Status | Source | Meaning |
 |--------|--------|---------|
@@ -45,38 +31,9 @@ Implementation gaps to close before calling error handling finished:
 | 422 | `BusinessException` | Request shape is valid, but a business rule was violated. |
 | 500 | fallback `Exception` handler | Unexpected server error. |
 
-## Current Single-Message Error Shape
+## Standard Error Envelope
 
-Used for 403, 404, 409, 422, and 500 responses handled by
-`GlobalExceptionHandler`.
-
-```json
-{
-  "status": 422,
-  "error": "Unprocessable Entity",
-  "message": "Business rule message",
-  "timestamp": "2026-05-09T12:00:00Z"
-}
-```
-
-## Current Validation Error Shape
-
-Used for 400 request validation failures.
-
-```json
-{
-  "status": 400,
-  "error": "Validation Failed",
-  "fields": {
-    "email": "must not be blank"
-  },
-  "timestamp": "2026-05-09T12:00:00Z"
-}
-```
-
-## Target Error Envelope
-
-When the error refactor is implemented, every error should use one shape:
+Every error uses one shape:
 
 ```json
 {
@@ -100,7 +57,7 @@ When the error refactor is implemented, every error should use one shape:
 Rules:
 
 - `code` is mandatory.
-- `requestId` is mandatory after the request ID filter exists.
+- `requestId` is mandatory.
 - `fields` is optional and omitted when the error is not field-specific.
 - Field paths use request/DTO names when the error is caused by client input:
   `money.currency`, `contract.parties`, `permit.entitlement`.
@@ -109,10 +66,9 @@ Rules:
 - `message` remains human-readable and can change; `code` is the stable client
   contract.
 
-## Target Validation Error Shape
+## Validation Error Shape
 
-DTO validation can either keep the current simple field map or move to the same
-field-detail shape as business errors. Prefer the unified shape:
+DTO validation uses the same field-detail shape as business errors:
 
 ```json
 {
@@ -133,11 +89,10 @@ field-detail shape as business errors. Prefer the unified shape:
 }
 ```
 
-## Target 401 Response Shape
+## Authentication Error Shape
 
-401 responses come from Spring Security, not `GlobalExceptionHandler`. Add a
-custom authentication entry point so unauthenticated responses match the API
-error envelope.
+401 responses come from Spring Security, not `GlobalExceptionHandler`. The
+custom authentication entry point returns the API error envelope.
 
 ```json
 {
@@ -178,8 +133,8 @@ Examples:
 
 ## Initial Error Code Catalog
 
-This catalog is based on current exception and rule usage across the backend.
-Implementation can start from this list and add only when a new rule exists.
+This catalog is based on exception and rule usage across the backend. Add codes
+only when a rule or error boundary needs a distinct client contract.
 
 ### Common
 
@@ -404,43 +359,43 @@ Implementation can start from this list and add only when a new rule exists.
 - Use 422 when the request is structurally valid but violates a domain rule.
 - Use 500 only for unexpected failures.
 
-## Implementation Checklist
+## Required Components
 
 ### Stable Codes
 
-1. Add an `ErrorCode` enum under `platform.common` or `platform.exception`.
-2. Add code-bearing constructors to custom exceptions.
-3. Migrate existing string-only throws to explicit codes.
-4. Keep `BUSINESS_RULE_VIOLATION` only as a temporary fallback during the
-   migration; new rules must use specific codes.
-5. Add tests that each exception maps to the intended status and code.
+- Error codes live in a typed Java enum under `platform.common` or
+  `platform.exception`.
+- Custom exceptions carry a stable code and human-readable message.
+- `BUSINESS_RULE_VIOLATION` is only a fallback for legacy string-only rules;
+  new rules use specific codes.
+- Tests prove that each exception maps to the intended status and code.
 
 ### Request IDs
 
-1. Add a `RequestIdFilter` extending `OncePerRequestFilter`.
-2. Use header `X-Request-Id`.
-3. Accept an inbound ID only when it is short and safe to log; otherwise
-   generate a UUID.
-4. Put the request ID in SLF4J MDC with key `requestId`.
-5. Add `X-Request-Id` to every response.
-6. Add `requestId` to every error response.
-7. Clear MDC in a `finally` block.
+- `RequestIdFilter` extends `OncePerRequestFilter`.
+- Header name is `X-Request-Id`.
+- Inbound IDs are accepted only when short and safe to log; otherwise the
+  server generates a UUID.
+- SLF4J MDC key is `requestId`.
+- Every response includes `X-Request-Id`.
+- Every error response includes `requestId`.
+- MDC is cleared in a `finally` block.
 
 ### Field-Level Business Errors
 
-1. Add a field-error record with `field`, `code`, and `message`.
-2. Add a code-bearing business exception that can hold zero or more field
-   errors.
-3. Use field-level business errors when a service can report multiple specific
-   rule failures at once.
-4. Do not replace simple single-rule exceptions with field maps unless the
-   field path helps the client fix the request.
+- Field-error records contain `field`, `code`, and `message`.
+- Code-bearing business exceptions can hold zero or more field errors.
+- Field-level business errors are used when a service can report multiple
+  specific rule failures at once.
+- Simple single-rule exceptions stay simple unless the field path helps the
+  client fix the request.
 
 ### Custom 401 And Security 403
 
-1. Add a JSON `AuthenticationEntryPoint` for 401 responses.
-2. Add a JSON `AccessDeniedHandler` for Spring Security 403 responses.
-3. Reuse the same error response factory used by `GlobalExceptionHandler`.
-4. Wire both through `SecurityConfig.exceptionHandling(...)`.
-5. Add tests for missing token, invalid token, wrong role, and service-level
-   forbidden cases after route role rules are implemented.
+- A JSON `AuthenticationEntryPoint` owns 401 responses.
+- A JSON `AccessDeniedHandler` owns Spring Security 403 responses.
+- Both security handlers reuse the same error response factory as
+  `GlobalExceptionHandler`.
+- `SecurityConfig.exceptionHandling(...)` wires both handlers.
+- Tests cover missing token, invalid token, wrong role, and service-level
+  forbidden cases.

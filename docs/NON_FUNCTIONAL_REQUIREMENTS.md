@@ -40,8 +40,8 @@ defines the standards the implementation must meet while doing it.
 - Financial records, payroll snapshots, KPI summaries, contract history, and
   access events are historical records and should be corrected through explicit
   state changes instead of silent deletion.
-- Future request/correlation IDs should connect logs, errors, and API calls
-  for investigation.
+- Request/correlation IDs connect logs, errors, and API calls for
+  investigation.
 
 ## Data Integrity
 
@@ -75,10 +75,9 @@ defines the standards the implementation must meet while doing it.
 
 - Value objects and converters need focused unit tests.
 - Business rules need positive and negative rule tests.
-- Workflow services need transactional service tests once the rule surface is
-  stable.
-- API/integration tests are planned after core workflows and environment
-  support mature.
+- Workflow services need transactional service tests.
+- API and integration tests cover route behavior, workflow behavior,
+  authorization, persistence, and environment wiring.
 
 ## Observability and Logging
 
@@ -91,7 +90,7 @@ defines the standards the implementation must meet while doing it.
 
 ## File Storage
 
-- MinIO is the planned binary storage system.
+- MinIO is the binary storage system.
 - The database stores file metadata, ownership, access scope, and storage keys.
 - The database should not store full file contents.
 - Uploaded CVs and documents require authorization checks before download.
@@ -101,6 +100,6 @@ defines the standards the implementation must meet while doing it.
 - Java 21 is required.
 - Machine-specific Gradle settings belong in local ignored
   `gradle.properties`; the tracked example documents expected keys.
-- Development currently targets the local PostgreSQL/Flyway setup.
+- Development targets the local PostgreSQL/Flyway setup.
 - Dockerfile, Jenkins, API runner, and separate test/staging/production
-  profiles are planned until committed.
+  profiles follow the contracts in `docs/DEVOPS.md`.

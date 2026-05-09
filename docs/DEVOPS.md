@@ -2,16 +2,14 @@
 
 ## Environments
 
-Three environments, each with its own Spring profile and configuration file.
-Only `application.yml` and `application-dev.yml` are committed today; the test,
-staging, and production files are planned DevOps work.
+Each environment uses its own Spring profile and configuration file.
 
 | Environment | Profile | Config File | Purpose |
 |---|---|---|---|
 | Development | `dev` | `application-dev.yml` | Local development. PostgreSQL via Docker. Debug logging. |
-| Testing | `test` | `application-test.yml` (planned) | Automated tests. Testcontainers spins up isolated PostgreSQL. Wiped after each run. |
-| Staging | `staging` | `application-staging.yml` (planned) | Pre-production. Same config as prod — used to validate changes before going live. |
-| Production | `prod` | `application-prod.yml` (planned) | Live system. No seeding. Info-level logging only. |
+| Testing | `test` | `application-test.yml` | Automated tests. Testcontainers spins up isolated PostgreSQL. Wiped after each run. |
+| Staging | `staging` | `application-staging.yml` | Pre-production. Same config as prod — used to validate changes before going live. |
+| Production | `prod` | `application-prod.yml` | Live system. No seeding. Info-level logging only. |
 
 Active profile is set in the `.env` file:
 
@@ -47,7 +45,7 @@ jwt:
 | Environment | How secrets are provided |
 |---|---|
 | `dev` | `.env` file on local machine — always in `.gitignore`, never committed |
-| `test` | Planned: Testcontainers manages the DB automatically. JWT secret is a hardcoded value in `application-test.yml` |
+| `test` | Testcontainers manages the DB automatically. JWT secret is a fixed test-only value in `application-test.yml` |
 | `prod` | Jenkins credentials store — injected via `withCredentials`, no `.env` file on server |
 
 Docker Compose loads the `.env` file automatically (dev only).
@@ -77,10 +75,10 @@ Rules:
 
 ## Docker
 
-### Current Local Services
+### Local Services
 
-The committed `docker-compose.yml` currently starts PostgreSQL and MinIO only.
-The Spring Boot application is run locally with Gradle during development.
+`docker-compose.yml` starts PostgreSQL and MinIO. The Spring Boot application
+runs locally with Gradle during development.
 
 ```yaml
 # docker-compose.yml
@@ -109,7 +107,7 @@ services:
       - "9000:9000"   # S3-compatible file API
       - "9001:9001"   # MinIO console UI
 
-  # Future: Redis
+  # Redis cache
   # redis:
   #   image: redis:7-alpine
   #   ports: ["6379:6379"]
@@ -119,7 +117,13 @@ volumes:
   minio_data:
 ```
 
-### Dockerfile (Planned)
+### MinIO Local Service
+
+The local Docker Compose stack exposes MinIO's S3-compatible endpoint on port
+`9000` and the console on port `9001`. Database ownership and metadata rules
+for file records live in [`DATABASE.md`](./DATABASE.md#file-storage).
+
+### Dockerfile
 
 Multi-stage build: compile in one stage, run in a minimal JRE image.
 
@@ -139,7 +143,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 ---
 
-## Reverse Proxy — Nginx (Planned)
+## Reverse Proxy — Nginx
 
 Tomcat (embedded in Spring Boot) handles HTTP. Nginx sits in front for TLS
 termination (HTTPS) and reverse proxy. TLS certificates are provided by
@@ -189,9 +193,9 @@ http {
 
 ## CI/CD — Jenkins
 
-Jenkins is the planned CI/CD runner. A `Jenkinsfile` is not committed yet; the
-pipeline below is the target shape for the deployment phase. Until a
-`Jenkinsfile` is committed, CI/CD behavior is documentation only.
+Jenkins is the CI/CD runner. The pipeline builds the application, runs tests,
+builds and pushes the Docker image, and deploys with credentials injected from
+the Jenkins credential store.
 
 ### Running Jenkins
 
@@ -203,7 +207,7 @@ docker run -d \
   jenkins/jenkins:lts
 ```
 
-### Pipeline (Planned)
+### Pipeline
 
 ```groovy
 // Jenkinsfile
@@ -315,8 +319,8 @@ pipeline {
 
 ### Trigger
 
-Planned flow: every push to `master` triggers the full pipeline via GitHub
-webhook. PRs trigger Build + Test stages only (no deploy).
+Every push to `master` triggers the full pipeline via GitHub webhook. PRs
+trigger Build + Test stages only, with no deploy.
 
 ### Rollback
 

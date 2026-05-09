@@ -15,7 +15,7 @@
 4. [Functional Requirements by Role](#4-functional-requirements-by-role)
 5. [Business Rules](#5-business-rules)
 6. [User Stories (Multi-Step Workflows)](#6-user-stories-multi-step-workflows)
-7. [Planned Product Areas and Open Questions](#7-planned-product-areas-and-open-questions)
+7. [Deferred Product Contracts and Open Questions](#7-deferred-product-contracts-and-open-questions)
 8. [Admin Production Lockdown](#8-admin-production-lockdown)
 
 ---
@@ -32,13 +32,8 @@ This document is the product contract used before implementation:
   where partial completion would corrupt the business state.
 - **Open questions** mark behavior that is not safe to invent during coding.
 
-Status labels:
-
-- **Implemented**: behavior exists on the current committed branch.
-- **Partial**: some behavior exists, but the requirement is not complete.
-- **Planned**: product requirement is accepted but not implemented yet.
-- **Future**: useful later, outside the current implementation queue.
-- **Open question**: needs a product decision before implementation.
+This document defines product behavior. It does not track branch progress,
+commit history, or implementation completion state.
 
 ---
 
@@ -57,7 +52,7 @@ the data structures in V1 — every table implies someone who reads or writes it
 | **Department Manager** | Manages their own department's staff: daily task assignments, attendance, KPI scoring, performance reviews. | Assigned_Task, Attends, Staff_KPI_Record, Staff_Performance_Review, Department_Managers, Person_Supervision |
 | **Gate Guard** | Processes gate entries, scans permits, logs anonymous vehicle plates. | Enters_At (write), Gate_Guard_Assignment (read own), Access_Permit (read/verify) |
 | **Regular Staff** | Views own attendance, own tasks, own salary history, own profile. Cannot modify anything except maybe own contact info. | Attends (read own), Assigned_Task (read own), Staff_Salary_History (read own), Staff_Profile (read own) |
-| **Tenant** | Views own contract, installment schedule, payment history. NOT a system user — interacts via **frontend portal** (future). | Contract (read own), Installment (read own), Payment (read own), Person_Resides_Under (read own) |
+| **Tenant** | Views own contract, installment schedule, payment history. NOT a system user — interacts via **frontend portal**. | Contract (read own), Installment (read own), Payment (read own), Person_Resides_Under (read own) |
 | **Investor** | Views investment stakes, compound financials (dashboards). **Logs in** as a non-staff read-only role. | Person_Invests_in_Compound (read own), Payment (read aggregates), Contract (read occupancy rates) |
 | **Visitor** | No system access. Exists only as a Person record + Visitor role + Access_Permit for gate entry. | None directly |
 
@@ -65,8 +60,8 @@ the data structures in V1 — every table implies someone who reads or writes it
 > never log in (Tenant, Visitor). Their identity is captured by their
 > **business role** in the `Person_Role` table. Only personas who need software
 > access get an `App_User` row with a `system_role`. **Investor** and
-> **Applicant** are the current non-staff login roles. **Tenant** and
-> **Visitor** remain non-login personas for the current scope.
+> **Applicant** are non-staff login roles. **Tenant** and **Visitor** remain
+> non-login personas in this product scope.
 
 ---
 
@@ -106,8 +101,8 @@ These are **software permission levels**. Only people who need to LOG IN get one
 
 > **Role model**: 12 roles. 9 staff-based + 3 non-staff
 > (`ADMIN`, `INVESTOR`, `APPLICANT`). Leasing and sales duties are handled by
-> `ACCOUNTANT` because the current product scope treats contracts, pricing,
-> installments, and payment collection as finance work.
+> `ACCOUNTANT` because this product treats contracts, pricing, installments,
+> and payment collection as finance work.
 
 ### Permission Policy
 
@@ -465,17 +460,12 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 > **User Story**: The Applicant is a job seeker who registers on the portal.
 > They are NOT staff — they have no access to any operational data.
->
-> **Status**: Planned. Applicant login exists as a system role in the
-> requirements, but the full applicant portal and CV workflow are not complete
-> in the current implementation.
 
 ```
 - Can self-register (creates own Person + AppUser with role = APPLICANT)
 - Can update own profile (name, contact info, qualifications)
 - Can upload CV (via MinIO — stored as file_url)
-- Future: can view applicant document/CV history when document metadata is
-  added.
+- Can view applicant document/CV history through document metadata.
 - Can view open positions (Staff_Position catalog — read only)
 - Can submit Applications (applicant_id = self, position_id, application_date)
 - Can view own application status and history
@@ -486,9 +476,6 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 ```
 
 ### INVESTOR
-
-> **Status**: Planned. Investor login is a required read-only portal role; the
-> dedicated dashboard/read model is not complete in the current implementation.
 
 ```
 - Can view own investment stakes (Person_Invests_in_Compound — own records)
@@ -533,8 +520,8 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 ```
 - A person cannot supervise themselves
-  → Implemented in schema by chk_no_self_supervision; service enforcement must
-    remain explicit when supervision workflows are completed.
+  → Schema safety net: chk_no_self_supervision. Service enforcement remains
+    explicit in supervision workflows.
 
 - Open question: should supervision cycles be rejected across the whole chain?
 
@@ -909,10 +896,6 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 > As a **job seeker**, I want to register on the portal, browse open
 > positions, and submit my application without staff involvement.
->
-> **Status**: Planned. The role and target workflow are part of the product
-> requirements; MinIO CV upload and applicant-owned document history still need
-> implementation.
 
 ```
 1. Applicant visits /register → creates own Person record + AppUser (role = APPLICANT)
@@ -927,26 +910,22 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 ---
 
-## 7. Planned Product Areas and Open Questions
+## 7. Deferred Product Contracts and Open Questions
 
-This section prevents accepted future work from being forgotten while keeping
-it separate from behavior that already exists.
+This section captures accepted product contracts and product decisions that
+need explicit confirmation before implementation.
 
 ### Applicant Portal
-
-**Status**: Planned.
 
 ```
 - Applicant login through APPLICANT system role.
 - Own profile management.
 - Own applications and interview schedule/history.
 - CV upload/download through MinIO.
-- Future applicant document history after document metadata exists.
+- Applicant document history through document metadata.
 ```
 
 ### Investor Portal
-
-**Status**: Planned.
 
 ```
 - Investor login through INVESTOR system role.
@@ -958,8 +937,6 @@ it separate from behavior that already exists.
 
 ### Payment Provider Demo
 
-**Status**: Planned.
-
 ```
 - Fake provider interface for demos, e.g. fake Fawry.
 - Payment attempt history with provider reference and provider status.
@@ -970,8 +947,6 @@ it separate from behavior that already exists.
 
 ### Supervision Policy
 
-**Status**: Open question.
-
 ```
 - No self-supervision is required.
 - Decide whether supervision cycles are forbidden.
@@ -981,8 +956,6 @@ it separate from behavior that already exists.
 ```
 
 ### Time and Calendar Policy
-
-**Status**: Partial.
 
 ```
 - Business timezone is Africa/Cairo.

@@ -187,6 +187,28 @@ public interface PersonRepository extends JpaRepository<Person, UUID> {
 
 ---
 
+## Documenting Tests
+
+Test files document required behavior. A non-trivial test class must explain
+the business rule or invariant it protects, not just the Java class it calls.
+
+```java
+/**
+ * Verifies the ownership rule that a gate guard may record entries only for
+ * the gate they are assigned to.
+ *
+ * <p>This protects the backend authorization rule even if the frontend hides
+ * other gates from the guard.
+ */
+@DisplayName("Gate entry ownership")
+class GateEntryOwnershipTest { ... }
+```
+
+Use `@DisplayName` or behavior-style method names so a failing test tells the
+reader which requirement broke.
+
+---
+
 ## Inline Field Documentation
 
 ```java
@@ -215,6 +237,7 @@ Javadoc always goes **above** the element — no trailing comment syntax.
 | Entity classes | `BaseEntity` fields (documented once) |
 | Record components in DTOs | Standard repo methods (`findById`, `save`) |
 | Public value objects, enums, and converters | Private helpers with obvious names |
+| Non-trivial test classes and fixtures | Tests whose method names already fully explain trivial behavior |
 | Non-obvious field semantics | Self-documenting fields (`email`, `name`) |
 | Custom repository queries | Config classes (annotations explain them) |
 
@@ -222,9 +245,9 @@ Javadoc always goes **above** the element — no trailing comment syntax.
 
 ---
 
-## Planned Documentation Backlog
+## Deferred Documentation Items
 
-- `V8__seed_catalog_data.sql` (future)
+- `V8__seed_catalog_data.sql`
 
 ---
 

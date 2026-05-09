@@ -22,14 +22,14 @@ See also:
 - [`ERRORS.md`](./ERRORS.md)
 - [`LOGGING.md`](./LOGGING.md)
 
-Current status notes:
+Tool roles:
 
-- REST JSON is implemented. Thymeleaf web views are optional future work.
-- PostgreSQL/Flyway are implemented for the backend schema.
-- MinIO is present as dependency/local service, but upload/download workflows
-  are planned.
-- Dockerfile, Jenkinsfile, Yaak automated runner, and Testcontainers-backed
-  integration tests are planned until committed.
+- REST JSON is the primary API surface.
+- Thymeleaf is the optional browser-facing view technology.
+- PostgreSQL and Flyway own schema persistence and migration order.
+- MinIO is the S3-compatible file storage service.
+- Docker, Jenkins, Yaak, and Testcontainers support deployment, API checks,
+  and environment-backed tests.
 
 ---
 
@@ -109,15 +109,16 @@ src/main/resources/db/migration/
   V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6
 ```
 
-Numbered migrations (`V1`-`V7` today, `V8+` later) run once, in order.
+Numbered migrations run once, in order.
 After the schema is shared or released, add a new migration instead of editing
 an applied one. Pre-release baseline edits require a database reset.
 `V3`/`V4` add the auth tables and constraints. `V6`/`V7` add the internal
 reporting table and constraints. The `R__` prefix is Flyway's repeatable
-migration convention for future dev-only seed data.
+migration convention for dev-only seed data.
 
-A `CommandLineRunner` bean annotated with `@Profile("dev")` can run any dev-only startup automation
-(e.g. bulk demo data generation, MinIO bucket setup, test user creation). Planned, not yet implemented.
+A `CommandLineRunner` bean annotated with `@Profile("dev")` can run dev-only
+startup automation such as bulk demo data generation, MinIO bucket setup, and
+test user creation.
 
 See [DATABASE.md](./DATABASE.md) for the full migration convention and rationale.
 
@@ -136,11 +137,10 @@ See [DATABASE.md](./DATABASE.md) for the full migration convention and rationale
 
 **Yaak** — API client for manual testing and collection management.
 
-**Yaak CLI + Python script** — planned automated collection runner for CI and
-environment verification. The `tests/api/` runner is not committed yet.
-Until then, use `./gradlew test` for committed backend tests.
+**Yaak CLI + Python script** — automated collection runner for CI and
+environment verification.
 
-Planned target shape:
+Runner shape:
 
 - Location: `tests/api/`
 - Runtime: Python 3.14, `venv`-managed
@@ -154,7 +154,7 @@ Planned target shape:
   python3 tests/api/run_tests.py
   ```
 
-Planned workflow:
+Workflow:
 1. Spring controllers define endpoints
 2. springdoc-openapi generates OpenAPI spec at `/v3/api-docs`
 3. Yaak imports spec (collection stays in sync)
@@ -167,9 +167,6 @@ Planned workflow:
 **JUnit 5** — test framework (ships with Spring Boot).
 
 **Mockito** — mocking library for unit tests.
-
-Current committed tests are focused unit tests under `src/test/java` for DDD
-value objects, enum labels, and converters.
 
 ```java
 @ExtendWith(MockitoExtension.class)
@@ -188,14 +185,12 @@ class SomeServiceTest {
 ```
 
 **Spring Boot Test + MockMvc** — integration tests that spin up the Spring
-context and hit controllers via HTTP. Planned for broader API coverage.
+context and hit controllers via HTTP.
 
 **Testcontainers** — spins up a real PostgreSQL Docker container during tests.
 Ensures Flyway migrations and queries work against the actual database engine.
-Planned for database-backed integration coverage.
 
-See [`TESTING.md`](./TESTING.md) for the current testing policy and layer
-definitions.
+See [`TESTING.md`](./TESTING.md) for the testing policy and layer definitions.
 
 ---
 
@@ -218,7 +213,7 @@ using SLF4J, Logback handles the output.
 See [`LOGGING.md`](./LOGGING.md) for project logging rules and
 [`ERRORS.md`](./ERRORS.md) for exception response behavior.
 
-## Future: Caching
+## Caching
 
 **Spring Data Redis** — `@Cacheable` annotation on service methods. Redis
 runs as a separate Docker container.
