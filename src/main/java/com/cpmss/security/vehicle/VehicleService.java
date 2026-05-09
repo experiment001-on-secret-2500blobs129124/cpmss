@@ -1,9 +1,9 @@
 package com.cpmss.security.vehicle;
 
 import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
-import com.cpmss.maintenance.common.MaintenanceErrorCode;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
@@ -12,10 +12,13 @@ import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.accesspermit.AccessPermit;
+import com.cpmss.security.accesspermit.AccessPermitRepository;
 import com.cpmss.security.common.SecurityAccessRules;
 import com.cpmss.security.common.SecurityErrorCode;
 import com.cpmss.security.vehicle.dto.CreateVehicleRequest;
 import com.cpmss.security.vehicle.dto.UpdateVehicleRequest;
+import com.cpmss.security.vehicle.dto.VehiclePermitLinkResponse;
 import com.cpmss.security.vehicle.dto.VehicleResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +47,7 @@ public class VehicleService {
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
     private final CompanyRepository companyRepository;
+    private final AccessPermitRepository accessPermitRepository;
     private final CurrentUserService currentUserService;
     private final VehicleMapper mapper;
     private final VehicleRules rules = new VehicleRules();
@@ -52,23 +56,26 @@ public class VehicleService {
     /**
      * Constructs the service with required dependencies.
      *
-     * @param repository           vehicle data access
-     * @param personRepository     person data access (owner FK lookup)
-     * @param departmentRepository department data access (owner FK lookup)
-     * @param companyRepository    company data access (owner FK lookup)
-     * @param currentUserService   current-user resolver for ownership checks
-     * @param mapper               entity-DTO mapper
+     * @param repository             vehicle data access
+     * @param personRepository       person data access (owner FK lookup)
+     * @param departmentRepository   department data access (owner FK lookup)
+     * @param companyRepository      company data access (owner FK lookup)
+     * @param accessPermitRepository access permit data access for vehicle links
+     * @param currentUserService     current-user resolver for ownership checks
+     * @param mapper                 entity-DTO mapper
      */
     public VehicleService(VehicleRepository repository,
                           PersonRepository personRepository,
                           DepartmentRepository departmentRepository,
                           CompanyRepository companyRepository,
+                          AccessPermitRepository accessPermitRepository,
                           CurrentUserService currentUserService,
                           VehicleMapper mapper) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.departmentRepository = departmentRepository;
         this.companyRepository = companyRepository;
+        this.accessPermitRepository = accessPermitRepository;
         this.currentUserService = currentUserService;
         this.mapper = mapper;
     }
@@ -83,8 +90,7 @@ public class VehicleService {
     @Transactional(readOnly = true)
     public VehicleResponse getById(UUID id) {
         accessRules.validateSecurityAdministrator(currentUserService.currentUser());
-        return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND)));
+        return mapper.toResponse(findVehicleOrThrow(id));
     }
 
     /**
@@ -107,7 +113,7 @@ public class VehicleService {
      *
      * @param request the create request with vehicle details and owner ID
      * @return the created vehicle response
-    * @throws ApiException if the owner rule is violated or the license is duplicate
+     * @throws ApiException if the owner rule is violated or the license is duplicate
      */
     @Transactional
     public VehicleResponse create(CreateVehicleRequest request) {
@@ -141,8 +147,7 @@ public class VehicleService {
     @Transactional
     public VehicleResponse update(UUID id, UpdateVehicleRequest request) {
         accessRules.validateSecurityAdministrator(currentUserService.currentUser());
-        Vehicle vehicle = repository.findById(id)
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND));
+        Vehicle vehicle = findVehicleOrThrow(id);
 
         rules.validateExactlyOneOwner(
                 request.ownerPersonId(), request.ownerDepartmentId(), request.ownerCompanyId());
@@ -164,6 +169,49 @@ public class VehicleService {
     }
 
     /**
+     * Links an active vehicle sticker permit to a vehicle.
+     *
+     * @param id the vehicle UUID
+     * @param permitId the access permit UUID
+     * @return the created vehicle-permit link response
+     * @throws ApiException if the vehicle, permit, or link rule is invalid
+     */
+    @Transactional
+    public VehiclePermitLinkResponse linkPermit(UUID id, UUID permitId) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
+        Vehicle vehicle = findVehicleOrThrow(id);
+        AccessPermit permit = findPermitOrThrow(permitId);
+
+        rules.validatePermitCanBeLinkedToVehicle(permit);
+        rules.validatePermitNotAlreadyLinked(vehicle.getPermits().contains(permit));
+
+        vehicle.getPermits().add(permit);
+        repository.save(vehicle);
+        log.info("Vehicle permit linked: vehicle={} permit={}", id, permitId);
+        return toLinkResponse(vehicle, permit);
+    }
+
+    /**
+     * Unlinks an access permit from a vehicle.
+     *
+     * @param id the vehicle UUID
+     * @param permitId the access permit UUID
+     * @throws ApiException if the vehicle, permit, or link rule is invalid
+     */
+    @Transactional
+    public void unlinkPermit(UUID id, UUID permitId) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
+        Vehicle vehicle = findVehicleOrThrow(id);
+        AccessPermit permit = findPermitOrThrow(permitId);
+
+        rules.validatePermitLinked(vehicle.getPermits().contains(permit));
+
+        vehicle.getPermits().remove(permit);
+        repository.save(vehicle);
+        log.info("Vehicle permit unlinked: vehicle={} permit={}", id, permitId);
+    }
+
+    /**
      * Deletes a vehicle by ID.
      *
      * @param id the vehicle's UUID
@@ -172,13 +220,27 @@ public class VehicleService {
     @Transactional
     public void delete(UUID id) {
         accessRules.validateSecurityAdministrator(currentUserService.currentUser());
-        Vehicle vehicle = repository.findById(id)
-                .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND));
+        Vehicle vehicle = findVehicleOrThrow(id);
         repository.delete(vehicle);
         log.info("Vehicle deleted: {}", vehicle.getLicenseNo());
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private Vehicle findVehicleOrThrow(UUID id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND));
+    }
+
+    private AccessPermit findPermitOrThrow(UUID id) {
+        return accessPermitRepository.findById(id)
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.ACCESS_PERMIT_NOT_FOUND));
+    }
+
+    private VehiclePermitLinkResponse toLinkResponse(Vehicle vehicle, AccessPermit permit) {
+        return new VehiclePermitLinkResponse(
+                vehicle.getId(), permit.getId(), vehicle.getLicenseNo(), permit.getPermitNo());
+    }
 
     private Person resolveOwnerPerson(UUID id) {
         if (id == null) {

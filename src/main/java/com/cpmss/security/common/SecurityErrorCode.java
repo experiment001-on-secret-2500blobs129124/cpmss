@@ -89,6 +89,18 @@ public enum SecurityErrorCode implements ErrorCode {
     /** License number is already registered. */
     VEHICLE_LICENSE_DUPLICATE(409, "License number is already registered"),
 
+    /** Vehicle permit is already linked. */
+    VEHICLE_PERMIT_ALREADY_LINKED(409, "Vehicle permit is already linked"),
+
+    /** Vehicle permit link does not exist. */
+    VEHICLE_PERMIT_NOT_LINKED(404, "Vehicle permit link does not exist"),
+
+    /** Vehicle can only be linked to vehicle sticker permits. */
+    VEHICLE_PERMIT_TYPE_INVALID(422, "Vehicle can only be linked to vehicle sticker permits"),
+
+    /** Vehicle can only be linked to active permits. */
+    VEHICLE_PERMIT_NOT_ACTIVE(422, "Vehicle can only be linked to active permits"),
+
     /** Access permit not found. */
     ACCESS_PERMIT_NOT_FOUND(404, "Access permit not found"),
 

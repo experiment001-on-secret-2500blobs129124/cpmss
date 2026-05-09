@@ -89,6 +89,8 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.GET, ApiPaths.ACCESS_PERMITS_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.ACCESS_PERMITS);
         add(routes, HttpMethod.PUT, ApiPaths.ACCESS_PERMITS_BY_ID);
+        add(routes, HttpMethod.POST, ApiPaths.VEHICLE_PERMIT);
+        add(routes, HttpMethod.DELETE, ApiPaths.VEHICLE_PERMIT);
         add(routes, HttpMethod.GET, ApiPaths.GATE_GUARD_ASSIGNMENTS);
         add(routes, HttpMethod.GET, ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.GATE_GUARD_ASSIGNMENTS);

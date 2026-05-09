@@ -5,6 +5,7 @@ import com.cpmss.platform.common.ApiResponse;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.security.vehicle.dto.CreateVehicleRequest;
 import com.cpmss.security.vehicle.dto.UpdateVehicleRequest;
+import com.cpmss.security.vehicle.dto.VehiclePermitLinkResponse;
 import com.cpmss.security.vehicle.dto.VehicleResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 /**
- * REST controller for vehicle CRUD operations.
+ * REST controller for vehicle CRUD and permit-link operations.
  *
  * <p>Exposes paginated list, single-resource GET, create, update,
- * and delete endpoints under {@link ApiPaths#VEHICLES}.
+ * delete, and parent-managed vehicle-permit link workflows under
+ * {@link ApiPaths#VEHICLES}.
  *
  * @see VehicleService
  */
@@ -89,6 +91,36 @@ public class VehicleApiController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateVehicleRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(vehicleService.update(id, request)));
+    }
+
+    /**
+     * Links an access permit to a vehicle.
+     *
+     * @param id the vehicle UUID
+     * @param permitId the access permit UUID
+     * @return 201 Created with the vehicle-permit link
+     */
+    @PostMapping(ApiPaths.VEHICLE_PERMIT)
+    public ResponseEntity<ApiResponse<VehiclePermitLinkResponse>> linkPermit(
+            @PathVariable UUID id,
+            @PathVariable UUID permitId) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(vehicleService.linkPermit(id, permitId)));
+    }
+
+    /**
+     * Unlinks an access permit from a vehicle.
+     *
+     * @param id the vehicle UUID
+     * @param permitId the access permit UUID
+     * @return 204 No Content
+     */
+    @DeleteMapping(ApiPaths.VEHICLE_PERMIT)
+    public ResponseEntity<ApiResponse<Void>> unlinkPermit(
+            @PathVariable UUID id,
+            @PathVariable UUID permitId) {
+        vehicleService.unlinkPermit(id, permitId);
+        return ResponseEntity.status(204).body(ApiResponse.noContent());
     }
 
     /**

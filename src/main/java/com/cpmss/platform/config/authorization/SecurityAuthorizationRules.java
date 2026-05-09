@@ -43,6 +43,12 @@ final class SecurityAuthorizationRules {
                         // Allow security officers to update access permit status/details.
                         EndpointAuthorizationRules.allow(HttpMethod.PUT,
                                 ApiPaths.ACCESS_PERMITS_BY_ID, RoleGroups.SECURITY),
+                        // Allow security officers to link vehicle stickers to vehicles.
+                        EndpointAuthorizationRules.allow(HttpMethod.POST,
+                                ApiPaths.VEHICLE_PERMIT, RoleGroups.SECURITY),
+                        // Allow security officers to unlink vehicle stickers from vehicles.
+                        EndpointAuthorizationRules.allow(HttpMethod.DELETE,
+                                ApiPaths.VEHICLE_PERMIT, RoleGroups.SECURITY),
                         // Allow security officers and gate guards to reach guard assignment reads;
                         // service rules narrow gate guards to their own active assignment.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,

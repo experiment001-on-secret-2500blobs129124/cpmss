@@ -57,6 +57,7 @@ public final class ApiPaths {
     public static final String GATES_BY_ID = "/api/v1/gates/{id}";
     public static final String VEHICLES = "/api/v1/vehicles";
     public static final String VEHICLES_BY_ID = "/api/v1/vehicles/{id}";
+    public static final String VEHICLE_PERMIT = "/api/v1/vehicles/{id}/permits/{permitId}";
 
     // Phase 4 — Staff & HR
     public static final String STAFF_POSITIONS = "/api/v1/staff-positions";
