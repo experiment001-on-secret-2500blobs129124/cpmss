@@ -1,6 +1,7 @@
 package com.cpmss.security.accesspermit;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -42,17 +43,16 @@ public enum PermitType {
      *
      * @param label the permit type label
      * @return the matching permit type
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     public static PermitType fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Permit type is required");
+            throw new ApiException(SecurityErrorCode.PERMIT_TYPE_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Permit type must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.PERMIT_TYPE_INVALID));
     }
 
     /**

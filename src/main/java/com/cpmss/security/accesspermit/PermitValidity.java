@@ -1,6 +1,7 @@
 package com.cpmss.security.accesspermit;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -38,15 +39,15 @@ public class PermitValidity implements Serializable {
      *
      * @param issueDate the required issue date
      * @param expiryDate the optional expiry date
-     * @throws BusinessException if the issue date is missing or the expiry
+     * @throws ApiException if the issue date is missing or the expiry
      *                           date is before the issue date
      */
     public PermitValidity(LocalDate issueDate, LocalDate expiryDate) {
         if (issueDate == null) {
-            throw new BusinessException("Permit issue date is required");
+            throw new ApiException(SecurityErrorCode.PERMIT_ISSUE_DATE_REQUIRED);
         }
         if (expiryDate != null && expiryDate.isBefore(issueDate)) {
-            throw new BusinessException("Permit expiry date cannot be before issue date");
+            throw new ApiException(SecurityErrorCode.PERMIT_DATE_RANGE_INVALID);
         }
         this.issueDate = issueDate;
         this.expiryDate = expiryDate;
@@ -58,11 +59,11 @@ public class PermitValidity implements Serializable {
      * @param date the date to check
      * @return true when the date is on or after issue date and not after
      *         expiry date when one exists
-     * @throws BusinessException if the date is missing
+     * @throws ApiException if the date is missing
      */
     public boolean contains(LocalDate date) {
         if (date == null) {
-            throw new BusinessException("Permit check date is required");
+            throw new ApiException(SecurityErrorCode.PERMIT_CHECK_DATE_REQUIRED);
         }
         return !date.isBefore(issueDate) && (expiryDate == null || !date.isAfter(expiryDate));
     }

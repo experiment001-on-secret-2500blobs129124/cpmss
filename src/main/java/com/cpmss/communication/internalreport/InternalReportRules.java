@@ -1,7 +1,8 @@
 package com.cpmss.communication.internalreport;
 
+import com.cpmss.communication.common.CommunicationErrorCode;
 import com.cpmss.identity.auth.SystemRole;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Set;
 
@@ -29,16 +30,14 @@ public class InternalReportRules {
      * Validates that the assigned role is a valid system role.
      *
      * @param assignedToRole the target role to validate
-     * @throws BusinessException if the role cannot process internal reports
+     * @throws ApiException if the role cannot process internal reports
      */
     public void validateAssignedToRole(SystemRole assignedToRole) {
         if (assignedToRole == null) {
-            throw new BusinessException("Assigned role is required");
+            throw new ApiException(CommunicationErrorCode.REPORT_TARGET_ROLE_REQUIRED);
         }
         if (!REPORT_RECEIVER_ROLES.contains(assignedToRole)) {
-            throw new BusinessException(
-                    "Invalid assigned role: '" + assignedToRole
-                            + "'. Must be a report receiver role");
+            throw new ApiException(CommunicationErrorCode.REPORT_TARGET_ROLE_INVALID);
         }
     }
 
@@ -46,11 +45,11 @@ public class InternalReportRules {
      * Validates that the report category is one of the known categories.
      *
      * @param reportCategory the category to validate
-     * @throws BusinessException if the category is unknown
+     * @throws ApiException if the category is unknown
      */
     public void validateCategory(ReportCategory reportCategory) {
         if (reportCategory == null) {
-            throw new BusinessException("Report category is required");
+            throw new ApiException(CommunicationErrorCode.REPORT_CATEGORY_REQUIRED);
         }
     }
 }

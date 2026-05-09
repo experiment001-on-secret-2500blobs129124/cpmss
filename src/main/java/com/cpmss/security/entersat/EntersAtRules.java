@@ -1,8 +1,8 @@
 package com.cpmss.security.entersat;
 
 import com.cpmss.identity.auth.SystemRole;
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
 
 import java.util.UUID;
 
@@ -18,15 +18,14 @@ public class EntersAtRules {
      *
      * @param permitId        the permit UUID (may be {@code null})
      * @param manualPlateEntry the manually entered plate (may be {@code null})
-     * @throws BusinessException if neither or both are set
+     * @throws ApiException if neither or both are set
      */
     public void validateExactlyOneEntryMethod(UUID permitId, String manualPlateEntry) {
         boolean hasPermit = permitId != null;
         boolean hasManualPlate = manualPlateEntry != null && !manualPlateEntry.isBlank();
 
         if (hasPermit == hasManualPlate) {
-            throw new BusinessException(
-                    "Exactly one of permit or manual plate entry must be provided");
+            throw new ApiException(SecurityErrorCode.GUARD_NOT_ASSIGNED);
         }
     }
 
@@ -37,14 +36,14 @@ public class EntersAtRules {
      * this guard-only check protects the operational rule that a guard can log
      * events only for the gate where they are currently posted.
      *
-     * @param actorRole           the current user's system role
+     * @param actorRole            the current user's system role
      * @param assignedToGateAtTime whether the guard has an active gate posting
-     * @throws ForbiddenException if a gate guard is not assigned to the gate
+     * @throws ApiException if a gate guard is not assigned to the gate
      */
     public void validateGateGuardAssignedToGate(SystemRole actorRole,
                                                 boolean assignedToGateAtTime) {
         if (actorRole == SystemRole.GATE_GUARD && !assignedToGateAtTime) {
-            throw new ForbiddenException("Gate guard is not assigned to this gate");
+            throw new ApiException(SecurityErrorCode.GUARD_NOT_ASSIGNED);
         }
     }
 
@@ -55,10 +54,10 @@ public class EntersAtRules {
      * linked person id. The service may still default anonymous entries to the
      * current guard when the request leaves the field blank.
      *
-     * @param actorRole      the current user's system role
-     * @param actorPersonId  linked person UUID for the current user
-     * @param processedById  requested processing guard UUID
-     * @throws ForbiddenException if a gate guard tries to act as another guard
+     * @param actorRole     the current user's system role
+     * @param actorPersonId linked person UUID for the current user
+     * @param processedById requested processing guard UUID
+     * @throws ApiException if a gate guard tries to act as another guard
      */
     public void validateGateGuardProcessesOnlySelf(SystemRole actorRole,
                                                    UUID actorPersonId,
@@ -66,7 +65,7 @@ public class EntersAtRules {
         if (actorRole == SystemRole.GATE_GUARD
                 && processedById != null
                 && !processedById.equals(actorPersonId)) {
-            throw new ForbiddenException("Gate guards can only process entries as themselves");
+            throw new ApiException(SecurityErrorCode.GUARD_NOT_ASSIGNED);
         }
     }
 }

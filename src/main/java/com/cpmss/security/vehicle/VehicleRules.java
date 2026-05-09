@@ -1,7 +1,7 @@
 package com.cpmss.security.vehicle;
 
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -24,7 +24,7 @@ public class VehicleRules {
      * @param ownerPersonId     the person owner UUID (may be {@code null})
      * @param ownerDepartmentId the department owner UUID (may be {@code null})
      * @param ownerCompanyId    the company owner UUID (may be {@code null})
-     * @throws BusinessException if zero or more than one owner is set
+     * @throws ApiException if zero or more than one owner is set
      */
     public void validateExactlyOneOwner(UUID ownerPersonId, UUID ownerDepartmentId, UUID ownerCompanyId) {
         int count = 0;
@@ -33,8 +33,7 @@ public class VehicleRules {
         if (ownerCompanyId != null) count++;
 
         if (count != 1) {
-            throw new BusinessException(
-                    "A vehicle must have exactly one owner (person, department, or company)");
+            throw new ApiException(SecurityErrorCode.VEHICLE_OWNER_INVALID);
         }
     }
 
@@ -43,11 +42,11 @@ public class VehicleRules {
      *
      * @param licenseNo the desired license number
      * @param exists    whether a vehicle with this license already exists
-     * @throws ConflictException if the license number is already registered
+     * @throws ApiException if the license number is already registered
      */
     public void validateLicenseNoUnique(String licenseNo, boolean exists) {
         if (exists) {
-            throw new ConflictException("License number '" + licenseNo + "' is already registered");
+            throw new ApiException(SecurityErrorCode.VEHICLE_LICENSE_DUPLICATE);
         }
     }
 }

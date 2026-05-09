@@ -130,7 +130,7 @@ public class AppUser {
      * Assigns the login email from a raw string.
      *
      * @param email the raw login email
-     * @throws com.cpmss.platform.exception.BusinessException if the email is
+     * @throws com.cpmss.platform.exception.ApiException if the email is
      *                                                        missing, too long,
      *                                                        or invalid
      */

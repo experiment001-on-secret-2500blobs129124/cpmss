@@ -15,6 +15,22 @@ Every tool, library, and framework used in this project.
 | File Storage | ![MinIO](https://img.shields.io/badge/MinIO-latest-C72E49?logo=minio&logoColor=white) |
 | Build | ![Gradle](https://img.shields.io/badge/Gradle-8-02303A?logo=gradle) |
 
+See also:
+
+- [`NON_FUNCTIONAL_REQUIREMENTS.md`](./NON_FUNCTIONAL_REQUIREMENTS.md)
+- [`TESTING.md`](./TESTING.md)
+- [`ERRORS.md`](./ERRORS.md)
+- [`LOGGING.md`](./LOGGING.md)
+
+Tool roles:
+
+- REST JSON is the primary API surface.
+- Thymeleaf is the optional browser-facing view technology.
+- PostgreSQL and Flyway own schema persistence and migration order.
+- MinIO is the S3-compatible file storage service.
+- Docker, Jenkins, Yaak, and Testcontainers support deployment, API checks,
+  and environment-backed tests.
+
 ---
 
 ## Code Quality & Boilerplate
@@ -93,15 +109,16 @@ src/main/resources/db/migration/
   V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6
 ```
 
-Numbered migrations (`V1`-`V7` today, `V8+` later) run once, in order.
+Numbered migrations run once, in order.
 After the schema is shared or released, add a new migration instead of editing
 an applied one. Pre-release baseline edits require a database reset.
 `V3`/`V4` add the auth tables and constraints. `V6`/`V7` add the internal
 reporting table and constraints. The `R__` prefix is Flyway's repeatable
-migration convention for future dev-only seed data.
+migration convention for dev-only seed data.
 
-A `CommandLineRunner` bean annotated with `@Profile("dev")` can run any dev-only startup automation
-(e.g. bulk demo data generation, MinIO bucket setup, test user creation). Planned, not yet implemented.
+A `CommandLineRunner` bean annotated with `@Profile("dev")` can run dev-only
+startup automation such as bulk demo data generation, MinIO bucket setup, and
+test user creation.
 
 See [DATABASE.md](./DATABASE.md) for the full migration convention and rationale.
 
@@ -120,9 +137,10 @@ See [DATABASE.md](./DATABASE.md) for the full migration convention and rationale
 
 **Yaak** — API client for manual testing and collection management.
 
-**Yaak CLI + Python script** — planned automated collection runner for CI and
-environment verification. The `tests/api/` runner is not committed yet.
-Until then, use `./gradlew test` for committed backend tests.
+**Yaak CLI + Python script** — automated collection runner for CI and
+environment verification.
+
+Runner shape:
 
 - Location: `tests/api/`
 - Runtime: Python 3.14, `venv`-managed
@@ -150,9 +168,6 @@ Workflow:
 
 **Mockito** — mocking library for unit tests.
 
-Current committed tests are focused unit tests under `src/test/java` for DDD
-value objects, enum labels, and converters.
-
 ```java
 @ExtendWith(MockitoExtension.class)
 class SomeServiceTest {
@@ -164,7 +179,7 @@ class SomeServiceTest {
     void shouldThrowWhenNotFound() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.getById(id));
+        assertThrows(ApiException.class, () -> service.getById(id));
     }
 }
 ```
@@ -174,6 +189,8 @@ context and hit controllers via HTTP.
 
 **Testcontainers** — spins up a real PostgreSQL Docker container during tests.
 Ensures Flyway migrations and queries work against the actual database engine.
+
+See [`TESTING.md`](./TESTING.md) for the testing policy and layer definitions.
 
 ---
 
@@ -193,9 +210,10 @@ request via `Authorization: Bearer` header.
 is the engine behind it. They always work together. You write `log.info(...)`
 using SLF4J, Logback handles the output.
 
+See [`LOGGING.md`](./LOGGING.md) for project logging rules and
+[`ERRORS.md`](./ERRORS.md) for exception response behavior.
 
-
-## Future: Caching
+## Caching
 
 **Spring Data Redis** — `@Cacheable` annotation on service methods. Redis
 runs as a separate Docker container.

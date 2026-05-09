@@ -1,6 +1,7 @@
 package com.cpmss.security.entersat;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -36,17 +37,16 @@ public enum GateDirection {
      *
      * @param label the gate direction label
      * @return the matching gate direction
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     public static GateDirection fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Gate direction is required");
+            throw new ApiException(SecurityErrorCode.GATE_DIRECTION_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Gate direction must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_DIRECTION_INVALID));
     }
 
     /**

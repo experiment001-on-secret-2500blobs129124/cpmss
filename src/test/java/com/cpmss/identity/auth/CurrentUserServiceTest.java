@@ -1,7 +1,8 @@
 package com.cpmss.identity.auth;
 
 import com.cpmss.people.common.EmailAddress;
-import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +64,8 @@ class CurrentUserServiceTest {
         CurrentUserService service = new CurrentUserService(appUserRepository);
 
         assertThatThrownBy(service::currentUser)
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessage("No authenticated user");
+                .isInstanceOf(ApiException.class)
+                .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
+                        .isEqualTo(CommonErrorCode.SECURITY_CONTEXT_MISSING));
     }
 }

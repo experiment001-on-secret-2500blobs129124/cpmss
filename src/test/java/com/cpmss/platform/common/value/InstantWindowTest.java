@@ -1,6 +1,6 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -25,7 +25,7 @@ class InstantWindowTest {
         Instant end = Instant.parse("2026-05-08T08:00:00Z");
 
         assertThatThrownBy(() -> new InstantWindow(start, end))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("End instant must be after start instant");
     }
 }

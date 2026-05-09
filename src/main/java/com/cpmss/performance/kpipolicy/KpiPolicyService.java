@@ -1,17 +1,20 @@
 package com.cpmss.performance.kpipolicy;
 
-import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.performance.common.KpiScoreRange;
 import com.cpmss.performance.common.PercentageRate;
+import com.cpmss.performance.common.PerformanceErrorCode;
 import com.cpmss.performance.common.PerformanceRating;
 import com.cpmss.performance.kpipolicy.dto.CreateKpiPolicyRequest;
 import com.cpmss.performance.kpipolicy.dto.KpiPolicyResponse;
 import com.cpmss.performance.kpipolicy.dto.UpdateKpiPolicyRequest;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -66,7 +69,7 @@ public class KpiPolicyService {
      *
      * @param id the KPI policy UUID
      * @return the matching KPI policy response
-     * @throws ResourceNotFoundException if no KPI policy exists with this ID
+    * @throws ApiException if no KPI policy exists with this ID
      */
     @Transactional(readOnly = true)
     public KpiPolicyResponse getById(UUID id) {
@@ -89,11 +92,8 @@ public class KpiPolicyService {
      *
      * @param request the KPI policy creation request
      * @return the created KPI policy response
-     * @throws ResourceNotFoundException if the department or approver does not
-     *                                   exist
-     * @throws com.cpmss.platform.exception.BusinessException if the tier label,
-     *                                                        score range, or
-     *                                                        rates are invalid
+    * @throws ApiException if the department or approver does not exist, or the
+    *                      tier label, score range, or rates are invalid
      */
     @Transactional
     public KpiPolicyResponse create(CreateKpiPolicyRequest request) {
@@ -103,9 +103,9 @@ public class KpiPolicyService {
         PercentageRate deductionRate = PercentageRate.orZero(request.deductionRate());
 
         Department dept = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
         Person approver = personRepository.findById(request.approvedById())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.approvedById()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
         KpiPolicy policy = KpiPolicy.builder()
                 .department(dept)
@@ -128,10 +128,8 @@ public class KpiPolicyService {
      * @param id the KPI policy UUID
      * @param request the replacement KPI policy values
      * @return the updated KPI policy response
-     * @throws ResourceNotFoundException if no KPI policy exists with this ID
-     * @throws com.cpmss.platform.exception.BusinessException if the tier label,
-     *                                                        score range, or
-     *                                                        rates are invalid
+    * @throws ApiException if no KPI policy exists with this ID or the tier
+    *                      label, score range, or rates are invalid
      */
     @Transactional
     public KpiPolicyResponse update(UUID id, UpdateKpiPolicyRequest request) {
@@ -151,6 +149,6 @@ public class KpiPolicyService {
 
     private KpiPolicy findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("KpiPolicy", id));
+                .orElseThrow(() -> new ApiException(PerformanceErrorCode.KPI_POLICY_NOT_FOUND));
     }
 }

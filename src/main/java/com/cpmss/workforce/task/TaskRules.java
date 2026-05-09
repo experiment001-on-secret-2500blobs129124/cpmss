@@ -1,6 +1,7 @@
 package com.cpmss.workforce.task;
 
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.workforce.common.WorkforceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Business rules for {@link Task} operations.
@@ -14,11 +15,11 @@ public class TaskRules {
      *
      * @param title  the desired task title
      * @param exists whether a task with this title already exists in the department
-     * @throws ConflictException if the title is already in use
+     * @throws ApiException if the title is already in use
      */
     public void validateTitleUniqueInDepartment(String title, boolean exists) {
         if (exists) {
-            throw new ConflictException("Task '" + title + "' already exists in this department");
+            throw new ApiException(WorkforceErrorCode.TASK_DUPLICATE);
         }
     }
 }

@@ -23,8 +23,9 @@ src/main/resources/db/migration/
 | File | Runs in prod? | Purpose |
 |---|---|---|
 | `V1`–`V7` | All environments | Current schema structure, auth tables, constraints, and internal reports |
-| Future `V8+` | All environments | New schema changes or required reference data |
-| Future `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
+| `V8+` | All environments | New schema changes or required reference data |
+| `V8__seed_catalog_data.sql` | All environments | Required startup catalog/reference rows after the catalog list is reviewed |
+| `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
 
 **Rules:**
 - After the schema is shared or released, never modify a committed versioned
@@ -36,7 +37,8 @@ src/main/resources/db/migration/
 - `V5` adds `team_name` to `Person_Supervision`.
 - `V6`/`V7` add `Internal_Report` and its deferred constraints.
 - `R__` stands for **Repeatable** — Flyway re-runs it whenever the file content changes (checksum-based). You can edit it freely. Used only in `dev` profile.
-- A `CommandLineRunner` for randomised bulk demo data is planned but not implemented.
+- A `CommandLineRunner` for randomized bulk demo data belongs in the `dev`
+  profile only.
 
 **Adding new tables (repeating pattern):**
 
@@ -49,6 +51,27 @@ Every new batch of tables follows the same DDL → constraints → seed sequence
 | `Vn+2__seed_{feature}_data.sql` | Catalog/reference data for those tables — **only if the feature requires it** |
 
 Seeding is optional. Not every feature needs reference data. Add a seed migration only when the app cannot function without those rows.
+
+---
+
+## Schema Extension Contracts
+
+These schema areas follow fixed storage contracts:
+
+| Area | Storage contract |
+|---|---|
+| Applicant/application documents | Metadata table linked to applicant/application records; binary files in MinIO |
+| Payment attempts/provider transactions | Provider reference, status, attempt time, masked display data if needed |
+| Seed catalog data | Required startup rows for catalogs after review |
+| Slugs | URL-friendly identifiers for selected named/catalog resources |
+
+Payment provider data must not include raw card numbers, CVV values, or
+provider secrets. Store provider references and statuses, not card data.
+
+Slug columns belong only to approved named/catalog resources. They do not
+belong on financial records, access events, history rows, or records that
+already have a business reference such as `payment_no`, `contract_reference`,
+`work_order_no`, or `permit_no`.
 
 ---
 
@@ -110,7 +133,7 @@ Every DDL migration (`Vn__add_{feature}_tables.sql`) tracks its paired constrain
 **The pattern:**
 - `V1` tables carry `[V2]` comments → constraints land in `V2__add_constraints.sql`
 - `V3` tables carry `[V4]` comments → constraints land in `V4__add_{feature}_constraints.sql`
-- And so on for every future DDL batch.
+- And so on for every subsequent DDL batch.
 
 Place the comment block **immediately after the relevant column**, never outside the `CREATE TABLE` block. Both the tag comment and the `ALTER TABLE` block are removed once the paired constraints migration is written and applied.
 
@@ -264,18 +287,20 @@ Some facts change over time and the history must be preserved. Instead of updati
 The first admin user is created via a **first-run HTTP endpoint** (`POST /setup`):
 
 - Accessible only when the user table is empty — returns `404` permanently after first use.
-- Usable from a browser (IT person on deployment day) or via `curl` from Jenkins.
+- Usable from a browser (IT person on deployment day) or via `curl` from
+  deployment automation.
 - The created account is flagged `force_password_change = true` — first login forces a password change.
 
 ```bash
-# Jenkins deploy stage — automated first-admin creation
+# Target deploy stage — automated first-admin creation
 sleep 10
 curl -sf -X POST http://localhost:8080/setup \
      -H "Content-Type: application/json" \
      -d "{\"email\": \"admin@compound.com\", \"password\": \"${BOOTSTRAP_PASSWORD}\"}"
 ```
 
-`BOOTSTRAP_PASSWORD` is a Jenkins credential — never hardcoded.
+`BOOTSTRAP_PASSWORD` is provided by the deployment secret store — never
+hardcoded.
 
 ---
 
@@ -342,19 +367,57 @@ The service layer bridges them: when `PersonService` assigns the Staff role to a
 
 ---
 
-## Planned File Storage
+## File Storage
 
-Binary files (CVs, documents, images) should be stored in **MinIO**, not in
-PostgreSQL. The database column holds only the object path or presigned URL —
-never file bytes.
+Binary files (CVs, documents, images) are stored in **MinIO**, not in
+PostgreSQL. The database stores metadata and MinIO object keys, never file
+bytes.
+
+For document-style uploads, the database should store metadata such as owner,
+business record link, storage key, content type, original filename, size,
+created timestamp, and authorization scope. MinIO stores the binary object.
 
 ```sql
 file_url VARCHAR(500)  -- object path, e.g. "resource-type/record-id/filename.ext"
 ```
 
+Document metadata shape:
+
+| Column | Purpose |
+|--------|---------|
+| `document_id` | UUID primary key for metadata row |
+| `owner_person_id` | person who owns or uploaded the file |
+| `application_id` / workflow FK | business record the file belongs to |
+| `object_key` | MinIO object key, not a public URL |
+| `original_filename` | display/download filename |
+| `content_type` | MIME type provided/validated by upload flow |
+| `size_bytes` | uploaded object size |
+| `document_type` | CV, attachment, contract scan, invoice, etc. |
+| `access_scope` | who may read/download the file |
+| `uploaded_by_id` | actor who uploaded the file |
+| `uploaded_at` | upload timestamp |
+
+Object keys are deterministic enough to organize storage but do not expose
+secrets:
+
+```text
+{resource-type}/{record-id}/{document-id}/{safe-filename}
+```
+
+Presigned URLs are response-time artifacts. Store object keys in the database,
+not long-lived presigned URLs.
+
 MinIO is an S3-compatible self-hosted object storage server running as a Docker
-service (see [DEVOPS.md](./DEVOPS.md)). The Java upload/download service is
-planned work. Once it exists, it will upload via the MinIO SDK and store the
-returned path in the DB column.
+service (see [DEVOPS.md](./DEVOPS.md)). File services store MinIO object keys
+in database metadata rows and create presigned URLs only as response-time
+download artifacts.
 Switching to AWS S3 later = change the endpoint URL and credentials only — no
 schema or code logic changes.
+
+File access rules belong in services/rules classes:
+
+- applicant can access own CV/application files,
+- HR can access applicant and staff files needed for hiring,
+- staff can access own uploaded/owned files where allowed,
+- `GENERAL_MANAGER` can access business files,
+- `ADMIN` remains break-glass and should not be normal document access.

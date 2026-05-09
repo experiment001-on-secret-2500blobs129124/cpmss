@@ -23,26 +23,37 @@ import java.util.List;
  * Spring Security configuration.
  *
  * <p>Configures the JWT filter chain, endpoint access rules, CORS,
- * and the BCrypt password encoder. Public endpoints stay explicit; every
- * business endpoint must match a role rule or be denied.
+ * the BCrypt password encoder, and JSON error handlers for 401/403
+ * responses. Public endpoints stay explicit; every business endpoint must
+ * match a role rule or be denied.
  *
  * @see EndpointAuthorizationRules
  * @see JwtAuthenticationFilter
  * @see JwtUtils
+ * @see JsonAuthenticationEntryPoint
+ * @see JsonAccessDeniedHandler
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JsonAuthenticationEntryPoint authenticationEntryPoint;
+    private final JsonAccessDeniedHandler accessDeniedHandler;
 
     /**
-     * Constructs the security configuration with the JWT filter.
+     * Constructs the security configuration.
      *
-     * @param jwtAuthenticationFilter the JWT bearer token filter
+     * @param jwtAuthenticationFilter  the JWT bearer token filter
+     * @param authenticationEntryPoint JSON handler for 401 responses
+     * @param accessDeniedHandler      JSON handler for 403 responses
      */
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          JsonAuthenticationEntryPoint authenticationEntryPoint,
+                          JsonAccessDeniedHandler accessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     /**
@@ -80,6 +91,10 @@ public class SecurityConfig {
 
                 auth.anyRequest().denyAll();
             })
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
+            )
             .addFilterBefore(jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class);
 

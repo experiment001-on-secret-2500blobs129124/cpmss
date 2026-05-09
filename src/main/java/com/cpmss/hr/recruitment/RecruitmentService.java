@@ -5,8 +5,8 @@ import com.cpmss.hr.application.ApplicationId;
 import com.cpmss.hr.application.ApplicationRepository;
 import com.cpmss.hr.application.dto.ApplicationResponse;
 import com.cpmss.hr.application.dto.CreateApplicationRequest;
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.hr.hireagreement.HireAgreement;
 import com.cpmss.hr.hireagreement.HireAgreementRepository;
 import com.cpmss.hr.hireagreement.dto.CreateHireAgreementRequest;
@@ -94,7 +94,7 @@ public class RecruitmentService {
      *
      * @param request the application details
      * @return the created application response
-     * @throws ResourceNotFoundException if applicant or position not found
+     * @throws ApiException if applicant or position not found
      */
     @Transactional
     public ApplicationResponse submitApplication(CreateApplicationRequest request) {
@@ -131,14 +131,14 @@ public class RecruitmentService {
      *
      * @param request the interview details including application composite key
      * @return the created recruitment response
-     * @throws ResourceNotFoundException if application, interviewer, or position not found
+     * @throws ApiException if application, interviewer, or position not found
      */
     @Transactional
     public RecruitmentResponse scheduleInterview(CreateRecruitmentRequest request) {
         ApplicationId appId = new ApplicationId(
                 request.applicantId(), request.positionId(), request.applicationDate());
         Application application = applicationRepository.findById(appId)
-                .orElseThrow(() -> new ResourceNotFoundException("Application", appId.toString()));
+                .orElseThrow(() -> new ApiException(HrErrorCode.APPLICATION_NOT_FOUND));
         Person interviewer = findPersonOrThrow(request.interviewerId());
 
         Recruitment recruitment = new Recruitment();
@@ -160,18 +160,16 @@ public class RecruitmentService {
      * @param id      the 5-part composite key identifying the interview
      * @param request the interview result (Pass, Fail, Pending)
      * @return the updated recruitment response
-     * @throws ResourceNotFoundException if the interview record is not found
-     * @throws BusinessException if the result value is invalid
+     * @throws ApiException if the interview record is not found or result is invalid
      */
     @Transactional
     public RecruitmentResponse recordResult(RecruitmentId id, UpdateRecruitmentRequest request) {
         Recruitment recruitment = recruitmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Recruitment", id.toString()));
+                .orElseThrow(() -> new ApiException(HrErrorCode.RECRUITMENT_NOT_FOUND));
 
         String result = request.interviewResult();
         if (!"Pass".equals(result) && !"Fail".equals(result) && !"Pending".equals(result)) {
-            throw new BusinessException(
-                    "Interview result must be 'Pass', 'Fail', or 'Pending'");
+            throw new ApiException(HrErrorCode.INTERVIEW_RESULT_INVALID);
         }
 
         recruitment.setInterviewResult(result);
@@ -198,15 +196,14 @@ public class RecruitmentService {
      *
      * @param request the hire agreement details
      * @return the created hire agreement response
-     * @throws ResourceNotFoundException if application, person, position, or qualification not found
-     * @throws BusinessException if no interview passed or dates are invalid
+     * @throws ApiException if application, person, position, or qualification not found, or rules fail
      */
     @Transactional
     public HireAgreementResponse createHireAgreement(CreateHireAgreementRequest request) {
         ApplicationId appId = new ApplicationId(
                 request.applicantId(), request.positionId(), request.applicationDate());
         Application application = applicationRepository.findById(appId)
-                .orElseThrow(() -> new ResourceNotFoundException("Application", appId.toString()));
+                .orElseThrow(() -> new ApiException(HrErrorCode.APPLICATION_NOT_FOUND));
 
         // Validate at least one Pass
         List<Recruitment> interviews = recruitmentRepository
@@ -234,8 +231,7 @@ public class RecruitmentService {
         // 2. Create StaffProfile (if not already exists)
         if (!staffProfileRepository.existsById(applicant.getId())) {
             Qualification qualification = qualificationRepository.findById(request.qualificationId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Qualification", request.qualificationId()));
+                    .orElseThrow(() -> new ApiException(HrErrorCode.QUALIFICATION_NOT_FOUND));
 
             StaffProfile profile = StaffProfile.builder()
                     .person(applicant)
@@ -272,12 +268,12 @@ public class RecruitmentService {
 
     private Person findPersonOrThrow(UUID id) {
         return personRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(HrErrorCode.PERSON_NOT_FOUND));
     }
 
     private StaffPosition findPositionOrThrow(UUID id) {
         return staffPositionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffPosition", id));
+                .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
     }
 
     private ApplicationResponse toApplicationResponse(Application a) {

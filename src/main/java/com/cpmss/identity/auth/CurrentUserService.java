@@ -1,8 +1,8 @@
 package com.cpmss.identity.auth;
 
 import com.cpmss.people.common.EmailAddress;
-import com.cpmss.platform.exception.ForbiddenException;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 import com.cpmss.platform.util.AuthUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,16 +35,15 @@ public class CurrentUserService {
      * Resolves the current authenticated user from the security context.
      *
      * @return the active current user
-     * @throws ForbiddenException if no authenticated user exists
-     * @throws ResourceNotFoundException if the authenticated account is no longer active
+     * @throws ApiException if no authenticated active account can be resolved
      */
     @Transactional(readOnly = true)
     public CurrentUser currentUser() {
         String email = AuthUtils.getCurrentUserEmail()
-                .orElseThrow(() -> new ForbiddenException("No authenticated user"));
+                .orElseThrow(() -> new ApiException(CommonErrorCode.SECURITY_CONTEXT_MISSING));
         EmailAddress loginEmail = EmailAddress.of(email);
         AppUser user = appUserRepository.findByEmailAndActiveTrue(loginEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("AppUser", loginEmail.value()));
+                .orElseThrow(() -> new ApiException(CommonErrorCode.SECURITY_CONTEXT_MISSING));
         return new CurrentUser(user.getId(), user.getPersonId(), user.getSystemRole(), user.getEmail());
     }
 }

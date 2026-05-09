@@ -1,7 +1,8 @@
 package com.cpmss.workforce.shiftattendancetype;
 
 import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.shiftattendancetype.dto.CreateShiftAttendanceTypeRequest;
 import com.cpmss.workforce.shiftattendancetype.dto.ShiftAttendanceTypeResponse;
 import com.cpmss.workforce.shiftattendancetype.dto.UpdateShiftAttendanceTypeRequest;
@@ -46,12 +47,12 @@ public class ShiftAttendanceTypeService {
      *
      * @param id the shift type's UUID primary key
      * @return the matching response
-     * @throws ResourceNotFoundException if not found
+    * @throws ApiException if not found
      */
     @Transactional(readOnly = true)
     public ShiftAttendanceTypeResponse getById(UUID id) {
         ShiftAttendanceType entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ShiftAttendanceType", id));
+            .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
         return mapper.toResponse(entity);
     }
 
@@ -87,12 +88,12 @@ public class ShiftAttendanceTypeService {
      * @param id      the shift type's UUID
      * @param request the update request
      * @return the updated response
-     * @throws ResourceNotFoundException if not found
+    * @throws ApiException if not found
      */
     @Transactional
     public ShiftAttendanceTypeResponse update(UUID id, UpdateShiftAttendanceTypeRequest request) {
         ShiftAttendanceType entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ShiftAttendanceType", id));
+            .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
         if (!entity.getShiftName().equals(request.shiftName())) {
             rules.validateNameUnique(request.shiftName(), repository.existsByShiftName(request.shiftName()));
         }
@@ -106,12 +107,12 @@ public class ShiftAttendanceTypeService {
      * Deletes a shift attendance type by ID.
      *
      * @param id the shift type's UUID
-     * @throws ResourceNotFoundException if not found
+    * @throws ApiException if not found
      */
     @Transactional
     public void delete(UUID id) {
         ShiftAttendanceType entity = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ShiftAttendanceType", id));
+            .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
         repository.delete(entity);
         log.info("ShiftAttendanceType deleted: {}", entity.getShiftName());
     }

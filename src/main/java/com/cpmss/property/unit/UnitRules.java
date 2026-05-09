@@ -1,6 +1,7 @@
 package com.cpmss.property.unit;
 
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.property.common.PropertyErrorCode;
 
 /**
  * Business rules for {@link Unit} operations.
@@ -14,12 +15,11 @@ public class UnitRules {
      *
      * @param unitNo the desired unit number
      * @param exists whether a unit with this number exists in the building
-     * @throws ConflictException if the unit number is already in use
+     * @throws ApiException if the unit number is already in use
      */
     public void validateUnitNoUniqueInBuilding(String unitNo, boolean exists) {
         if (exists) {
-            throw new ConflictException(
-                    "Unit number '" + unitNo + "' already exists in this building");
+            throw new ApiException(PropertyErrorCode.UNIT_DUPLICATE);
         }
     }
 }

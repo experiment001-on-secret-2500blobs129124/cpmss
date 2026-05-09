@@ -1,6 +1,7 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -20,18 +21,18 @@ public record LocalTimeWindow(LocalTime startTime, LocalTime endTime) {
     /**
      * Creates a local time window.
      *
-     * @throws BusinessException if either time is missing or the end is not
-     *                           after the start
+     * @throws ApiException if either time is missing or the end is not
+     *                      after the start
      */
     public LocalTimeWindow {
         if (startTime == null) {
-            throw new BusinessException("Start time is required");
+            throw new ApiException(CommonErrorCode.TIME_WINDOW_INVALID, "Start time is required");
         }
         if (endTime == null) {
-            throw new BusinessException("End time is required");
+            throw new ApiException(CommonErrorCode.TIME_WINDOW_INVALID, "End time is required");
         }
         if (!endTime.isAfter(startTime)) {
-            throw new BusinessException("End time must be after start time");
+            throw new ApiException(CommonErrorCode.TIME_WINDOW_INVALID, "End time must be after start time");
         }
     }
 

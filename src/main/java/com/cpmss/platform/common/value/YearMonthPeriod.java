@@ -1,6 +1,7 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -20,14 +21,14 @@ public record YearMonthPeriod(int year, int month) {
     /**
      * Creates a year-month period.
      *
-     * @throws BusinessException if the year or month is outside the supported
-     *                           {@link YearMonth} range
+     * @throws ApiException if the year or month is outside the supported
+     *                      {@link YearMonth} range
      */
     public YearMonthPeriod {
         try {
             YearMonth.of(year, month);
         } catch (RuntimeException ex) {
-            throw new BusinessException("Year-month period is invalid");
+            throw new ApiException(CommonErrorCode.YEAR_MONTH_PERIOD_INVALID);
         }
     }
 
@@ -37,7 +38,7 @@ public record YearMonthPeriod(int year, int month) {
      * @param year the calendar year
      * @param month the calendar month number from 1 to 12
      * @return the validated year-month period
-     * @throws BusinessException if the year or month is invalid
+     * @throws ApiException if the year or month is invalid
      */
     public static YearMonthPeriod of(int year, int month) {
         return new YearMonthPeriod(year, month);

@@ -1,6 +1,6 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -21,7 +21,7 @@ class LocalTimeWindowTest {
     @Test
     void rejectsNonPositiveWindow() {
         assertThatThrownBy(() -> new LocalTimeWindow(LocalTime.NOON, LocalTime.NOON))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("End time must be after start time");
     }
 }

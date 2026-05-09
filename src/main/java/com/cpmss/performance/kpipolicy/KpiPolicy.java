@@ -150,8 +150,8 @@ public class KpiPolicy extends BaseEntity {
      * Returns the inclusive score range for this tier.
      *
      * @return the typed KPI score range
-     * @throws com.cpmss.platform.exception.BusinessException if either bound is
-     *                                                        missing or invalid
+     * @throws com.cpmss.platform.exception.ApiException if either bound is
+     *                                                   missing or invalid
      */
     public KpiScoreRange getScoreRange() {
         return new KpiScoreRange(minKpiScore, maxKpiScore);

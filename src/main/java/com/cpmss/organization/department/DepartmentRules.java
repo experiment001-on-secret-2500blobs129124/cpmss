@@ -1,6 +1,7 @@
 package com.cpmss.organization.department;
 
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.organization.common.OrganizationErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Business rules for {@link Department} operations.
@@ -17,11 +18,11 @@ public class DepartmentRules {
      *
      * @param name   the desired department name
      * @param exists whether a department with this name already exists
-     * @throws ConflictException if the name is already in use
+     * @throws ApiException if the name is already in use
      */
     public void validateNameUnique(String name, boolean exists) {
         if (exists) {
-            throw new ConflictException("Department '" + name + "' already exists");
+            throw new ApiException(OrganizationErrorCode.DEPARTMENT_DUPLICATE);
         }
     }
 }

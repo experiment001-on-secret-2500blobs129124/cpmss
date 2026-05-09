@@ -1,6 +1,6 @@
 package com.cpmss.finance.money;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -21,28 +21,28 @@ class MoneyTest {
     @Test
     void requiresCurrencyForPositiveMoney() {
         assertThatThrownBy(() -> Money.positive(new BigDecimal("10.00"), null))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Money currency is required");
     }
 
     @Test
     void rejectsNegativeAmount() {
         assertThatThrownBy(() -> new Money(new BigDecimal("-0.01"), "USD"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Money amount cannot be negative");
     }
 
     @Test
     void positiveFactoryRejectsZero() {
         assertThatThrownBy(() -> Money.positive(BigDecimal.ZERO, "USD"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Money amount must be positive");
     }
 
     @Test
     void rejectsInvalidCurrency() {
         assertThatThrownBy(() -> new Money(BigDecimal.ONE, "dollars"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Money currency must be a valid ISO-4217 code");
     }
 
@@ -63,7 +63,7 @@ class MoneyTest {
         Money pounds = new Money(BigDecimal.ONE, "EGP");
 
         assertThatThrownBy(() -> dollars.add(pounds))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Cannot add money with different currencies");
     }
 }

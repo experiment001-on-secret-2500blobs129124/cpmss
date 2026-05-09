@@ -1,6 +1,7 @@
 package com.cpmss.hr.recruitment;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,14 +24,13 @@ public class HireAgreementRules {
      * Validates that at least one interview has a 'Pass' result.
      *
      * @param interviews the list of interview records for this application
-     * @throws BusinessException if no interview has passed
+     * @throws ApiException if no interview has passed
      */
     public void validateAtLeastOnePass(List<Recruitment> interviews) {
         boolean hasPass = interviews.stream()
                 .anyMatch(r -> "Pass".equals(r.getInterviewResult()));
         if (!hasPass) {
-            throw new BusinessException(
-                    "Cannot create hire agreement — at least one interview must have result 'Pass'");
+            throw new ApiException(HrErrorCode.NO_PASSING_INTERVIEW);
         }
     }
 
@@ -39,13 +39,12 @@ public class HireAgreementRules {
      *
      * @param employmentStartDate the agreed start date
      * @param applicationDate     the original application date
-     * @throws BusinessException if start date precedes application date
+     * @throws ApiException if start date precedes application date
      */
     public void validateStartDateNotBeforeApplication(LocalDate employmentStartDate,
                                                        LocalDate applicationDate) {
         if (employmentStartDate.isBefore(applicationDate)) {
-            throw new BusinessException(
-                    "Employment start date cannot be before application date");
+            throw new ApiException(HrErrorCode.START_DATE_BEFORE_APPLICATION);
         }
     }
 }

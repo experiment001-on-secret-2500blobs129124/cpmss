@@ -1,6 +1,6 @@
 package com.cpmss.workforce.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -19,12 +19,12 @@ public record HourDelta(BigDecimal hours) {
     /**
      * Creates a signed hour delta.
      *
-     * @throws BusinessException if the value is missing
+     * @throws ApiException if the value is missing
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public HourDelta {
         if (hours == null) {
-            throw new BusinessException("Hour delta is required");
+            throw new ApiException(WorkforceErrorCode.HOUR_DELTA_REQUIRED);
         }
     }
 

@@ -1,13 +1,15 @@
 package com.cpmss.communication.internalreport;
 
-import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.communication.internalreport.dto.CreateInternalReportRequest;
 import com.cpmss.communication.internalreport.dto.InternalReportResponse;
 import com.cpmss.communication.internalreport.dto.UpdateInternalReportRequest;
 import com.cpmss.identity.auth.SystemRole;
+import com.cpmss.communication.common.CommunicationErrorCode;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -55,9 +57,9 @@ public class InternalReportService {
     /**
      * Retrieves a report by its unique identifier.
      *
-     * @param id the report's UUID
+      * @param id the report's UUID
      * @return the matching report response
-     * @throws ResourceNotFoundException if not found
+      * @throws ApiException if not found
      */
     @Transactional(readOnly = true)
     public InternalReportResponse getById(UUID id) {
@@ -117,6 +119,7 @@ public class InternalReportService {
      *
      * @param request the report details
      * @return the created report response
+     * @throws ApiException if the reporter does not exist or the inputs are invalid
      */
     @Transactional
     public InternalReportResponse create(CreateInternalReportRequest request) {
@@ -124,7 +127,7 @@ public class InternalReportService {
         rules.validateCategory(request.reportCategory());
 
         Person reporter = personRepository.findById(request.reporterId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.reporterId()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
         InternalReport report = InternalReport.builder()
                 .reporter(reporter)
@@ -147,7 +150,7 @@ public class InternalReportService {
      * @param id      the report's UUID
      * @param request the update request
      * @return the updated report response
-     * @throws ResourceNotFoundException if not found
+     * @throws ApiException if the report or resolver does not exist
      */
     @Transactional
     public InternalReportResponse update(UUID id, UpdateInternalReportRequest request) {
@@ -158,7 +161,7 @@ public class InternalReportService {
 
         if (request.resolvedById() != null) {
             Person resolver = personRepository.findById(request.resolvedById())
-                    .orElseThrow(() -> new ResourceNotFoundException("Person", request.resolvedById()));
+                    .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
             report.setResolvedBy(resolver);
             report.setResolvedAt(OffsetDateTime.now());
         }
@@ -174,13 +177,13 @@ public class InternalReportService {
      * @param id     the report's UUID
      * @param readBy the person marking as read
      * @return the updated report response
-     * @throws ResourceNotFoundException if not found
+     * @throws ApiException if the report or reader does not exist
      */
     @Transactional
     public InternalReportResponse markAsRead(UUID id, UUID readBy) {
         InternalReport report = findOrThrow(id);
         Person reader = personRepository.findById(readBy)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", readBy));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         report.setRead(true);
         report.setReadAt(OffsetDateTime.now());
         report.setReadBy(reader);
@@ -194,7 +197,7 @@ public class InternalReportService {
      *
      * @param id the report's UUID
      * @return the updated report response
-     * @throws ResourceNotFoundException if not found
+     * @throws ApiException if the report does not exist
      */
     @Transactional
     public InternalReportResponse markAsUnread(UUID id) {
@@ -214,13 +217,13 @@ public class InternalReportService {
      * @param resolvedById   the person resolving
      * @param resolutionNote the resolution explanation
      * @return the updated report response
-     * @throws ResourceNotFoundException if not found
+     * @throws ApiException if the report or resolver does not exist
      */
     @Transactional
     public InternalReportResponse resolve(UUID id, UUID resolvedById, String resolutionNote) {
         InternalReport report = findOrThrow(id);
         Person resolver = personRepository.findById(resolvedById)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", resolvedById));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         report.setReportStatus(ReportStatus.RESOLVED);
         report.setResolvedBy(resolver);
         report.setResolvedAt(OffsetDateTime.now());
@@ -232,6 +235,6 @@ public class InternalReportService {
 
     private InternalReport findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("InternalReport", id));
+                .orElseThrow(() -> new ApiException(CommunicationErrorCode.REPORT_NOT_FOUND));
     }
 }

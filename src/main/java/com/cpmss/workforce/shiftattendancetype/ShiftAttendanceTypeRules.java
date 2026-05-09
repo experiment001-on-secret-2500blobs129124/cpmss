@@ -1,5 +1,6 @@
 package com.cpmss.workforce.shiftattendancetype;
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.workforce.common.WorkforceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 /**
  * Business rules for {@link ShiftAttendanceType} operations.
  *
@@ -11,11 +12,11 @@ public class ShiftAttendanceTypeRules {
      *
      * @param name   the desired shift name
      * @param exists whether a shift type with this name already exists
-     * @throws ConflictException if the name is already in use
+     * @throws ApiException if the name is already in use
      */
     public void validateNameUnique(String name, boolean exists) {
         if (exists) {
-            throw new ConflictException("Shift attendance type '" + name + "' already exists");
+            throw new ApiException(WorkforceErrorCode.SHIFT_TYPE_DUPLICATE);
         }
     }
 }

@@ -2,7 +2,7 @@ package com.cpmss.leasing.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -45,18 +45,17 @@ public enum ContractStatus {
      *
      * @param label the contract status label
      * @return the matching status
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     @JsonCreator
     public static ContractStatus fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Contract status is required");
+            throw new ApiException(LeasingErrorCode.CONTRACT_STATUS_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Contract status must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_STATUS_INVALID));
     }
 
     /**

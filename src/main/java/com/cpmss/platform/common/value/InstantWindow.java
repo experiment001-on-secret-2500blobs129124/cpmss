@@ -1,6 +1,7 @@
 package com.cpmss.platform.common.value;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,18 +20,18 @@ public record InstantWindow(Instant start, Instant end) {
     /**
      * Creates an instant window.
      *
-     * @throws BusinessException if either instant is missing or the end is not
-     *                           after the start
+     * @throws ApiException if either instant is missing or the end is not
+     *                      after the start
      */
     public InstantWindow {
         if (start == null) {
-            throw new BusinessException("Start instant is required");
+            throw new ApiException(CommonErrorCode.INSTANT_WINDOW_INVALID, "Start instant is required");
         }
         if (end == null) {
-            throw new BusinessException("End instant is required");
+            throw new ApiException(CommonErrorCode.INSTANT_WINDOW_INVALID, "End instant is required");
         }
         if (!end.isAfter(start)) {
-            throw new BusinessException("End instant must be after start instant");
+            throw new ApiException(CommonErrorCode.INSTANT_WINDOW_INVALID, "End instant must be after start instant");
         }
     }
 

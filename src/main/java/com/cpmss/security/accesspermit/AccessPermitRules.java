@@ -1,6 +1,7 @@
 package com.cpmss.security.accesspermit;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -21,7 +22,7 @@ public class AccessPermitRules {
      * @param contractId     the contract UUID (may be {@code null})
      * @param workOrderId    the work order UUID (may be {@code null})
      * @param invitedById    the inviting person UUID (may be {@code null})
-     * @throws BusinessException if zero or more than one basis is set
+     * @throws ApiException if zero or more than one basis is set
      */
     public void validateExactlyOneEntitlement(UUID staffProfileId, UUID contractId,
                                               UUID workOrderId, UUID invitedById) {
@@ -32,8 +33,7 @@ public class AccessPermitRules {
         if (invitedById != null) count++;
 
         if (count != 1) {
-            throw new BusinessException(
-                    "A permit must reference exactly one entitlement basis");
+            throw new ApiException(SecurityErrorCode.PERMIT_ALREADY_ACTIVE);
         }
     }
 }

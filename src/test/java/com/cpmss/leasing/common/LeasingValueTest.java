@@ -1,7 +1,7 @@
 package com.cpmss.leasing.common;
 
 import com.cpmss.finance.money.Money;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -27,8 +27,10 @@ class LeasingValueTest {
         assertThatThrownBy(() -> new ContractPeriod(
                 LocalDate.of(2026, 5, 1),
                 LocalDate.of(2026, 5, 1)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Contract end date must be after start date");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.CONTRACT_END_DATE_INVALID);
+                    assertThat(ex).hasMessage("Contract end date must be after start date");
+                });
     }
 
     @Test
@@ -46,8 +48,10 @@ class LeasingValueTest {
         assertThatThrownBy(() -> new ResidencyPeriod(
                 LocalDate.of(2026, 5, 1),
                 LocalDate.of(2026, 5, 1)))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Move-out date must be after move-in date");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.MOVE_OUT_DATE_INVALID);
+                    assertThat(ex).hasMessage("Move-out date must be after move-in date");
+                });
     }
 
     @Test
@@ -61,11 +65,15 @@ class LeasingValueTest {
     @Test
     void rejectsUnknownContractVocabularyLabels() {
         assertThatThrownBy(() -> ContractType.fromLabel("Parking"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Contract type must be one of: Residential, Commercial");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.CONTRACT_TYPE_INVALID);
+                    assertThat(ex).hasMessage("Contract type is not allowed");
+                });
         assertThatThrownBy(() -> ContractStatus.fromLabel("Closed"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Contract status must be one of: Draft, Active, Expired, Terminated, Renewed");
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.CONTRACT_STATUS_INVALID);
+                    assertThat(ex).hasMessage("Contract status is not allowed");
+                });
     }
 
     @Test
@@ -81,6 +89,20 @@ class LeasingValueTest {
     }
 
     @Test
+    void rejectsUnknownPartyAndHouseholdLabels() {
+        assertThatThrownBy(() -> ContractPartyRole.fromLabel("Witness"))
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.CONTRACT_PARTY_ROLE_INVALID);
+                    assertThat(ex).hasMessage("Contract party role is not allowed");
+                });
+        assertThatThrownBy(() -> HouseholdRelationship.fromLabel("Roommate"))
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.HOUSEHOLD_RELATIONSHIP_INVALID);
+                    assertThat(ex).hasMessage("Household relationship is not allowed");
+                });
+    }
+
+    @Test
     void parsesInstallmentVocabularyLabels() {
         assertThat(InstallmentType.fromLabel("Rent")).isEqualTo(InstallmentType.RENT);
         assertThat(InstallmentType.fromLabel("Penalty")).isEqualTo(InstallmentType.PENALTY);
@@ -88,6 +110,20 @@ class LeasingValueTest {
                 .isEqualTo(InstallmentStatus.PARTIALLY_PAID);
         assertThat(InstallmentStatus.fromLabel("Cancelled"))
                 .isEqualTo(InstallmentStatus.CANCELLED);
+    }
+
+    @Test
+    void rejectsUnknownInstallmentVocabularyLabels() {
+        assertThatThrownBy(() -> InstallmentType.fromLabel("Utilities"))
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.INSTALLMENT_TYPE_INVALID);
+                    assertThat(ex).hasMessage("Installment type is not allowed");
+                });
+        assertThatThrownBy(() -> InstallmentStatus.fromLabel("Waived"))
+                .isInstanceOfSatisfying(ApiException.class, ex -> {
+                    assertThat(ex.getErrorCode()).isEqualTo(LeasingErrorCode.INSTALLMENT_STATUS_INVALID);
+                    assertThat(ex).hasMessage("Installment status is not allowed");
+                });
     }
 
     @Test

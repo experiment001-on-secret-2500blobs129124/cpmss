@@ -1,6 +1,7 @@
 package com.cpmss.security.accesspermit;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -39,20 +40,19 @@ public enum AccessLevel {
      *
      * @param label the optional access level label
      * @return the matching access level, or {@code null} when absent
-     * @throws BusinessException if the label is blank or unsupported
+     * @throws ApiException if the label is blank or unsupported
      */
     public static AccessLevel fromNullableLabel(String label) {
         if (label == null) {
             return null;
         }
         if (label.isBlank()) {
-            throw new BusinessException("Access level cannot be blank");
+            throw new ApiException(SecurityErrorCode.ACCESS_LEVEL_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Access level must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.ACCESS_LEVEL_INVALID));
     }
 
     /**

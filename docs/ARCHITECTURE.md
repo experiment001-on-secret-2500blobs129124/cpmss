@@ -14,7 +14,27 @@ swap out your controller style without touching your service layer.
 
 ---
 
-## Request Lifecycle
+## Architecture Standards
+
+- The backend is REST-first. JSON `@RestController` classes are the primary API
+  surface.
+- Authentication uses stateless JWT. Public auth/setup/health and OpenAPI
+  routes are explicitly permitted; protected routes require an authenticated
+  request.
+- Authorization has two layers: route role policy first, then service-level
+  ownership/resource policy.
+- The source tree follows the DDD-lite bounded-context package strategy below.
+- Domain value types are used for many validated primitives while workflow
+  rules remain in services/rules classes.
+
+---
+
+## Secured Request Lifecycle
+
+This diagram shows the standard request lifecycle for protected REST routes.
+Route authorization answers whether the caller's role may perform the action;
+service authorization answers whether the caller may touch the specific
+record.
 
 ```mermaid
 flowchart TD
@@ -23,7 +43,7 @@ flowchart TD
     subgraph SEC ["Security Middleware"]
         B["Security Filter Chain"]
         B -->|"Invalid token"| B1["401 Unauthorized"]
-        B -->|"Valid token"| C["@PreAuthorize"]
+        B -->|"Valid token"| C["Role policy / @PreAuthorize"]
         C -->|"Wrong role"| C1["403 Forbidden"]
     end
 
@@ -54,7 +74,7 @@ flowchart TD
     H --> I
     J --> H2
 
-    H -..->|"future"| R["Redis Cache"]
+    H -..->|"cache"| R["Redis Cache"]
 
     subgraph VW ["View Layer — V in MVCS"]
         K["Response DTO / optional Thymeleaf Template"]
@@ -90,7 +110,7 @@ See [DATABASE.md](./DATABASE.md) for schema design decisions, migration conventi
 ```mermaid
 flowchart LR
     subgraph Controllers
-        WC["@Controller — Thymeleaf HTML (optional future)"]
+        WC["@Controller — Thymeleaf HTML (optional)"]
         RC["@RestController — JSON"]
     end
 
@@ -98,7 +118,7 @@ flowchart LR
     RC --> S
 
     subgraph Routes
-        R1["/entity-name → web UI (future)"]
+        R1["/entity-name → web UI"]
         R2["/api/v1/entity-name → JSON"]
     end
 
@@ -106,20 +126,57 @@ flowchart LR
     R2 --> RC
 ```
 
-The current backend implementation is REST-first. JSON `@RestController`
-classes are the committed API surface. The Thymeleaf lane remains an optional
-future extension and must not be documented as implemented until web
-controllers and templates exist.
+The backend is REST-first. JSON `@RestController` classes are the primary API
+surface. Thymeleaf is an optional browser-facing view layer that reuses the
+same service layer as REST controllers.
 
 ---
 
 ## Code Structure (DDD-Lite Bounded Contexts)
 
 The source tree is organized by business context first, then by feature. Each
-feature keeps the existing Spring MVCS shape internally: entity, repository,
-service, rules, controller, mapper, and DTOs stay together. This keeps the
-current implementation pattern while making the package boundaries easier to
-scan as the system grows.
+feature keeps the Spring MVCS shape internally: entity, repository, service,
+rules, controller, mapper, and DTOs stay together. This keeps package
+boundaries easy to scan as the system grows.
+
+CPMSS uses a **DDD-lite** package model. Spring controllers, services,
+repositories, DTOs, and JPA entities remain the application style; bounded
+contexts define where domain language, validation, orchestration, and policy
+belong.
+
+### Bounded Context Ownership
+
+| Context | Owns |
+|---------|------|
+| `identity` | login, setup, JWT-backed users, system roles, account status |
+| `people` | person identity, contact values, business roles, qualifications |
+| `organization` | departments, managers, department locations, supervision |
+| `property` | compounds, buildings, facilities, units, pricing/status history |
+| `security` | permits, gates, gate entries, guard assignments, vehicles |
+| `hr` | applications, recruitment, hiring, staff profile, positions, compensation setup |
+| `workforce` | tasks, attendance, shift attendance types, monthly payroll snapshots |
+| `performance` | KPI policies, KPI records, KPI summaries, performance reviews |
+| `leasing` | contracts, contract parties, residents, installments |
+| `finance` | bank accounts, payments, payment subtypes, investment records |
+| `maintenance` | companies, work orders, vendor assignments |
+| `communication` | internal reports and role inbox behavior |
+| `platform` | cross-cutting API envelope, exceptions, config, shared values, utilities |
+
+### Context Rules
+
+- Business behavior belongs to the context that owns the business concept.
+- `platform` contains only truly cross-cutting infrastructure. It must not
+  become a second domain layer.
+- Context-specific value objects live in `{context}/common`.
+- A value object belongs in `platform/common/value` only when multiple contexts use
+  the exact same concept with the same meaning.
+- Cross-context workflows belong to the service that owns the workflow
+  decision. For example, payment orchestration belongs in `finance`; contract
+  lifecycle belongs in `leasing`; hiring orchestration belongs in `hr`.
+- Catch-all classes are avoided for authorization, workflow, files, and
+  reporting when a context-specific policy/rules class can own the behavior.
+- API paths do not define bounded contexts by themselves. A context is a
+  business boundary: it owns language, rules, and lifecycle decisions.
 
 ```
 src/main/java/com/cpmss/
@@ -177,7 +234,7 @@ src/main/java/com/cpmss/
   │     common/                     ← base entities, API envelope, route constants
   │       value/                    ← shared scalar value types
   │     config/                     ← Spring Security, JWT, auditing
-  │       CacheConfig.java          ← Redis (future)
+  │       CacheConfig.java          ← Redis cache configuration
   │     exception/                  ← application exception hierarchy
   │     util/                       ← date, auth, slug, and masking helpers
   ├── property/
@@ -223,7 +280,7 @@ src/main/java/com/cpmss/{context}/{feature}/
 ```
 
 See [`CONVENTIONS.md`](./CONVENTIONS.md) for implementation patterns: `BaseEntity`,
-entity annotations, domain value types, `{Feature}Rules.java` contract, planned
+entity annotations, domain value types, `{Feature}Rules.java` contract, the
 slug pattern, `PagedResponse<T>`, `ApiPaths.java`, transaction boundaries, and
 MapStruct + Records.
 
@@ -243,7 +300,7 @@ service pattern.
 | Multi-column concept | `@Embeddable` record/class | Existing column group |
 | Cross-row workflow rule | Rules/service method | Repository-backed check |
 
-Current examples include:
+Examples include:
 
 - `finance.money.Money` for amount and currency pairs.
 - `finance.payment.PaymentType`, `PaymentDirection`, `PaymentMethod`, and
@@ -260,6 +317,35 @@ format, and string normalization belong in these value objects. Rules that need
 repositories or multiple aggregates remain in service/rules classes; examples
 include one active staff position, one active department manager, permit
 entitlement checks, payroll close freezing, and payment subtype orchestration.
+
+---
+
+## Selective CQRS
+
+CPMSS stays MVCS/layered by default. CQRS is used selectively when a bounded
+context has complex writes, read-heavy dashboards, or projections that would
+make one service mix too many responsibilities.
+
+Command services own validation, ownership, transactions, and mutation. Query
+services own read-only DTOs/read models. Read models do not own business
+invariants, and API routes remain stable unless a route change is explicitly
+approved.
+
+Selective CQRS candidates:
+
+| Context | Command side | Query/read-model side |
+|---------|--------------|-----------------------|
+| `finance` | payment creation, subtype orchestration, reconciliation | payment history, reconciliation queues, financial summaries |
+| `workforce` | attendance recording, payroll close | payroll summaries, attendance calendars, salary dashboards |
+| `performance` | KPI recording, KPI month close, reviews | KPI summaries, rating dashboards, performance history |
+| `leasing` | contract lifecycle, parties, installments, residency | contract overview, installment schedules, occupancy views |
+| `maintenance` | work-order lifecycle and assignments | work-order queues, vendor workload, status boards |
+| `communication` | report filing, read/unread, resolution | role inboxes, unread counts, report timelines |
+| `security` | gate entry recording, permit/vehicle assignment | gate logs, permit lookup, guard assignment views |
+| `hr` | recruitment, hiring, staff position/salary changes | applicant pipeline, staff history, compensation views |
+
+Catalog CRUD remains a normal service unless the read side becomes a real
+projection or dashboard.
 
 ---
 
@@ -283,48 +369,62 @@ for the full contract and example.
 
 ---
 
-## Exception Hierarchy
+## Exception Handling
 
 ```mermaid
 flowchart TD
-    RE["RuntimeException"] --> BE["BusinessException → 422"]
-    RE --> RNF["ResourceNotFoundException → 404"]
-    RE --> FE["ForbiddenException → 403"]
-    RE --> CE["ConflictException → 409"]
-
-    BE --> GEH["GlobalExceptionHandler"]
-    RNF --> GEH
-    FE --> GEH
-    CE --> GEH
-
+    AE["ApiException"] --> EC["ErrorCode"]
+    EC --> GEH["GlobalExceptionHandler"]
+    VALID["MethodArgumentNotValidException"] --> GEH
+    AUTH["Spring Security 401/403"] --> SH["JSON security handlers"]
     GEH --> R["Structured JSON Error Response"]
+    SH --> R
 ```
 
-Error response format:
+`ApiException` is the single application exception type for API errors.
+Its `ErrorCode` determines the HTTP status, stable client-facing code, and
+fallback message. Spring Security authentication and route authorization
+failures happen before MVC exception handling, so they use JSON security
+handlers that build the same response envelope.
+
+Standard error response format:
 
 ```json
 {
   "status": 422,
+  "code": "DOMAIN_RULE_INVALID",
   "error": "Unprocessable Entity",
-  "message": "Domain rule violated",
-  "timestamp": "2026-03-24T07:00:00Z"
+  "message": "Domain rule is invalid"
+  "requestId": "5c27db63-8c1f-44df-a06f-869cfbfc6ad5",
+  "timestamp": "2026-05-09T12:00:00Z"
 }
 ```
 
-Validation error format (format validation failures):
+Validation error format:
 
 ```json
 {
   "status": 400,
+  "code": "VALIDATION_FAILED",
   "error": "Validation Failed",
+  "message": "Request validation failed",
   "fields": {
-    "email": "Must be a valid email address",
-    "age": "Must be at least 18"
-  }
+    "email": [
+      {
+        "code": "VALIDATION_FIELD_INVALID",
+        "message": "must be a well-formed email address"
+      }
+    ]
+  },
+  "requestId": "5c27db63-8c1f-44df-a06f-869cfbfc6ad5",
+  "timestamp": "2026-05-09T12:00:00Z"
 }
 ```
 
-HTML error pages for future Thymeleaf routes can be served by Spring Boot's
+See [`ERRORS.md`](./ERRORS.md) for error code naming, field-level business
+errors, request ID rules, and the Spring Security 401 response shape.
+
+HTML error pages for Thymeleaf routes are served by Spring Boot's
 `BasicErrorController` when browser-facing controllers are introduced:
 
 ```
@@ -352,25 +452,32 @@ See [`CONVENTIONS.md`](./CONVENTIONS.md#transaction-boundaries) for the naming r
 
 These apply across all layers and are not owned by any single layer.
 
-| Concern | Implementation |
+| Concern | Standard |
 |---|---|
-| Logging | SLF4J / Logback. Controller logs request entry. Service logs decisions. Exception handler logs errors with stack traces. |
-| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) — catches all custom exceptions and maps them to structured JSON. HTML error pages are future Thymeleaf work. |
+| Logging | SLF4J / Logback. See [`LOGGING.md`](./LOGGING.md) for level and sensitive-data rules. |
+| Exception Handling | `GlobalExceptionHandler` (`@RestControllerAdvice`) maps custom exceptions to JSON error responses. See [`ERRORS.md`](./ERRORS.md). HTML error pages belong to the Thymeleaf view layer. |
 | CORS | Configured in `SecurityConfig`. |
 | Authentication | Stateless JWT. Token issued on login, validated on every request via Spring Security filter chain. CSRF disabled — no session cookies are issued. |
-| Authorization | `@PreAuthorize` for role-based. Explicit ownership checks in service for resource-based. |
+| Authorization | Route role policies run first; service-level ownership/resource checks protect individual records. |
 | Password Hashing | BCrypt via Spring Security. Raw passwords are never stored. |
 | Refresh Tokens | Access token (short-lived) + refresh token (long-lived). Client uses refresh token to silently obtain a new access token. |
-| Rate Limiting | Applied at Nginx level on auth endpoints (`/api/v1/auth/login`, `/api/v1/auth/refresh`). |
+| Rate Limiting | Nginx-level limits protect auth endpoints (`/api/v1/auth/login`, `/api/v1/auth/refresh`). |
 | Audit Fields | `BaseEntity` with `@CreatedDate`, `@LastModifiedDate`, `@CreatedBy`, `@LastModifiedBy`. Requires `AuditorAware` bean and `@EnableJpaAuditing`. |
-| Data Masking | Sensitive fields returned masked in Response DTOs via `MaskingUtils`. Role-specific DTOs for different access levels. |
+| Data Masking | Use `MaskingUtils` and role-specific DTOs where a response contains sensitive data. |
 | Input Validation | Format: `@Valid` annotations on Request DTOs. Business: explicit Rules class per feature. |
 | Pagination | All list endpoints accept `Pageable`. Service returns `PagedResponse<T>`. |
-| Slugs | Planned URL-friendly identifiers for named/catalog resources. `SlugUtils` exists, but slug columns and lookup endpoints are future work. |
+| Slugs | URL-friendly identifiers for selected named/catalog resources. See [`CONVENTIONS.md`](./CONVENTIONS.md#slug-pattern). |
 
 ---
 
-## Future: Redis
+## Workflow Diagrams
+
+Sequence diagrams document stable workflow behavior: service behavior,
+transaction boundaries, authorization checks, and error cases.
+
+---
+
+## Redis Cache
 
 Redis sits parallel to PostgreSQL as a cache layer. The service checks Redis
 before hitting the database for expensive, frequently-read data.

@@ -35,7 +35,7 @@ public class PersonEmail {
      * Creates a person contact email.
      *
      * @param email the raw email address
-     * @throws com.cpmss.platform.exception.BusinessException if the email is
+     * @throws com.cpmss.platform.exception.ApiException if the email is
      *                                                        missing, too long,
      *                                                        or invalid
      */

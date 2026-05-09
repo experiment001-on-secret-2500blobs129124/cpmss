@@ -5,9 +5,10 @@ import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
-import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.security.accesspermit.AccessPermitRepository;
 import com.cpmss.security.entersat.dto.CreateEntersAtRequest;
+import com.cpmss.security.common.SecurityErrorCode;
 import com.cpmss.security.entersat.dto.EntersAtResponse;
 import com.cpmss.security.gate.Gate;
 import com.cpmss.security.gate.GateRepository;
@@ -70,8 +71,9 @@ class EntersAtServiceOwnershipTest {
                 guardId, gateId, enteredAt)).thenReturn(false);
 
         assertThatThrownBy(() -> service().create(anonymousEntry(gateId, enteredAt, null)))
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Gate guard is not assigned to this gate");
+                .isInstanceOf(ApiException.class)
+                .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
+                        .isEqualTo(SecurityErrorCode.GUARD_NOT_ASSIGNED));
         verify(entersAtRepository, never()).save(any());
     }
 

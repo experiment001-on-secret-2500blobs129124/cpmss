@@ -1,7 +1,8 @@
 package com.cpmss.communication.internalreport;
 
+import com.cpmss.communication.common.CommunicationErrorCode;
 import com.cpmss.identity.auth.SystemRole;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,12 +22,13 @@ class InternalReportValueTest {
     @Test
     void rejectsUnknownReportVocabularyLabels() {
         assertThatThrownBy(() -> ReportCategory.fromLabel("Leave_Request"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Report category must be one of: Salary_Request, Transfer_Request, Complaint, "
-                        + "Maintenance_Request, Security_Incident, Policy_Suggestion, General");
+                .isInstanceOfSatisfying(ApiException.class,
+                        ex -> assertThat(ex.getErrorCode())
+                                .isEqualTo(CommunicationErrorCode.REPORT_CATEGORY_INVALID));
         assertThatThrownBy(() -> ReportStatus.fromLabel("Closed"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Report status must be one of: Open, In_Review, Resolved, Rejected");
+                .isInstanceOfSatisfying(ApiException.class,
+                        ex -> assertThat(ex.getErrorCode())
+                                .isEqualTo(CommunicationErrorCode.REPORT_STATUS_INVALID));
     }
 
     @Test
@@ -36,15 +38,17 @@ class InternalReportValueTest {
         assertThatCode(() -> rules.validateAssignedToRole(SystemRole.GENERAL_MANAGER))
                 .doesNotThrowAnyException();
         assertThatThrownBy(() -> rules.validateAssignedToRole(SystemRole.STAFF))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Invalid assigned role: 'STAFF'. Must be a report receiver role");
+                .isInstanceOfSatisfying(ApiException.class,
+                        ex -> assertThat(ex.getErrorCode())
+                                .isEqualTo(CommunicationErrorCode.REPORT_TARGET_ROLE_INVALID));
     }
 
     @Test
     void requiresReportReceiverRole() {
         assertThatThrownBy(() -> new InternalReportRules().validateAssignedToRole(null))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Assigned role is required");
+                .isInstanceOfSatisfying(ApiException.class,
+                        ex -> assertThat(ex.getErrorCode())
+                                .isEqualTo(CommunicationErrorCode.REPORT_TARGET_ROLE_REQUIRED));
     }
 
     @Test

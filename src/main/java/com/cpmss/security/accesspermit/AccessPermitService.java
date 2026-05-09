@@ -1,18 +1,23 @@
 package com.cpmss.security.accesspermit;
 
-import com.cpmss.security.accesspermit.dto.AccessPermitResponse;
-import com.cpmss.security.accesspermit.dto.CreateAccessPermitRequest;
-import com.cpmss.security.accesspermit.dto.UpdateAccessPermitRequest;
-import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.leasing.contract.Contract;
 import com.cpmss.leasing.contract.ContractRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.leasing.common.LeasingErrorCode;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.hr.common.HrErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.hr.staffprofile.StaffProfile;
 import com.cpmss.hr.staffprofile.StaffProfileRepository;
 import com.cpmss.maintenance.workorder.WorkOrder;
 import com.cpmss.maintenance.workorder.WorkOrderRepository;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.accesspermit.dto.AccessPermitResponse;
+import com.cpmss.security.accesspermit.dto.CreateAccessPermitRequest;
+import com.cpmss.security.accesspermit.dto.UpdateAccessPermitRequest;
+import com.cpmss.security.common.SecurityErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -72,8 +77,8 @@ public class AccessPermitService {
      * Retrieves an access permit by its unique identifier.
      *
      * @param id the permit's UUID primary key
-     * @return the matching permit response
-     * @throws ResourceNotFoundException if no permit exists with this ID
+    * @return the matching permit response
+    * @throws ApiException if no permit exists with this ID
      */
     @Transactional(readOnly = true)
     public AccessPermitResponse getById(UUID id) {
@@ -95,8 +100,8 @@ public class AccessPermitService {
      * Creates a new access permit with entitlement validation.
      *
      * @param request the create request with permit details
-     * @return the created permit response
-     * @throws com.cpmss.platform.exception.BusinessException if entitlement rule is violated
+    * @return the created permit response
+    * @throws ApiException if entitlement rule is violated or a reference is missing
      */
     @Transactional
     public AccessPermitResponse create(CreateAccessPermitRequest request) {
@@ -128,8 +133,8 @@ public class AccessPermitService {
      *
      * @param id      the permit's UUID
      * @param request the update request
-     * @return the updated permit response
-     * @throws ResourceNotFoundException if no permit exists with this ID
+    * @return the updated permit response
+    * @throws ApiException if no permit exists with this ID
      */
     @Transactional
     public AccessPermitResponse update(UUID id, UpdateAccessPermitRequest request) {
@@ -148,12 +153,12 @@ public class AccessPermitService {
 
     private AccessPermit findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("AccessPermit", id));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.ACCESS_PERMIT_NOT_FOUND));
     }
 
     private Person resolvePerson(UUID id) {
         return personRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
     }
 
     private Person resolvePersonNullable(UUID id) {
@@ -168,7 +173,7 @@ public class AccessPermitService {
             return null;
         }
         return staffProfileRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffProfile", id));
+                .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_PROFILE_NOT_FOUND));
     }
 
     private Contract resolveContract(UUID id) {
@@ -176,7 +181,7 @@ public class AccessPermitService {
             return null;
         }
         return contractRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Contract", id));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND));
     }
 
     private WorkOrder resolveWorkOrder(UUID id) {
@@ -184,6 +189,6 @@ public class AccessPermitService {
             return null;
         }
         return workOrderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("WorkOrder", id));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.WORK_ORDER_NOT_FOUND));
     }
 }

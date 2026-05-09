@@ -1,11 +1,13 @@
 package com.cpmss.security.entersat;
 
 import com.cpmss.identity.auth.SystemRole;
-import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
@@ -23,8 +25,9 @@ class EntersAtRulesTest {
     void rejectsGateGuardOutsideAssignedGate() {
         assertThatThrownBy(() ->
                 rules.validateGateGuardAssignedToGate(SystemRole.GATE_GUARD, false))
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Gate guard is not assigned to this gate");
+                .isInstanceOf(ApiException.class)
+                .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
+                        .isEqualTo(SecurityErrorCode.GUARD_NOT_ASSIGNED));
     }
 
     @Test
@@ -39,7 +42,8 @@ class EntersAtRulesTest {
 
         assertThatThrownBy(() -> rules.validateGateGuardProcessesOnlySelf(
                 SystemRole.GATE_GUARD, guardId, otherPersonId))
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Gate guards can only process entries as themselves");
+                .isInstanceOf(ApiException.class)
+                .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
+                        .isEqualTo(SecurityErrorCode.GUARD_NOT_ASSIGNED));
     }
 }

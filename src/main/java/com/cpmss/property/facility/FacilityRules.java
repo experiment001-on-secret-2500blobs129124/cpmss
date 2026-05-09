@@ -1,6 +1,7 @@
 package com.cpmss.property.facility;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.property.common.PropertyErrorCode;
 import com.cpmss.property.common.FacilityManagementType;
 
 /**
@@ -20,19 +21,17 @@ public class FacilityRules {
      *
      * @param managementType     the facility management type
      * @param managedByCompanyId the managing company UUID (may be {@code null})
-     * @throws BusinessException if the combination is invalid
+     * @throws ApiException if the combination is invalid
      */
     public void validateManagementType(FacilityManagementType managementType, java.util.UUID managedByCompanyId) {
         if (managementType == null) {
-            throw new BusinessException("Facility management type is required");
+            throw new ApiException(PropertyErrorCode.FACILITY_MGMT_TYPE_REQUIRED);
         }
         if (managementType == FacilityManagementType.VENDOR && managedByCompanyId == null) {
-            throw new BusinessException(
-                    "A managing company is required when management type is 'Vendor'");
+            throw new ApiException(PropertyErrorCode.FACILITY_MGMT_MISMATCH_COMMERCIAL);
         }
         if (managementType == FacilityManagementType.COMPOUND && managedByCompanyId != null) {
-            throw new BusinessException(
-                    "A managing company must not be set when management type is 'Compound'");
+            throw new ApiException(PropertyErrorCode.FACILITY_MGMT_MISMATCH_RESIDENTIAL);
         }
     }
 }

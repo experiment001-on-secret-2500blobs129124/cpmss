@@ -1,13 +1,17 @@
 package com.cpmss.security.vehicle;
 
-import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
+import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
 import com.cpmss.security.vehicle.dto.CreateVehicleRequest;
 import com.cpmss.security.vehicle.dto.UpdateVehicleRequest;
 import com.cpmss.security.vehicle.dto.VehicleResponse;
@@ -67,12 +71,12 @@ public class VehicleService {
      *
      * @param id the vehicle's UUID primary key
      * @return the matching vehicle response
-     * @throws ResourceNotFoundException if no vehicle exists with this ID
+     * @throws ApiException if no vehicle exists with this ID
      */
     @Transactional(readOnly = true)
     public VehicleResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", id)));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND)));
     }
 
     /**
@@ -94,8 +98,7 @@ public class VehicleService {
      *
      * @param request the create request with vehicle details and owner ID
      * @return the created vehicle response
-     * @throws com.cpmss.platform.exception.BusinessException if owner rule is violated
-     * @throws com.cpmss.platform.exception.ConflictException  if license is duplicate
+    * @throws ApiException if the owner rule is violated or the license is duplicate
      */
     @Transactional
     public VehicleResponse create(CreateVehicleRequest request) {
@@ -123,12 +126,12 @@ public class VehicleService {
      * @param id      the vehicle's UUID
      * @param request the update request with new values
      * @return the updated vehicle response
-     * @throws ResourceNotFoundException if no vehicle exists with this ID
+     * @throws ApiException if no vehicle exists with this ID
      */
     @Transactional
     public VehicleResponse update(UUID id, UpdateVehicleRequest request) {
         Vehicle vehicle = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", id));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND));
 
         rules.validateExactlyOneOwner(
                 request.ownerPersonId(), request.ownerDepartmentId(), request.ownerCompanyId());
@@ -153,12 +156,12 @@ public class VehicleService {
      * Deletes a vehicle by ID.
      *
      * @param id the vehicle's UUID
-     * @throws ResourceNotFoundException if no vehicle exists with this ID
+     * @throws ApiException if no vehicle exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Vehicle vehicle = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vehicle", id));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND));
         repository.delete(vehicle);
         log.info("Vehicle deleted: {}", vehicle.getLicenseNo());
     }
@@ -170,7 +173,7 @@ public class VehicleService {
             return null;
         }
         return personRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
     }
 
     private Department resolveOwnerDepartment(UUID id) {
@@ -178,7 +181,7 @@ public class VehicleService {
             return null;
         }
         return departmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Department", id));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
     }
 
     private Company resolveOwnerCompany(UUID id) {
@@ -186,6 +189,6 @@ public class VehicleService {
             return null;
         }
         return companyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", id));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
     }
 }

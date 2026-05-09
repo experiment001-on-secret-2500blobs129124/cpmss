@@ -1,6 +1,7 @@
 package com.cpmss.finance.payment;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -40,17 +41,16 @@ public enum PaymentType {
      *
      * @param label the payment type label
      * @return the matching payment type
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     public static PaymentType fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Payment type is required");
+            throw new ApiException(FinanceErrorCode.PAYMENT_TYPE_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Payment type must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYMENT_TYPE_INVALID));
     }
 
     /**

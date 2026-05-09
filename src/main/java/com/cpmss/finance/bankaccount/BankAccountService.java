@@ -3,14 +3,18 @@ package com.cpmss.finance.bankaccount;
 import com.cpmss.finance.bankaccount.dto.BankAccountResponse;
 import com.cpmss.finance.bankaccount.dto.CreateBankAccountRequest;
 import com.cpmss.finance.bankaccount.dto.UpdateBankAccountRequest;
+import com.cpmss.finance.common.FinanceErrorCode;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
 import com.cpmss.property.compound.Compound;
 import com.cpmss.property.compound.CompoundRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.property.common.PropertyErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -69,12 +73,12 @@ public class BankAccountService {
      *
      * @param id the bank account's UUID primary key
      * @return the matching bank account response
-     * @throws ResourceNotFoundException if no bank account exists with this ID
+     * @throws ApiException if no bank account exists with this ID
      */
     @Transactional(readOnly = true)
     public BankAccountResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("BankAccount", id)));
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.BANK_ACCOUNT_NOT_FOUND)));
     }
 
     /**
@@ -93,7 +97,7 @@ public class BankAccountService {
      *
      * @param request the create request with bank details and owner ID
      * @return the created bank account response
-     * @throws com.cpmss.platform.exception.BusinessException if owner rule is violated
+     * @throws ApiException if the owner rule is violated
      */
     @Transactional
     public BankAccountResponse create(CreateBankAccountRequest request) {
@@ -120,12 +124,12 @@ public class BankAccountService {
      * @param id      the bank account's UUID
      * @param request the update request with new values
      * @return the updated bank account response
-     * @throws ResourceNotFoundException if no bank account exists with this ID
+     * @throws ApiException if no bank account exists with this ID
      */
     @Transactional
     public BankAccountResponse update(UUID id, UpdateBankAccountRequest request) {
         BankAccount account = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("BankAccount", id));
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.BANK_ACCOUNT_NOT_FOUND));
 
         rules.validateExactlyOneOwner(
                 request.compoundId(), request.accountOwnerId(), request.companyId());
@@ -149,7 +153,7 @@ public class BankAccountService {
             return null;
         }
         return compoundRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Compound", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
     }
 
     private Person resolvePerson(UUID id) {
@@ -157,7 +161,7 @@ public class BankAccountService {
             return null;
         }
         return personRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
     }
 
     private Company resolveCompany(UUID id) {
@@ -165,6 +169,6 @@ public class BankAccountService {
             return null;
         }
         return companyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", id));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
     }
 }

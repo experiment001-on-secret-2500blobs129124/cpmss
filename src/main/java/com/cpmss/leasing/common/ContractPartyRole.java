@@ -2,7 +2,7 @@ package com.cpmss.leasing.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -45,18 +45,17 @@ public enum ContractPartyRole {
      *
      * @param label the party role label
      * @return the matching role
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     @JsonCreator
     public static ContractPartyRole fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Contract party role is required");
+            throw new ApiException(LeasingErrorCode.CONTRACT_PARTY_ROLE_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Contract party role must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_PARTY_ROLE_INVALID));
     }
 
     /**

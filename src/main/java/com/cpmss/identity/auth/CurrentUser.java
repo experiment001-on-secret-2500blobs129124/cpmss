@@ -1,6 +1,7 @@
 package com.cpmss.identity.auth;
 
-import com.cpmss.platform.exception.ForbiddenException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 
 import java.util.UUID;
 
@@ -41,11 +42,13 @@ public record CurrentUser(
      *
      * @param actionDescription the business action that needs a person link
      * @return the linked person UUID
-     * @throws ForbiddenException if this login account has no linked person
+     * @throws ApiException if this login account has no linked person
      */
     public UUID requirePersonId(String actionDescription) {
         if (personId == null) {
-            throw new ForbiddenException(actionDescription + " requires a linked person");
+            throw new ApiException(
+                    CommonErrorCode.ACCESS_DENIED,
+                    actionDescription + " requires a linked person");
         }
         return personId;
     }

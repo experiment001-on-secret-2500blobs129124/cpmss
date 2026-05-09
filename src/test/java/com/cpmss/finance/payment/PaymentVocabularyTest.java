@@ -1,6 +1,6 @@
 package com.cpmss.finance.payment;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,12 +42,12 @@ class PaymentVocabularyTest {
     @Test
     void rejectsUnknownPaymentVocabulary() {
         assertThatThrownBy(() -> PaymentType.fromLabel("Subscription"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Payment type must be one of: Installment, WorkOrder, Payroll");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Payment type is not allowed");
 
         assertThatThrownBy(() -> PaymentMethod.fromNullableLabel("Wire"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Payment method must be one of: Cash, Bank Transfer, Cheque, Card, Other");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Payment method is not allowed");
     }
 
     @Test

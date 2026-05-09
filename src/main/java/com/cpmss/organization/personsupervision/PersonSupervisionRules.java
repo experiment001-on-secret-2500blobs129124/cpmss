@@ -1,6 +1,7 @@
 package com.cpmss.organization.personsupervision;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.organization.common.OrganizationErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -18,11 +19,11 @@ public class PersonSupervisionRules {
      *
      * @param supervisorId the supervisor's UUID
      * @param superviseeId the supervisee's UUID
-     * @throws BusinessException if both IDs refer to the same person
+     * @throws ApiException if both IDs refer to the same person
      */
     public void validateNoSelfSupervision(UUID supervisorId, UUID superviseeId) {
         if (supervisorId.equals(superviseeId)) {
-            throw new BusinessException("A person cannot supervise themselves");
+            throw new ApiException(OrganizationErrorCode.SELF_SUPERVISION_FORBIDDEN);
         }
     }
 }

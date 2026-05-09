@@ -34,7 +34,7 @@ public class PersonService {
 
     public Person getById(UUID id) {
         return repository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+            .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
     }
 }
 ```
@@ -245,7 +245,7 @@ public Person getById(UUID id) {
         throw new IllegalArgumentException("ID must not be null");
     }
     return repository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+        .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 }
 ```
 
@@ -344,7 +344,8 @@ String query = """
 Use `String.format()` or string concatenation for simple cases:
 
 ```java
-throw new ResourceNotFoundException(
+throw new ApiException(
+    PeopleErrorCode.PERSON_NOT_FOUND,
     "Person with ID " + id + " not found"
 );
 ```
@@ -361,7 +362,7 @@ throw new ResourceNotFoundException(
 // ✅ Repository returns Optional — service unwraps or throws
 public Person getById(UUID id) {
     return repository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+        .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 }
 
 // ❌ Never return null

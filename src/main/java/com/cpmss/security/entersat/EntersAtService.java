@@ -3,18 +3,20 @@ package com.cpmss.security.entersat;
 import com.cpmss.identity.auth.CurrentUser;
 import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.identity.auth.SystemRole;
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.people.person.Person;
+import com.cpmss.people.person.PersonRepository;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.security.accesspermit.AccessPermit;
 import com.cpmss.security.accesspermit.AccessPermitRepository;
-import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.security.common.SecurityErrorCode;
 import com.cpmss.security.entersat.dto.CreateEntersAtRequest;
 import com.cpmss.security.entersat.dto.EntersAtResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.security.gate.Gate;
 import com.cpmss.security.gate.GateRepository;
 import com.cpmss.security.gateguardassignment.GateGuardAssignmentRepository;
 import com.cpmss.security.vehicle.LicensePlate;
-import com.cpmss.people.person.Person;
-import com.cpmss.people.person.PersonRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -50,13 +52,13 @@ public class EntersAtService {
     /**
      * Constructs the service with required dependencies.
      *
-     * @param repository             entry data access
-     * @param gateRepository         gate data access (FK lookup)
-     * @param accessPermitRepository permit data access (FK lookup)
-     * @param personRepository       person data access (FK lookup)
+     * @param repository                    entry data access
+     * @param gateRepository                gate data access (FK lookup)
+     * @param accessPermitRepository        permit data access (FK lookup)
+     * @param personRepository              person data access (FK lookup)
      * @param gateGuardAssignmentRepository guard posting data access
-     * @param currentUserService     authenticated user resolver
-     * @param mapper                 entity-DTO mapper
+     * @param currentUserService            authenticated user resolver
+     * @param mapper                        entity-DTO mapper
      */
     public EntersAtService(EntersAtRepository repository,
                            GateRepository gateRepository,
@@ -79,12 +81,12 @@ public class EntersAtService {
      *
      * @param id the entry's UUID primary key
      * @return the matching entry response
-     * @throws ResourceNotFoundException if no entry exists with this ID
+     * @throws ApiException if no entry exists with this ID
      */
     @Transactional(readOnly = true)
     public EntersAtResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("EntersAt", id)));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_ENTRY_NOT_FOUND)));
     }
 
     /**
@@ -107,8 +109,8 @@ public class EntersAtService {
      *
      * @param request the entry details
      * @return the created entry response
-     * @throws com.cpmss.platform.exception.BusinessException if entry method rule is violated
-     * @throws com.cpmss.platform.exception.ForbiddenException if a gate guard is outside their post
+     * @throws ApiException if entry method rule is violated, access is denied,
+     *                      or a reference is missing
      */
     @Transactional
     public EntersAtResponse create(CreateEntersAtRequest request) {
@@ -117,7 +119,7 @@ public class EntersAtService {
         Person currentGuard = resolveCurrentGuardIfNeeded(actor, request);
 
         Gate gate = gateRepository.findById(request.gateId())
-                .orElseThrow(() -> new ResourceNotFoundException("Gate", request.gateId()));
+            .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND));
 
         EntersAt entry = EntersAt.builder()
                 .gate(gate)
@@ -148,7 +150,7 @@ public class EntersAtService {
         rules.validateGateGuardProcessesOnlySelf(
                 actor.systemRole(), guardPersonId, request.processedById());
         return personRepository.findById(guardPersonId)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", guardPersonId));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
     }
 
     private Person resolveProcessedBy(CreateEntersAtRequest request,
@@ -169,7 +171,7 @@ public class EntersAtService {
             return null;
         }
         return accessPermitRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("AccessPermit", id));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.ACCESS_PERMIT_NOT_FOUND));
     }
 
     private Person resolvePersonNullable(UUID id) {
@@ -177,6 +179,6 @@ public class EntersAtService {
             return null;
         }
         return personRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Person", id));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
     }
 }
