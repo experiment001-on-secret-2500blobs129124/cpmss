@@ -1,7 +1,8 @@
 package com.cpmss.maintenance.workorder;
 
 import com.cpmss.finance.money.Money;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Business rules for {@link WorkOrder} operations.
@@ -16,11 +17,11 @@ public class WorkOrderRules {
      * Validates that the cost amount is positive when provided.
      *
      * @param cost the cost of the work (may be {@code null})
-     * @throws BusinessException if the cost is not positive
+     * @throws ApiException if the cost is not positive
      */
     public void validateCostPositive(Money cost) {
         if (cost != null && cost.getAmount().signum() <= 0) {
-            throw new BusinessException("Work order cost must be positive");
+            throw new ApiException(MaintenanceErrorCode.WORK_ORDER_COST_NOT_POSITIVE);
         }
     }
 
@@ -38,16 +39,11 @@ public class WorkOrderRules {
      *
      * @param currentStatus the current job status
      * @param newStatus     the requested new status
-     * @throws BusinessException if the transition is invalid
+     * @throws ApiException if the transition is invalid
      */
     public void validateStatusTransition(WorkOrderStatus currentStatus, WorkOrderStatus newStatus) {
         if (currentStatus == null || newStatus == null || !currentStatus.canTransitionTo(newStatus)) {
-            throw new BusinessException(
-                    "Invalid status transition: " + label(currentStatus) + " → " + label(newStatus));
+            throw new ApiException(MaintenanceErrorCode.WORK_ORDER_STATUS_TRANSITION_INVALID);
         }
-    }
-
-    private String label(WorkOrderStatus status) {
-        return status != null ? status.label() : "null";
     }
 }

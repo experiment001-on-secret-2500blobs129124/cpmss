@@ -1,10 +1,11 @@
 package com.cpmss.maintenance.company;
 
-import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.maintenance.common.MaintenanceErrorCode;
 import com.cpmss.maintenance.company.dto.CompanyResponse;
 import com.cpmss.maintenance.company.dto.CreateCompanyRequest;
 import com.cpmss.maintenance.company.dto.UpdateCompanyRequest;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -46,12 +47,12 @@ public class CompanyService {
      *
      * @param id the company's UUID primary key
      * @return the matching company response
-     * @throws ResourceNotFoundException if no company exists with this ID
+     * @throws ApiException if no company exists with this ID
      */
     @Transactional(readOnly = true)
     public CompanyResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", id)));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND)));
     }
 
     /**
@@ -85,12 +86,12 @@ public class CompanyService {
      * @param id      the company's UUID
      * @param request the update request with new values
      * @return the updated company response
-     * @throws ResourceNotFoundException if no company exists with this ID
+     * @throws ApiException if no company exists with this ID
      */
     @Transactional
     public CompanyResponse update(UUID id, UpdateCompanyRequest request) {
         Company company = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", id));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
         company.setCompanyName(request.companyName());
         company.setTaxId(request.taxId());
         company.setPhoneNo(request.phoneNo());
@@ -104,12 +105,12 @@ public class CompanyService {
      * Deletes a company by ID.
      *
      * @param id the company's UUID
-     * @throws ResourceNotFoundException if no company exists with this ID
+     * @throws ApiException if no company exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         Company company = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Company", id));
+                .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
         repository.delete(company);
         log.info("Company deleted: {}", company.getCompanyName());
     }
