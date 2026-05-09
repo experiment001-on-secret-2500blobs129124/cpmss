@@ -1,8 +1,9 @@
 package com.cpmss.communication.internalreport;
 
+import com.cpmss.communication.common.CommunicationErrorCode;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -43,18 +44,17 @@ public enum ReportPriority {
      *
      * @param label the priority label
      * @return the matching priority
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     @JsonCreator
     public static ReportPriority fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Report priority is required");
+            throw new ApiException(CommunicationErrorCode.REPORT_PRIORITY_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException(
-                        "Report priority must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(CommunicationErrorCode.REPORT_PRIORITY_INVALID));
     }
 
     /**
