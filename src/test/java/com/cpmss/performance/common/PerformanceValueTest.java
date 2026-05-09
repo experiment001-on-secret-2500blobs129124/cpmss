@@ -1,6 +1,6 @@
 package com.cpmss.performance.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -20,7 +20,7 @@ class PerformanceValueTest {
     @Test
     void rejectsNegativeKpiScores() {
         assertThatThrownBy(() -> KpiScore.of(new BigDecimal("-0.01")))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("KPI score cannot be negative");
     }
 
@@ -36,7 +36,7 @@ class PerformanceValueTest {
     @Test
     void rejectsInvalidKpiScoreRanges() {
         assertThatThrownBy(() -> KpiScoreRange.of(new BigDecimal("90.00"), new BigDecimal("90.00")))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("KPI score range max must be greater than min");
     }
 
@@ -48,7 +48,7 @@ class PerformanceValueTest {
     @Test
     void rejectsNegativePercentageRates() {
         assertThatThrownBy(() -> PercentageRate.of(new BigDecimal("-0.0001")))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Percentage rate cannot be negative");
     }
 
@@ -63,8 +63,8 @@ class PerformanceValueTest {
     @Test
     void rejectsUnknownPerformanceRatingLabels() {
         assertThatThrownBy(() -> PerformanceRating.fromLabel("Satisfactory"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Performance rating must be one of: Excellent, Good, Average, Poor");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Performance rating is required");
     }
 
     @Test

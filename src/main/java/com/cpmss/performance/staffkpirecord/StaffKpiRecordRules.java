@@ -1,6 +1,7 @@
 package com.cpmss.performance.staffkpirecord;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.performance.common.PerformanceErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.performance.kpipolicy.KpiPolicy;
 
 import java.time.LocalDate;
@@ -21,12 +22,11 @@ public class StaffKpiRecordRules {
      *
      * @param policy     the KPI policy
      * @param recordDate the date of the KPI assessment
-     * @throws BusinessException if the policy is not active for that date
+     * @throws ApiException if the policy is not active for that date
      */
     public void validatePolicyActiveForDate(KpiPolicy policy, LocalDate recordDate) {
         if (policy.getEffectiveDate().isAfter(recordDate)) {
-            throw new BusinessException(
-                    "KPI policy is not yet active — effective date is after record date");
+            throw new ApiException(PerformanceErrorCode.KPI_POLICY_NOT_ACTIVE);
         }
     }
 }

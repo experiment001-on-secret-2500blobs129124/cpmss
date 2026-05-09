@@ -1,6 +1,6 @@
 package com.cpmss.performance.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.math.BigDecimal;
 
@@ -15,14 +15,14 @@ public record KpiScore(BigDecimal value) {
      * Creates a non-negative KPI score.
      *
      * @param value the raw score value
-     * @throws BusinessException if the score is missing or negative
+     * @throws ApiException if the score is missing or negative
      */
     public KpiScore {
         if (value == null) {
-            throw new BusinessException("KPI score is required");
+            throw new ApiException(PerformanceErrorCode.KPI_SCORE_REQUIRED);
         }
         if (value.signum() < 0) {
-            throw new BusinessException("KPI score cannot be negative");
+            throw new ApiException(PerformanceErrorCode.KPI_SCORE_NEGATIVE);
         }
     }
 
@@ -31,7 +31,7 @@ public record KpiScore(BigDecimal value) {
      *
      * @param value the raw score value
      * @return the validated KPI score
-     * @throws BusinessException if the score is missing or negative
+     * @throws ApiException if the score is missing or negative
      */
     public static KpiScore of(BigDecimal value) {
         return new KpiScore(value);
@@ -42,7 +42,7 @@ public record KpiScore(BigDecimal value) {
      *
      * @param value the optional raw score value
      * @return the validated KPI score, or {@code null} when absent
-     * @throws BusinessException if the score is present but negative
+     * @throws ApiException if the score is present but negative
      */
     public static KpiScore nullable(BigDecimal value) {
         return value != null ? of(value) : null;
