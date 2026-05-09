@@ -1,10 +1,14 @@
 package com.cpmss.performance.staffkpirecord;
 
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.organization.common.DepartmentScopeService;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
 import com.cpmss.performance.kpipolicy.KpiPolicy;
 import com.cpmss.performance.kpipolicy.KpiPolicyRepository;
+import com.cpmss.performance.common.PerformanceAccessRules;
 import com.cpmss.performance.common.PerformanceErrorCode;
 import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
@@ -54,7 +58,10 @@ public class KpiService {
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
     private final KpiPolicyRepository kpiPolicyRepository;
+    private final CurrentUserService currentUserService;
+    private final DepartmentScopeService departmentScopeService;
     private final StaffKpiRecordRules recordRules = new StaffKpiRecordRules();
+    private final PerformanceAccessRules accessRules = new PerformanceAccessRules();
     private final StaffKpiMonthlySummaryRules summaryRules = new StaffKpiMonthlySummaryRules();
 
     /**
@@ -71,12 +78,16 @@ public class KpiService {
                       StaffKpiMonthlySummaryRepository kpiSummaryRepository,
                       PersonRepository personRepository,
                       DepartmentRepository departmentRepository,
-                      KpiPolicyRepository kpiPolicyRepository) {
+                      KpiPolicyRepository kpiPolicyRepository,
+                      CurrentUserService currentUserService,
+                      DepartmentScopeService departmentScopeService) {
         this.kpiRecordRepository = kpiRecordRepository;
         this.kpiSummaryRepository = kpiSummaryRepository;
         this.personRepository = personRepository;
         this.departmentRepository = departmentRepository;
         this.kpiPolicyRepository = kpiPolicyRepository;
+        this.currentUserService = currentUserService;
+        this.departmentScopeService = departmentScopeService;
     }
 
     // ── Daily KPI Recording ─────────────────────────────────────────────
@@ -92,6 +103,15 @@ public class KpiService {
      */
     @Transactional
     public StaffKpiRecordResponse recordDailyKpi(CreateStaffKpiRecordRequest request) {
+        CurrentUser user = currentUserService.currentUser();
+        accessRules.requireCanManageDepartment(
+                user, request.departmentId(), departmentScopeService);
+        if (!accessRules.isHrOrBusinessAdmin(user)
+                && (!request.recordedById().equals(user.personId())
+                || !departmentScopeService.staffBelongsToDepartment(
+                        request.staffId(), request.departmentId()))) {
+            throw new ApiException(PerformanceErrorCode.PERFORMANCE_RECORD_ACCESS_DENIED);
+        }
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Department department = departmentRepository.findById(request.departmentId())
@@ -130,11 +150,15 @@ public class KpiService {
      */
     @Transactional(readOnly = true)
     public List<StaffKpiRecordResponse> getKpiByStaff(UUID staffId, int year, int month) {
+        CurrentUser user = currentUserService.currentUser();
         YearMonthPeriod period = YearMonthPeriod.of(year, month);
         LocalDate from = period.firstDay();
         LocalDate to = period.lastDay();
         return kpiRecordRepository.findByStaffIdAndRecordDateBetween(staffId, from, to)
-                .stream().map(this::toKpiRecordResponse).toList();
+                .stream()
+                .filter(record -> canViewKpiRecord(user, record))
+                .map(this::toKpiRecordResponse)
+                .toList();
     }
 
     // ── Monthly KPI Close ───────────────────────────────────────────────
@@ -154,7 +178,12 @@ public class KpiService {
     public List<StaffKpiMonthlySummaryResponse> closeMonthlyKpi(
             UUID departmentId, int year, int month, UUID closedById) {
 
+        CurrentUser user = currentUserService.currentUser();
         summaryRules.validateCloserProvided(closedById != null);
+        accessRules.requireCanManageDepartment(user, departmentId, departmentScopeService);
+        if (!accessRules.isHrOrBusinessAdmin(user) && !closedById.equals(user.personId())) {
+            throw new ApiException(PerformanceErrorCode.PERFORMANCE_RECORD_ACCESS_DENIED);
+        }
         YearMonthPeriod period = YearMonthPeriod.of(year, month);
 
         Department department = departmentRepository.findById(departmentId)
@@ -219,11 +248,24 @@ public class KpiService {
     @Transactional(readOnly = true)
     public List<StaffKpiMonthlySummaryResponse> getKpiSummaries(
             UUID departmentId, int year, int month) {
+        accessRules.requireCanManageDepartment(
+                currentUserService.currentUser(), departmentId, departmentScopeService);
         return kpiSummaryRepository.findByDepartmentIdAndYearAndMonth(departmentId, year, month)
                 .stream().map(this::toSummaryResponse).toList();
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private boolean canViewKpiRecord(CurrentUser user, StaffKpiRecord record) {
+        try {
+            accessRules.requireCanViewStaffPerformance(
+                    user, record.getStaff().getId(),
+                    record.getDepartment().getId(), departmentScopeService);
+            return true;
+        } catch (ApiException ex) {
+            return false;
+        }
+    }
 
     private StaffKpiRecordResponse toKpiRecordResponse(StaffKpiRecord r) {
         return new StaffKpiRecordResponse(

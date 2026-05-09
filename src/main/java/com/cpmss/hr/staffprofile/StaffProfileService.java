@@ -1,6 +1,8 @@
 package com.cpmss.hr.staffprofile;
 
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.hr.common.HrAccessRules;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.hr.common.HrErrorCode;
 import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
@@ -38,7 +40,9 @@ public class StaffProfileService {
     private final PersonRepository personRepository;
     private final QualificationRepository qualificationRepository;
     private final StaffProfileMapper mapper;
+    private final CurrentUserService currentUserService;
     private final StaffProfileRules rules = new StaffProfileRules();
+    private final HrAccessRules accessRules = new HrAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -51,11 +55,13 @@ public class StaffProfileService {
     public StaffProfileService(StaffProfileRepository repository,
                                PersonRepository personRepository,
                                QualificationRepository qualificationRepository,
-                               StaffProfileMapper mapper) {
+                               StaffProfileMapper mapper,
+                               CurrentUserService currentUserService) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.qualificationRepository = qualificationRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -67,6 +73,7 @@ public class StaffProfileService {
      */
     @Transactional(readOnly = true)
     public StaffProfileResponse getById(UUID personId) {
+        accessRules.requireCanViewStaffProfile(currentUserService.currentUser(), personId);
         return mapper.toResponse(repository.findById(personId)
                 .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_PROFILE_NOT_FOUND)));
     }
@@ -79,6 +86,7 @@ public class StaffProfileService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<StaffProfileResponse> listAll(Pageable pageable) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -95,6 +103,7 @@ public class StaffProfileService {
      */
     @Transactional
     public StaffProfileResponse create(CreateStaffProfileRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         rules.validateProfileNotExists(request.personId(),
                 repository.existsById(request.personId()));
 
@@ -125,6 +134,7 @@ public class StaffProfileService {
      */
     @Transactional
     public StaffProfileResponse update(UUID personId, UpdateStaffProfileRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         StaffProfile profile = repository.findById(personId)
                 .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_PROFILE_NOT_FOUND));
 
@@ -147,6 +157,7 @@ public class StaffProfileService {
      */
     @Transactional
     public void delete(UUID personId) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         StaffProfile profile = repository.findById(personId)
                 .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_PROFILE_NOT_FOUND));
         repository.delete(profile);

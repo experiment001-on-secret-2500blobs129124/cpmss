@@ -1,5 +1,7 @@
 package com.cpmss.people.role;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.people.common.PeopleAccessRules;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.platform.exception.ApiException;
@@ -30,7 +32,9 @@ public class RoleService {
 
     private final RoleRepository repository;
     private final RoleMapper mapper;
+    private final CurrentUserService currentUserService;
     private final RoleRules rules = new RoleRules();
+    private final PeopleAccessRules accessRules = new PeopleAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -38,9 +42,11 @@ public class RoleService {
      * @param repository role data access
      * @param mapper     entity-DTO mapper
      */
-    public RoleService(RoleRepository repository, RoleMapper mapper) {
+    public RoleService(RoleRepository repository, RoleMapper mapper,
+                       CurrentUserService currentUserService) {
         this.repository = repository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -52,6 +58,7 @@ public class RoleService {
      */
     @Transactional(readOnly = true)
     public RoleResponse getById(UUID id) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         Role role = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.ROLE_NOT_FOUND));
         return mapper.toResponse(role);
@@ -65,6 +72,7 @@ public class RoleService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<RoleResponse> listAll(Pageable pageable) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -76,6 +84,7 @@ public class RoleService {
      */
     @Transactional
     public RoleResponse create(CreateRoleRequest request) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         rules.validateNameUnique(request.roleName(), repository.existsByRoleName(request.roleName()));
         Role role = mapper.toEntity(request);
         role = repository.save(role);
@@ -93,6 +102,7 @@ public class RoleService {
      */
     @Transactional
     public RoleResponse update(UUID id, UpdateRoleRequest request) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         Role role = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.ROLE_NOT_FOUND));
         if (!role.getRoleName().equals(request.roleName())) {
@@ -112,6 +122,7 @@ public class RoleService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         Role role = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.ROLE_NOT_FOUND));
         repository.delete(role);

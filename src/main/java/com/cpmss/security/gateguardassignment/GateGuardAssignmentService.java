@@ -1,10 +1,13 @@
 package com.cpmss.security.gateguardassignment;
 
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityAccessRules;
 import com.cpmss.security.common.SecurityErrorCode;
-import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.security.gate.Gate;
 import com.cpmss.security.gate.GateRepository;
 import com.cpmss.security.gateguardassignment.dto.CreateGateGuardAssignmentRequest;
@@ -14,6 +17,7 @@ import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.workforce.assignedtask.AssignedTask;
 import com.cpmss.workforce.assignedtask.AssignedTaskRepository;
+import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceTypeRepository;
 import org.slf4j.Logger;
@@ -22,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /** Orchestrates gate guard assignment operations. */
@@ -35,7 +40,9 @@ public class GateGuardAssignmentService {
     private final GateRepository gateRepository;
     private final AssignedTaskRepository assignedTaskRepository;
     private final ShiftAttendanceTypeRepository shiftRepository;
+    private final CurrentUserService currentUserService;
     private final GateGuardAssignmentMapper mapper;
+    private final SecurityAccessRules accessRules = new SecurityAccessRules();
 
     /**
      * Creates the service with repositories needed to resolve gate, guard,
@@ -46,6 +53,7 @@ public class GateGuardAssignmentService {
      * @param gateRepository repository used to load the assigned gate
      * @param assignedTaskRepository repository used to load the backing task
      * @param shiftRepository repository used to load the optional shift type
+     * @param currentUserService current-user resolver for ownership checks
      * @param mapper mapper converting entities to API responses
      */
     public GateGuardAssignmentService(GateGuardAssignmentRepository repository,
@@ -53,12 +61,14 @@ public class GateGuardAssignmentService {
                                       GateRepository gateRepository,
                                       AssignedTaskRepository assignedTaskRepository,
                                       ShiftAttendanceTypeRepository shiftRepository,
+                                      CurrentUserService currentUserService,
                                       GateGuardAssignmentMapper mapper) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.gateRepository = gateRepository;
         this.assignedTaskRepository = assignedTaskRepository;
         this.shiftRepository = shiftRepository;
+        this.currentUserService = currentUserService;
         this.mapper = mapper;
     }
 
@@ -67,22 +77,37 @@ public class GateGuardAssignmentService {
      *
      * @param id the assignment identifier
      * @return the matching gate guard assignment response
-     * @throws ApiException if the assignment does not exist
+     * @throws ApiException if the assignment does not exist or access is denied
      */
     @Transactional(readOnly = true)
     public GateGuardAssignmentResponse getById(UUID id) {
-        return mapper.toResponse(findOrThrow(id));
+        GateGuardAssignment assignment = findOrThrow(id);
+        accessRules.validateCanReadGuardAssignment(currentUserService.currentUser(),
+                assignment, Instant.now());
+        return mapper.toResponse(assignment);
     }
 
     /**
      * Lists gate guard assignments using pageable repository access.
+     *
+     * <p>Security administrators can browse every assignment. Gate guards only
+     * receive their own currently active assignments.
      *
      * @param pageable the paging configuration for the result set
      * @return a page of gate guard assignment responses
      */
     @Transactional(readOnly = true)
     public PagedResponse<GateGuardAssignmentResponse> listAll(Pageable pageable) {
-        return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+        CurrentUser currentUser = currentUserService.currentUser();
+        if (accessRules.isSecurityAdministrator(currentUser)) {
+            return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+        }
+        if (!currentUser.hasRole(SystemRole.GATE_GUARD)) {
+            throw new ApiException(SecurityErrorCode.SECURITY_RECORD_ACCESS_DENIED);
+        }
+        UUID guardId = currentUser.requirePersonId("Viewing gate guard assignments");
+        return PagedResponse.from(repository.findActiveByGuardId(guardId, Instant.now(), pageable),
+                mapper::toResponse);
     }
 
     /**
@@ -95,6 +120,7 @@ public class GateGuardAssignmentService {
      */
     @Transactional
     public GateGuardAssignmentResponse create(CreateGateGuardAssignmentRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         Person guard = personRepository.findById(request.guardId())
             .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Gate gate = gateRepository.findById(request.gateId())
@@ -111,7 +137,8 @@ public class GateGuardAssignmentService {
                 .shiftEnd(request.shiftEnd())
                 .build();
         assignment = repository.save(assignment);
-        log.info("Gate guard assignment created: guard {} at gate {}", request.guardId(), request.gateId());
+        log.info("Gate guard assignment created: guard {} at gate {}",
+                request.guardId(), request.gateId());
         return mapper.toResponse(assignment);
     }
 
@@ -125,6 +152,7 @@ public class GateGuardAssignmentService {
      */
     @Transactional
     public GateGuardAssignmentResponse update(UUID id, UpdateGateGuardAssignmentRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         GateGuardAssignment assignment = findOrThrow(id);
         assignment.setShiftEnd(request.shiftEnd());
         assignment = repository.save(assignment);

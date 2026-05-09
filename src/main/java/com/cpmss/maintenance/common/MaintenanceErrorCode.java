@@ -45,7 +45,10 @@ public enum MaintenanceErrorCode implements ErrorCode {
     WORK_ORDER_NOT_FOUND(404, "Work order not found"),
 
     /** Company not found. */
-    COMPANY_NOT_FOUND(404, "Company not found");
+    COMPANY_NOT_FOUND(404, "Company not found"),
+
+    /** User cannot access this maintenance record. */
+    MAINTENANCE_RECORD_ACCESS_DENIED(403, "Maintenance record access denied");
 
     private final int status;
     private final String defaultMessage;

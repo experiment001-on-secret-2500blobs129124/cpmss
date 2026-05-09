@@ -3,7 +3,9 @@ package com.cpmss.performance.kpipolicy;
 import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.performance.common.KpiScoreRange;
+import com.cpmss.performance.common.PerformanceAccessRules;
 import com.cpmss.performance.common.PercentageRate;
 import com.cpmss.performance.common.PerformanceErrorCode;
 import com.cpmss.performance.common.PerformanceRating;
@@ -44,7 +46,9 @@ public class KpiPolicyService {
     private final DepartmentRepository departmentRepository;
     private final PersonRepository personRepository;
     private final KpiPolicyMapper mapper;
+    private final CurrentUserService currentUserService;
     private final KpiPolicyRules rules = new KpiPolicyRules();
+    private final PerformanceAccessRules accessRules = new PerformanceAccessRules();
 
     /**
      * Creates the KPI policy service.
@@ -57,11 +61,13 @@ public class KpiPolicyService {
     public KpiPolicyService(KpiPolicyRepository repository,
                             DepartmentRepository departmentRepository,
                             PersonRepository personRepository,
-                            KpiPolicyMapper mapper) {
+                            KpiPolicyMapper mapper,
+                            CurrentUserService currentUserService) {
         this.repository = repository;
         this.departmentRepository = departmentRepository;
         this.personRepository = personRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -73,6 +79,7 @@ public class KpiPolicyService {
      */
     @Transactional(readOnly = true)
     public KpiPolicyResponse getById(UUID id) {
+        accessRules.requireHrOrBusinessAdmin(currentUserService.currentUser());
         return mapper.toResponse(findOrThrow(id));
     }
 
@@ -84,6 +91,7 @@ public class KpiPolicyService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<KpiPolicyResponse> listAll(Pageable pageable) {
+        accessRules.requireHrOrBusinessAdmin(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -97,6 +105,7 @@ public class KpiPolicyService {
      */
     @Transactional
     public KpiPolicyResponse create(CreateKpiPolicyRequest request) {
+        accessRules.requireHrOrBusinessAdmin(currentUserService.currentUser());
         KpiScoreRange scoreRange = rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
         PerformanceRating tier = PerformanceRating.fromLabel(request.tierLabel());
         PercentageRate bonusRate = PercentageRate.orZero(request.bonusRate());
@@ -133,6 +142,7 @@ public class KpiPolicyService {
      */
     @Transactional
     public KpiPolicyResponse update(UUID id, UpdateKpiPolicyRequest request) {
+        accessRules.requireHrOrBusinessAdmin(currentUserService.currentUser());
         KpiPolicy policy = findOrThrow(id);
 
         KpiScoreRange scoreRange = rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());

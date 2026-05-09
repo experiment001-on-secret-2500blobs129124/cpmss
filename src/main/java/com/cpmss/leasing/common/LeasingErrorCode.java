@@ -109,7 +109,10 @@ public enum LeasingErrorCode implements ErrorCode {
     UNIT_NOT_FOUND(404, "Unit not found"),
 
     /** Facility not found (leasing context). */
-    FACILITY_NOT_FOUND(404, "Facility not found");
+    FACILITY_NOT_FOUND(404, "Facility not found"),
+
+    /** User cannot access this leasing record. */
+    LEASING_RECORD_ACCESS_DENIED(403, "Leasing record access denied");
 
     private final int status;
     private final String defaultMessage;

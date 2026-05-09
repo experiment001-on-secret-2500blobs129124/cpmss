@@ -73,7 +73,10 @@ public enum PeopleErrorCode implements ErrorCode {
     // --- Role Rules ---
 
     /** Role name already exists. */
-    ROLE_DUPLICATE(409, "Role already exists");
+    ROLE_DUPLICATE(409, "Role already exists"),
+
+    /** User cannot access this people record. */
+    PEOPLE_RECORD_ACCESS_DENIED(403, "People record access denied");
 
     private final int status;
     private final String defaultMessage;

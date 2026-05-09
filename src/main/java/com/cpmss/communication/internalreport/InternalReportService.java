@@ -1,10 +1,12 @@
 package com.cpmss.communication.internalreport;
 
+import com.cpmss.communication.common.CommunicationErrorCode;
 import com.cpmss.communication.internalreport.dto.CreateInternalReportRequest;
 import com.cpmss.communication.internalreport.dto.InternalReportResponse;
 import com.cpmss.communication.internalreport.dto.UpdateInternalReportRequest;
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.identity.auth.SystemRole;
-import com.cpmss.communication.common.CommunicationErrorCode;
 import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
@@ -36,45 +38,63 @@ public class InternalReportService {
 
     private final InternalReportRepository repository;
     private final PersonRepository personRepository;
+    private final CurrentUserService currentUserService;
     private final InternalReportMapper mapper;
     private final InternalReportRules rules = new InternalReportRules();
 
     /**
      * Constructs the service with required dependencies.
      *
-     * @param repository       internal report data access
-     * @param personRepository person data access (FK lookup)
-     * @param mapper           entity-DTO mapper
+     * @param repository         internal report data access
+     * @param personRepository   person data access (FK lookup)
+     * @param currentUserService current-user resolver for ownership checks
+     * @param mapper             entity-DTO mapper
      */
     public InternalReportService(InternalReportRepository repository,
-                                  PersonRepository personRepository,
-                                  InternalReportMapper mapper) {
+                                 PersonRepository personRepository,
+                                 CurrentUserService currentUserService,
+                                 InternalReportMapper mapper) {
         this.repository = repository;
         this.personRepository = personRepository;
+        this.currentUserService = currentUserService;
         this.mapper = mapper;
     }
 
     /**
      * Retrieves a report by its unique identifier.
      *
-      * @param id the report's UUID
+     * @param id the report's UUID
      * @return the matching report response
-      * @throws ApiException if not found
+     * @throws ApiException if not found or access is denied
      */
     @Transactional(readOnly = true)
     public InternalReportResponse getById(UUID id) {
-        return mapper.toResponse(findOrThrow(id));
+        InternalReport report = findOrThrow(id);
+        rules.validateCanView(currentUserService.currentUser(), report);
+        return mapper.toResponse(report);
     }
 
     /**
-     * Lists all reports with pagination.
+     * Lists reports with pagination.
+     *
+     * <p>Business admins receive all reports. Report receiver roles receive
+     * their assigned queue. Other staff receive only reports they filed.
      *
      * @param pageable pagination parameters
      * @return a paged response of report DTOs
      */
     @Transactional(readOnly = true)
     public PagedResponse<InternalReportResponse> listAll(Pageable pageable) {
-        return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+        CurrentUser currentUser = currentUserService.currentUser();
+        if (rules.isBusinessAdmin(currentUser)) {
+            return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
+        }
+        if (rules.canReceiveReports(currentUser.systemRole())) {
+            return PagedResponse.from(repository.findByAssignedToRole(currentUser.systemRole(), pageable),
+                    mapper::toResponse);
+        }
+        UUID reporterId = currentUser.requirePersonId("Viewing internal reports");
+        return PagedResponse.from(repository.findByReporterId(reporterId, pageable), mapper::toResponse);
     }
 
     /**
@@ -85,7 +105,8 @@ public class InternalReportService {
      */
     @Transactional(readOnly = true)
     public List<InternalReportResponse> listByRole(SystemRole assignedToRole) {
-        rules.validateAssignedToRole(assignedToRole);
+        CurrentUser currentUser = currentUserService.currentUser();
+        rules.validateCanAccessRoleQueue(currentUser, assignedToRole);
         return repository.findByAssignedToRoleOrderByCreatedAtDesc(assignedToRole)
                 .stream().map(mapper::toResponse).toList();
     }
@@ -98,6 +119,8 @@ public class InternalReportService {
      */
     @Transactional(readOnly = true)
     public List<InternalReportResponse> listByReporter(UUID reporterId) {
+        CurrentUser currentUser = currentUserService.currentUser();
+        rules.validateCanAccessReporter(currentUser, reporterId);
         return repository.findByReporterIdOrderByCreatedAtDesc(reporterId)
                 .stream().map(mapper::toResponse).toList();
     }
@@ -110,7 +133,8 @@ public class InternalReportService {
      */
     @Transactional(readOnly = true)
     public long countUnreadByRole(SystemRole assignedToRole) {
-        rules.validateAssignedToRole(assignedToRole);
+        CurrentUser currentUser = currentUserService.currentUser();
+        rules.validateCanAccessRoleQueue(currentUser, assignedToRole);
         return repository.countByAssignedToRoleAndIsReadFalse(assignedToRole);
     }
 
@@ -123,6 +147,8 @@ public class InternalReportService {
      */
     @Transactional
     public InternalReportResponse create(CreateInternalReportRequest request) {
+        CurrentUser currentUser = currentUserService.currentUser();
+        rules.validateCurrentPerson(currentUser, request.reporterId(), "Filing internal reports");
         rules.validateAssignedToRole(request.assignedToRole());
         rules.validateCategory(request.reportCategory());
 
@@ -154,12 +180,15 @@ public class InternalReportService {
      */
     @Transactional
     public InternalReportResponse update(UUID id, UpdateInternalReportRequest request) {
+        CurrentUser currentUser = currentUserService.currentUser();
         InternalReport report = findOrThrow(id);
+        rules.validateCanProcess(currentUser, report);
 
         report.setReportStatus(request.reportStatus());
         report.setResolutionNote(request.resolutionNote());
 
         if (request.resolvedById() != null) {
+            rules.validateCurrentPerson(currentUser, request.resolvedById(), "Updating internal reports");
             Person resolver = personRepository.findById(request.resolvedById())
                     .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
             report.setResolvedBy(resolver);
@@ -181,7 +210,10 @@ public class InternalReportService {
      */
     @Transactional
     public InternalReportResponse markAsRead(UUID id, UUID readBy) {
+        CurrentUser currentUser = currentUserService.currentUser();
         InternalReport report = findOrThrow(id);
+        rules.validateCanProcess(currentUser, report);
+        rules.validateCurrentPerson(currentUser, readBy, "Reading internal reports");
         Person reader = personRepository.findById(readBy)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         report.setRead(true);
@@ -201,7 +233,9 @@ public class InternalReportService {
      */
     @Transactional
     public InternalReportResponse markAsUnread(UUID id) {
+        CurrentUser currentUser = currentUserService.currentUser();
         InternalReport report = findOrThrow(id);
+        rules.validateCanProcess(currentUser, report);
         report.setRead(false);
         report.setReadAt(null);
         report.setReadBy(null);
@@ -221,7 +255,10 @@ public class InternalReportService {
      */
     @Transactional
     public InternalReportResponse resolve(UUID id, UUID resolvedById, String resolutionNote) {
+        CurrentUser currentUser = currentUserService.currentUser();
         InternalReport report = findOrThrow(id);
+        rules.validateCanProcess(currentUser, report);
+        rules.validateCurrentPerson(currentUser, resolvedById, "Resolving internal reports");
         Person resolver = personRepository.findById(resolvedById)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         report.setReportStatus(ReportStatus.RESOLVED);

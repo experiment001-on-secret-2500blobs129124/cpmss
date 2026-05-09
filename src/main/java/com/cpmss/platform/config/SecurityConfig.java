@@ -1,7 +1,10 @@
 package com.cpmss.platform.config;
 
+import com.cpmss.platform.config.authorization.EndpointAuthorizationRules;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,8 +24,10 @@ import java.util.List;
  *
  * <p>Configures the JWT filter chain, endpoint access rules, CORS,
  * the BCrypt password encoder, and JSON error handlers for 401/403
- * responses.
+ * responses. Public endpoints stay explicit; every business endpoint must
+ * match a role rule or be denied.
  *
+ * @see EndpointAuthorizationRules
  * @see JwtAuthenticationFilter
  * @see JwtUtils
  * @see JsonAuthenticationEntryPoint
@@ -56,7 +61,7 @@ public class SecurityConfig {
      *
      * <p>Public endpoints: {@code /setup}, {@code /api/v1/auth/**},
      * {@code /actuator/health}, Swagger UI, and OpenAPI docs.
-     * All other requests require authentication.
+     * All other REST endpoints require an explicit role rule.
      *
      * @param http the Spring Security HTTP configuration builder
      * @return the configured filter chain
@@ -69,19 +74,23 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/setup",
-                    "/register",
-                    "/api/v1/auth/**",
-                    "/actuator/health",
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**"
-                ).permitAll()
-                // TODO: Add role-based path matchers per REQUIREMENTS.md § 4
-                //       when Services are built (e.g. .hasRole("HR_OFFICER"))
-                .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers(
+                        "/setup",
+                        "/register",
+                        "/api/v1/auth/**",
+                        "/actuator/health",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**"
+                    ).permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+
+                EndpointAuthorizationRules.roleRules().forEach(rule ->
+                    auth.requestMatchers(rule.method(), rule.pathPattern())
+                        .hasAnyRole(rule.roleArray()));
+
+                auth.anyRequest().denyAll();
+            })
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .accessDeniedHandler(accessDeniedHandler)

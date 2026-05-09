@@ -2,7 +2,9 @@ package com.cpmss.finance.payment;
 
 import com.cpmss.finance.bankaccount.BankAccount;
 import com.cpmss.finance.bankaccount.BankAccountRepository;
+import com.cpmss.finance.common.FinanceAccessRules;
 import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
@@ -63,7 +65,9 @@ public class PaymentService {
     private final InstallmentRepository installmentRepository;
     private final WorkOrderRepository workOrderRepository;
     private final DepartmentRepository departmentRepository;
+    private final CurrentUserService currentUserService;
     private final PaymentRules rules = new PaymentRules();
+    private final FinanceAccessRules accessRules = new FinanceAccessRules();
 
     /**
      * Creates the payment service with all repositories needed by subtype flows.
@@ -95,7 +99,8 @@ public class PaymentService {
                           PersonRepository personRepository,
                           InstallmentRepository installmentRepository,
                           WorkOrderRepository workOrderRepository,
-                          DepartmentRepository departmentRepository) {
+                          DepartmentRepository departmentRepository,
+                          CurrentUserService currentUserService) {
         this.paymentRepository = paymentRepository;
         this.installmentPaymentRepository = installmentPaymentRepository;
         this.workOrderPaymentRepository = workOrderPaymentRepository;
@@ -105,6 +110,7 @@ public class PaymentService {
         this.installmentRepository = installmentRepository;
         this.workOrderRepository = workOrderRepository;
         this.departmentRepository = departmentRepository;
+        this.currentUserService = currentUserService;
     }
 
     // ── Installment Payment ─────────────────────────────────────────────
@@ -126,6 +132,7 @@ public class PaymentService {
      */
     @Transactional
     public PaymentResponse createInstallmentPayment(CreateInstallmentPaymentRequest request) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         Payment payment = createParentPayment(request.payment(), PaymentType.INSTALLMENT);
 
         Installment installment = installmentRepository.findById(request.installmentId())
@@ -161,6 +168,7 @@ public class PaymentService {
      */
     @Transactional
     public PaymentResponse createWorkOrderPayment(CreateWorkOrderPaymentRequest request) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         Payment payment = createParentPayment(request.payment(), PaymentType.WORK_ORDER);
 
         WorkOrder workOrder = workOrderRepository.findById(request.workOrderId())
@@ -196,6 +204,7 @@ public class PaymentService {
      */
     @Transactional
     public PaymentResponse createPayrollPayment(CreatePayrollPaymentRequest request) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         Payment payment = createParentPayment(request.payment(), PaymentType.PAYROLL);
 
         Person staff = personRepository.findById(request.staffId())
@@ -226,6 +235,7 @@ public class PaymentService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<PaymentResponse> findAll(Pageable pageable) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         return PagedResponse.from(paymentRepository.findAll(pageable), this::toResponse);
     }
 
@@ -238,6 +248,7 @@ public class PaymentService {
      */
     @Transactional(readOnly = true)
     public PaymentResponse findById(UUID id) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYMENT_NOT_FOUND));
         return toResponse(payment);

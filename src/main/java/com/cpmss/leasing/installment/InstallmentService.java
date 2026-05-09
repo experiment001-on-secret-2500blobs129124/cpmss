@@ -1,5 +1,7 @@
 package com.cpmss.leasing.installment;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.leasing.common.LeasingAccessRules;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.leasing.common.LeasingErrorCode;
 import com.cpmss.leasing.contract.Contract;
@@ -32,7 +34,9 @@ public class InstallmentService {
     private final InstallmentRepository repository;
     private final ContractRepository contractRepository;
     private final InstallmentMapper mapper;
+    private final CurrentUserService currentUserService;
     private final InstallmentRules rules = new InstallmentRules();
+    private final LeasingAccessRules accessRules = new LeasingAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -43,10 +47,12 @@ public class InstallmentService {
      */
     public InstallmentService(InstallmentRepository repository,
                               ContractRepository contractRepository,
-                              InstallmentMapper mapper) {
+                              InstallmentMapper mapper,
+                              CurrentUserService currentUserService) {
         this.repository = repository;
         this.contractRepository = contractRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -58,6 +64,7 @@ public class InstallmentService {
      */
     @Transactional(readOnly = true)
     public InstallmentResponse getById(UUID id) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         return mapper.toResponse(findOrThrow(id));
     }
 
@@ -69,6 +76,7 @@ public class InstallmentService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<InstallmentResponse> listAll(Pageable pageable) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -81,6 +89,7 @@ public class InstallmentService {
      */
     @Transactional
     public InstallmentResponse create(CreateInstallmentRequest request) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         rules.validateAmountPositive(request.amountExpected());
 
         Contract contract = contractRepository.findById(request.contractId())
@@ -110,6 +119,7 @@ public class InstallmentService {
      */
     @Transactional
     public InstallmentResponse update(UUID id, UpdateInstallmentRequest request) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         Installment installment = findOrThrow(id);
 
         rules.validateAmountPositive(request.amountExpected());

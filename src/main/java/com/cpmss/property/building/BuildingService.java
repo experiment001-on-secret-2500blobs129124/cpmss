@@ -1,5 +1,7 @@
 package com.cpmss.property.building;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.property.common.PropertyAccessRules;
 import com.cpmss.property.building.dto.BuildingResponse;
 import com.cpmss.property.building.dto.CreateBuildingRequest;
 import com.cpmss.property.building.dto.UpdateBuildingRequest;
@@ -33,6 +35,8 @@ public class BuildingService {
     private final BuildingRepository repository;
     private final CompoundRepository compoundRepository;
     private final BuildingMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final PropertyAccessRules accessRules = new PropertyAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -43,10 +47,12 @@ public class BuildingService {
      */
     public BuildingService(BuildingRepository repository,
                            CompoundRepository compoundRepository,
-                           BuildingMapper mapper) {
+                           BuildingMapper mapper,
+                           CurrentUserService currentUserService) {
         this.repository = repository;
         this.compoundRepository = compoundRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -58,6 +64,7 @@ public class BuildingService {
      */
     @Transactional(readOnly = true)
     public BuildingResponse getById(UUID id) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         Building building = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_NOT_FOUND));
         return mapper.toResponse(building);
@@ -71,6 +78,7 @@ public class BuildingService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<BuildingResponse> listAll(Pageable pageable) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -83,6 +91,7 @@ public class BuildingService {
      */
     @Transactional
     public BuildingResponse create(CreateBuildingRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Compound compound = compoundRepository.findById(request.compoundId())
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
 
@@ -109,6 +118,7 @@ public class BuildingService {
      */
     @Transactional
     public BuildingResponse update(UUID id, UpdateBuildingRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Building building = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_NOT_FOUND));
 
@@ -134,6 +144,7 @@ public class BuildingService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Building building = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.BUILDING_NOT_FOUND));
         repository.delete(building);

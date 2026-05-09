@@ -5,7 +5,9 @@ import com.cpmss.hr.application.ApplicationId;
 import com.cpmss.hr.application.ApplicationRepository;
 import com.cpmss.hr.application.dto.ApplicationResponse;
 import com.cpmss.hr.application.dto.CreateApplicationRequest;
+import com.cpmss.hr.common.HrAccessRules;
 import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.platform.exception.ApiException;
 import com.cpmss.hr.hireagreement.HireAgreement;
 import com.cpmss.hr.hireagreement.HireAgreementRepository;
@@ -62,7 +64,9 @@ public class RecruitmentService {
     private final StaffPositionHistoryRepository staffPositionHistoryRepository;
     private final StaffSalaryHistoryRepository staffSalaryHistoryRepository;
     private final QualificationRepository qualificationRepository;
+    private final CurrentUserService currentUserService;
     private final HireAgreementRules hireAgreementRules = new HireAgreementRules();
+    private final HrAccessRules accessRules = new HrAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -75,7 +79,8 @@ public class RecruitmentService {
                               StaffProfileRepository staffProfileRepository,
                               StaffPositionHistoryRepository staffPositionHistoryRepository,
                               StaffSalaryHistoryRepository staffSalaryHistoryRepository,
-                              QualificationRepository qualificationRepository) {
+                              QualificationRepository qualificationRepository,
+                              CurrentUserService currentUserService) {
         this.applicationRepository = applicationRepository;
         this.recruitmentRepository = recruitmentRepository;
         this.hireAgreementRepository = hireAgreementRepository;
@@ -85,6 +90,7 @@ public class RecruitmentService {
         this.staffPositionHistoryRepository = staffPositionHistoryRepository;
         this.staffSalaryHistoryRepository = staffSalaryHistoryRepository;
         this.qualificationRepository = qualificationRepository;
+        this.currentUserService = currentUserService;
     }
 
     // ── Application Operations ──────────────────────────────────────────
@@ -98,6 +104,7 @@ public class RecruitmentService {
      */
     @Transactional
     public ApplicationResponse submitApplication(CreateApplicationRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         Person applicant = findPersonOrThrow(request.applicantId());
         StaffPosition position = findPositionOrThrow(request.positionId());
 
@@ -119,6 +126,7 @@ public class RecruitmentService {
      */
     @Transactional(readOnly = true)
     public List<ApplicationResponse> listApplications(Pageable pageable) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         return applicationRepository.findAll(pageable)
                 .map(this::toApplicationResponse)
                 .getContent();
@@ -135,6 +143,7 @@ public class RecruitmentService {
      */
     @Transactional
     public RecruitmentResponse scheduleInterview(CreateRecruitmentRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         ApplicationId appId = new ApplicationId(
                 request.applicantId(), request.positionId(), request.applicationDate());
         Application application = applicationRepository.findById(appId)
@@ -164,6 +173,7 @@ public class RecruitmentService {
      */
     @Transactional
     public RecruitmentResponse recordResult(RecruitmentId id, UpdateRecruitmentRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         Recruitment recruitment = recruitmentRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HrErrorCode.RECRUITMENT_NOT_FOUND));
 
@@ -200,6 +210,7 @@ public class RecruitmentService {
      */
     @Transactional
     public HireAgreementResponse createHireAgreement(CreateHireAgreementRequest request) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
         ApplicationId appId = new ApplicationId(
                 request.applicantId(), request.positionId(), request.applicationDate());
         Application application = applicationRepository.findById(appId)

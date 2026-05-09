@@ -1,5 +1,7 @@
 package com.cpmss.people.qualification;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.people.common.PeopleAccessRules;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.platform.exception.ApiException;
@@ -30,7 +32,9 @@ public class QualificationService {
 
     private final QualificationRepository repository;
     private final QualificationMapper mapper;
+    private final CurrentUserService currentUserService;
     private final QualificationRules rules = new QualificationRules();
+    private final PeopleAccessRules accessRules = new PeopleAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -38,9 +42,11 @@ public class QualificationService {
      * @param repository qualification data access
      * @param mapper     entity-DTO mapper
      */
-    public QualificationService(QualificationRepository repository, QualificationMapper mapper) {
+    public QualificationService(QualificationRepository repository, QualificationMapper mapper,
+                                CurrentUserService currentUserService) {
         this.repository = repository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -52,6 +58,7 @@ public class QualificationService {
      */
     @Transactional(readOnly = true)
     public QualificationResponse getById(UUID id) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         Qualification q = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.QUALIFICATION_NOT_FOUND));
         return mapper.toResponse(q);
@@ -65,6 +72,7 @@ public class QualificationService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<QualificationResponse> listAll(Pageable pageable) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -76,6 +84,7 @@ public class QualificationService {
      */
     @Transactional
     public QualificationResponse create(CreateQualificationRequest request) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         rules.validateNameUnique(
                 request.qualificationName(),
                 repository.existsByQualificationName(request.qualificationName()));
@@ -95,6 +104,7 @@ public class QualificationService {
      */
     @Transactional
     public QualificationResponse update(UUID id, UpdateQualificationRequest request) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         Qualification q = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.QUALIFICATION_NOT_FOUND));
         if (!q.getQualificationName().equals(request.qualificationName())) {
@@ -116,6 +126,7 @@ public class QualificationService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requireHrAuthority(currentUserService.currentUser());
         Qualification q = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.QUALIFICATION_NOT_FOUND));
         repository.delete(q);

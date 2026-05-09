@@ -1,5 +1,7 @@
 package com.cpmss.maintenance.workorder;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.maintenance.common.MaintenanceAccessRules;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
 import com.cpmss.maintenance.common.MaintenanceErrorCode;
@@ -40,6 +42,8 @@ public class WorkOrderService {
     private final FacilityRepository facilityRepository;
     private final CompanyRepository companyRepository;
     private final WorkOrderMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final MaintenanceAccessRules accessRules = new MaintenanceAccessRules();
     private final WorkOrderRules rules = new WorkOrderRules();
 
     /**
@@ -55,12 +59,14 @@ public class WorkOrderService {
                             PersonRepository personRepository,
                             FacilityRepository facilityRepository,
                             CompanyRepository companyRepository,
-                            WorkOrderMapper mapper) {
+                            WorkOrderMapper mapper,
+                            CurrentUserService currentUserService) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.facilityRepository = facilityRepository;
         this.companyRepository = companyRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -72,6 +78,7 @@ public class WorkOrderService {
      */
     @Transactional(readOnly = true)
     public WorkOrderResponse getById(UUID id) {
+        accessRules.requireMaintenanceReader(currentUserService.currentUser());
         return mapper.toResponse(findOrThrow(id));
     }
 
@@ -83,6 +90,7 @@ public class WorkOrderService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<WorkOrderResponse> listAll(Pageable pageable) {
+        accessRules.requireMaintenanceReader(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -95,6 +103,7 @@ public class WorkOrderService {
      */
     @Transactional
     public WorkOrderResponse create(CreateWorkOrderRequest request) {
+        accessRules.requireMaintenanceAdministrator(currentUserService.currentUser());
         rules.validateCostPositive(request.cost());
 
         Person requester = personRepository.findById(request.requesterId())
@@ -127,6 +136,7 @@ public class WorkOrderService {
      */
     @Transactional
     public WorkOrderResponse update(UUID id, UpdateWorkOrderRequest request) {
+        accessRules.requireMaintenanceAdministrator(currentUserService.currentUser());
         WorkOrder workOrder = findOrThrow(id);
 
         rules.validateCostPositive(request.cost());

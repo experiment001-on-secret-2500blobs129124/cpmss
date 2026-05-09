@@ -1,5 +1,6 @@
 package com.cpmss.security.vehicle;
 
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
 import com.cpmss.maintenance.common.MaintenanceErrorCode;
@@ -11,6 +12,7 @@ import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityAccessRules;
 import com.cpmss.security.common.SecurityErrorCode;
 import com.cpmss.security.vehicle.dto.CreateVehicleRequest;
 import com.cpmss.security.vehicle.dto.UpdateVehicleRequest;
@@ -42,8 +44,10 @@ public class VehicleService {
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
     private final CompanyRepository companyRepository;
+    private final CurrentUserService currentUserService;
     private final VehicleMapper mapper;
     private final VehicleRules rules = new VehicleRules();
+    private final SecurityAccessRules accessRules = new SecurityAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -52,17 +56,20 @@ public class VehicleService {
      * @param personRepository     person data access (owner FK lookup)
      * @param departmentRepository department data access (owner FK lookup)
      * @param companyRepository    company data access (owner FK lookup)
+     * @param currentUserService   current-user resolver for ownership checks
      * @param mapper               entity-DTO mapper
      */
     public VehicleService(VehicleRepository repository,
                           PersonRepository personRepository,
                           DepartmentRepository departmentRepository,
                           CompanyRepository companyRepository,
+                          CurrentUserService currentUserService,
                           VehicleMapper mapper) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.departmentRepository = departmentRepository;
         this.companyRepository = companyRepository;
+        this.currentUserService = currentUserService;
         this.mapper = mapper;
     }
 
@@ -75,6 +82,7 @@ public class VehicleService {
      */
     @Transactional(readOnly = true)
     public VehicleResponse getById(UUID id) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND)));
     }
@@ -87,6 +95,7 @@ public class VehicleService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<VehicleResponse> listAll(Pageable pageable) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -102,6 +111,7 @@ public class VehicleService {
      */
     @Transactional
     public VehicleResponse create(CreateVehicleRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         rules.validateExactlyOneOwner(
                 request.ownerPersonId(), request.ownerDepartmentId(), request.ownerCompanyId());
         LicensePlate licenseNo = LicensePlate.of(request.licenseNo());
@@ -130,6 +140,7 @@ public class VehicleService {
      */
     @Transactional
     public VehicleResponse update(UUID id, UpdateVehicleRequest request) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         Vehicle vehicle = repository.findById(id)
                 .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND));
 
@@ -160,6 +171,7 @@ public class VehicleService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
         Vehicle vehicle = repository.findById(id)
                 .orElseThrow(() -> new ApiException(SecurityErrorCode.VEHICLE_NOT_FOUND));
         repository.delete(vehicle);

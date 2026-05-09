@@ -1,5 +1,7 @@
 package com.cpmss.property.facility;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.property.common.PropertyAccessRules;
 import com.cpmss.property.building.Building;
 import com.cpmss.property.building.BuildingRepository;
 import com.cpmss.platform.common.PagedResponse;
@@ -51,6 +53,8 @@ public class FacilityService {
     private final FacilityManagerRepository facilityManagerRepository;
     private final PersonRepository personRepository;
     private final FacilityMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final PropertyAccessRules accessRules = new PropertyAccessRules();
     private final FacilityRules rules = new FacilityRules();
 
     /**
@@ -70,7 +74,8 @@ public class FacilityService {
                            FacilityHoursHistoryRepository hoursHistoryRepository,
                            FacilityManagerRepository facilityManagerRepository,
                            PersonRepository personRepository,
-                           FacilityMapper mapper) {
+                           FacilityMapper mapper,
+                           CurrentUserService currentUserService) {
         this.repository = repository;
         this.buildingRepository = buildingRepository;
         this.companyRepository = companyRepository;
@@ -78,6 +83,7 @@ public class FacilityService {
         this.facilityManagerRepository = facilityManagerRepository;
         this.personRepository = personRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -89,6 +95,7 @@ public class FacilityService {
      */
     @Transactional(readOnly = true)
     public FacilityResponse getById(UUID id) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND)));
     }
@@ -101,6 +108,7 @@ public class FacilityService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<FacilityResponse> listAll(Pageable pageable) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -115,6 +123,7 @@ public class FacilityService {
      */
     @Transactional
     public FacilityResponse create(CreateFacilityRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         rules.validateManagementType(request.managementType(), request.managedByCompanyId());
 
         Building building = buildingRepository.findById(request.buildingId())
@@ -144,6 +153,7 @@ public class FacilityService {
      */
     @Transactional
     public FacilityResponse update(UUID id, UpdateFacilityRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Facility facility = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
 
@@ -172,6 +182,7 @@ public class FacilityService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Facility facility = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
         repository.delete(facility);
@@ -201,6 +212,7 @@ public class FacilityService {
     @Transactional
     public FacilityHoursHistoryResponse addHoursHistory(UUID facilityId,
                                                         CreateFacilityHoursHistoryRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Facility facility = repository.findById(facilityId)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
 
@@ -224,6 +236,7 @@ public class FacilityService {
      */
     @Transactional(readOnly = true)
     public List<FacilityHoursHistoryResponse> getHoursHistory(UUID facilityId) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         if (!repository.existsById(facilityId)) {
             throw new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND);
         }
@@ -244,6 +257,7 @@ public class FacilityService {
     @Transactional
     public FacilityManagerResponse assignManager(UUID facilityId,
                                                   CreateFacilityManagerRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Facility facility = repository.findById(facilityId)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND));
         Person manager = personRepository.findById(request.managerId())
@@ -276,6 +290,7 @@ public class FacilityService {
      */
     @Transactional(readOnly = true)
     public List<FacilityManagerResponse> getManagers(UUID facilityId) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         if (!repository.existsById(facilityId)) {
             throw new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND);
         }

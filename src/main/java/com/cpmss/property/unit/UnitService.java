@@ -1,5 +1,7 @@
 package com.cpmss.property.unit;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.property.common.PropertyAccessRules;
 import com.cpmss.property.building.Building;
 import com.cpmss.property.building.BuildingRepository;
 import com.cpmss.platform.common.PagedResponse;
@@ -45,6 +47,8 @@ public class UnitService {
     private final UnitPricingHistoryRepository pricingHistoryRepository;
     private final UnitStatusHistoryRepository statusHistoryRepository;
     private final UnitMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final PropertyAccessRules accessRules = new PropertyAccessRules();
     private final UnitRules rules = new UnitRules();
 
     /**
@@ -60,12 +64,14 @@ public class UnitService {
                        BuildingRepository buildingRepository,
                        UnitPricingHistoryRepository pricingHistoryRepository,
                        UnitStatusHistoryRepository statusHistoryRepository,
-                       UnitMapper mapper) {
+                       UnitMapper mapper,
+                       CurrentUserService currentUserService) {
         this.repository = repository;
         this.buildingRepository = buildingRepository;
         this.pricingHistoryRepository = pricingHistoryRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -77,6 +83,7 @@ public class UnitService {
      */
     @Transactional(readOnly = true)
     public UnitResponse getById(UUID id) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND)));
     }
@@ -89,6 +96,7 @@ public class UnitService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<UnitResponse> listAll(Pageable pageable) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -101,6 +109,7 @@ public class UnitService {
      */
     @Transactional
     public UnitResponse create(CreateUnitRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Building building = buildingRepository.findById(request.buildingId())
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
@@ -137,6 +146,7 @@ public class UnitService {
      */
     @Transactional
     public UnitResponse update(UUID id, UpdateUnitRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Unit unit = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
@@ -176,6 +186,7 @@ public class UnitService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Unit unit = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
         repository.delete(unit);
@@ -195,6 +206,7 @@ public class UnitService {
     @Transactional
     public UnitPricingHistoryResponse addPricingHistory(UUID unitId,
                                                         CreateUnitPricingHistoryRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Unit unit = repository.findById(unitId)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
@@ -218,6 +230,7 @@ public class UnitService {
      */
     @Transactional(readOnly = true)
     public List<UnitPricingHistoryResponse> getPricingHistory(UUID unitId) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         if (!repository.existsById(unitId)) {
             throw new ApiException(PropertyErrorCode.UNIT_NOT_FOUND);
         }
@@ -241,6 +254,7 @@ public class UnitService {
     @Transactional
     public UnitStatusHistoryResponse addStatusHistory(UUID unitId,
                                                       CreateUnitStatusHistoryRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Unit unit = repository.findById(unitId)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
@@ -264,6 +278,7 @@ public class UnitService {
      */
     @Transactional(readOnly = true)
     public List<UnitStatusHistoryResponse> getStatusHistory(UUID unitId) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         if (!repository.existsById(unitId)) {
             throw new ApiException(PropertyErrorCode.UNIT_NOT_FOUND);
         }
