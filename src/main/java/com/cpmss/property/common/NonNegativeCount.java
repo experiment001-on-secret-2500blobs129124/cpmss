@@ -2,7 +2,7 @@ package com.cpmss.property.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Count value for property measurements that cannot be negative.
@@ -17,15 +17,15 @@ public record NonNegativeCount(Integer value) {
     /**
      * Creates a non-negative count.
      *
-     * @throws BusinessException if the count is missing or negative
+     * @throws ApiException if the count is missing or negative
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public NonNegativeCount {
         if (value == null) {
-            throw new BusinessException("Count is required");
+            throw new ApiException(PropertyErrorCode.COUNT_REQUIRED);
         }
         if (value < 0) {
-            throw new BusinessException("Count cannot be negative");
+            throw new ApiException(PropertyErrorCode.COUNT_NEGATIVE);
         }
     }
 

@@ -1,6 +1,6 @@
 package com.cpmss.property.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -21,7 +21,7 @@ class PropertyValueTest {
     @Test
     void rejectsNonPositiveArea() {
         assertThatThrownBy(() -> new Area(BigDecimal.ZERO))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Area must be positive");
     }
 
@@ -35,7 +35,7 @@ class PropertyValueTest {
     @Test
     void rejectsNegativeCount() {
         assertThatThrownBy(() -> new NonNegativeCount(-1))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Count cannot be negative");
     }
 
@@ -52,7 +52,7 @@ class PropertyValueTest {
     @Test
     void rejectsIncompleteOperatingHours() {
         assertThatThrownBy(() -> new OperatingHours(LocalTime.of(8, 0), null))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Opening and closing time must be set together");
     }
 
@@ -61,7 +61,7 @@ class PropertyValueTest {
         assertThatThrownBy(() -> new OperatingHours(
                 LocalTime.of(8, 0),
                 LocalTime.of(8, 0)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Closing time must be after opening time");
     }
 
@@ -78,11 +78,11 @@ class PropertyValueTest {
     @Test
     void rejectsUnknownPropertyVocabularyLabels() {
         assertThatThrownBy(() -> BuildingType.fromLabel("Mixed"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Building type must be one of: Residential, Non-Residential");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Building type is required");
         assertThatThrownBy(() -> UnitStatus.fromLabel("Blocked"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Unit status must be one of: Vacant, Occupied, Under Maintenance, Reserved");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Unit status is required");
     }
 
     @Test

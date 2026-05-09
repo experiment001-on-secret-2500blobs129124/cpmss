@@ -2,7 +2,7 @@ package com.cpmss.property.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -37,17 +37,17 @@ public class OperatingHours {
      *
      * @param openingTime the opening time
      * @param closingTime the closing time
-     * @throws BusinessException if only one time is present or the closing
-     *                           time is not after the opening time
+     * @throws ApiException if only one time is present or the closing
+     *                      time is not after the opening time
      */
     @JsonCreator
     public OperatingHours(@JsonProperty("openingTime") LocalTime openingTime,
                           @JsonProperty("closingTime") LocalTime closingTime) {
         if ((openingTime == null) != (closingTime == null)) {
-            throw new BusinessException("Opening and closing time must be set together");
+            throw new ApiException(PropertyErrorCode.OPERATING_HOURS_INCOMPLETE);
         }
         if (openingTime != null && !closingTime.isAfter(openingTime)) {
-            throw new BusinessException("Closing time must be after opening time");
+            throw new ApiException(PropertyErrorCode.OPERATING_HOURS_INVALID);
         }
         this.openingTime = openingTime;
         this.closingTime = closingTime;

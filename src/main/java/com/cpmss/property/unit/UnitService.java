@@ -3,7 +3,8 @@ package com.cpmss.property.unit;
 import com.cpmss.property.building.Building;
 import com.cpmss.property.building.BuildingRepository;
 import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.property.common.PropertyErrorCode;
 import com.cpmss.property.unit.dto.CreateUnitRequest;
 import com.cpmss.property.unit.dto.UnitResponse;
 import com.cpmss.property.unit.dto.UpdateUnitRequest;
@@ -77,7 +78,7 @@ public class UnitService {
     @Transactional(readOnly = true)
     public UnitResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Unit", id)));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND)));
     }
 
     /**
@@ -101,7 +102,7 @@ public class UnitService {
     @Transactional
     public UnitResponse create(CreateUnitRequest request) {
         Building building = buildingRepository.findById(request.buildingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Building", request.buildingId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
         rules.validateUnitNoUniqueInBuilding(request.unitNo(),
                 repository.existsByUnitNoAndBuildingId(request.unitNo(), request.buildingId()));
@@ -137,10 +138,10 @@ public class UnitService {
     @Transactional
     public UnitResponse update(UUID id, UpdateUnitRequest request) {
         Unit unit = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Unit", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
         Building building = buildingRepository.findById(request.buildingId())
-                .orElseThrow(() -> new ResourceNotFoundException("Building", request.buildingId()));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
         boolean noChanged = !unit.getUnitNo().equals(request.unitNo());
         boolean bldgChanged = !unit.getBuilding().getId().equals(request.buildingId());
@@ -176,7 +177,7 @@ public class UnitService {
     @Transactional
     public void delete(UUID id) {
         Unit unit = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Unit", id));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
         repository.delete(unit);
         log.info("Unit deleted: {}", unit.getUnitNo());
     }
@@ -195,7 +196,7 @@ public class UnitService {
     public UnitPricingHistoryResponse addPricingHistory(UUID unitId,
                                                         CreateUnitPricingHistoryRequest request) {
         Unit unit = repository.findById(unitId)
-                .orElseThrow(() -> new ResourceNotFoundException("Unit", unitId));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
         UnitPricingHistory history = new UnitPricingHistory();
         history.setUnit(unit);
@@ -218,7 +219,7 @@ public class UnitService {
     @Transactional(readOnly = true)
     public List<UnitPricingHistoryResponse> getPricingHistory(UUID unitId) {
         if (!repository.existsById(unitId)) {
-            throw new ResourceNotFoundException("Unit", unitId);
+            throw new ApiException(PropertyErrorCode.UNIT_NOT_FOUND);
         }
         return pricingHistoryRepository.findByUnitIdOrderByEffectiveDateDesc(unitId)
                 .stream()
@@ -241,7 +242,7 @@ public class UnitService {
     public UnitStatusHistoryResponse addStatusHistory(UUID unitId,
                                                       CreateUnitStatusHistoryRequest request) {
         Unit unit = repository.findById(unitId)
-                .orElseThrow(() -> new ResourceNotFoundException("Unit", unitId));
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.UNIT_NOT_FOUND));
 
         UnitStatusHistory history = new UnitStatusHistory();
         history.setUnit(unit);
@@ -264,7 +265,7 @@ public class UnitService {
     @Transactional(readOnly = true)
     public List<UnitStatusHistoryResponse> getStatusHistory(UUID unitId) {
         if (!repository.existsById(unitId)) {
-            throw new ResourceNotFoundException("Unit", unitId);
+            throw new ApiException(PropertyErrorCode.UNIT_NOT_FOUND);
         }
         return statusHistoryRepository.findByUnitIdOrderByEffectiveDateDesc(unitId)
                 .stream()
