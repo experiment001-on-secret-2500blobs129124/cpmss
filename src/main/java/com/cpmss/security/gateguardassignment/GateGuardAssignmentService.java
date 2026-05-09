@@ -1,9 +1,10 @@
 package com.cpmss.security.gateguardassignment;
 
-import com.cpmss.workforce.assignedtask.AssignedTask;
-import com.cpmss.workforce.assignedtask.AssignedTaskRepository;
+import com.cpmss.people.common.PeopleErrorCode;
 import com.cpmss.platform.common.PagedResponse;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.common.SecurityErrorCode;
+import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.security.gate.Gate;
 import com.cpmss.security.gate.GateRepository;
 import com.cpmss.security.gateguardassignment.dto.CreateGateGuardAssignmentRequest;
@@ -11,6 +12,8 @@ import com.cpmss.security.gateguardassignment.dto.GateGuardAssignmentResponse;
 import com.cpmss.security.gateguardassignment.dto.UpdateGateGuardAssignmentRequest;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
+import com.cpmss.workforce.assignedtask.AssignedTask;
+import com.cpmss.workforce.assignedtask.AssignedTaskRepository;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceTypeRepository;
 import org.slf4j.Logger;
@@ -61,11 +64,11 @@ public class GateGuardAssignmentService {
     @Transactional
     public GateGuardAssignmentResponse create(CreateGateGuardAssignmentRequest request) {
         Person guard = personRepository.findById(request.guardId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.guardId()));
+            .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Gate gate = gateRepository.findById(request.gateId())
-                .orElseThrow(() -> new ResourceNotFoundException("Gate", request.gateId()));
+            .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_NOT_FOUND));
         AssignedTask task = assignedTaskRepository.findById(request.taskAssignmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("AssignedTask", request.taskAssignmentId()));
+            .orElseThrow(() -> new ApiException(WorkforceErrorCode.ASSIGNED_TASK_NOT_FOUND));
 
         GateGuardAssignment assignment = GateGuardAssignment.builder()
                 .guard(guard)
@@ -91,7 +94,7 @@ public class GateGuardAssignmentService {
 
     private GateGuardAssignment findOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("GateGuardAssignment", id));
+                .orElseThrow(() -> new ApiException(SecurityErrorCode.GATE_GUARD_ASSIGNMENT_NOT_FOUND));
     }
 
     private ShiftAttendanceType resolveShift(UUID id) {
@@ -99,6 +102,6 @@ public class GateGuardAssignmentService {
             return null;
         }
         return shiftRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ShiftAttendanceType", id));
+                .orElseThrow(() -> new ApiException(WorkforceErrorCode.SHIFT_TYPE_NOT_FOUND));
     }
 }

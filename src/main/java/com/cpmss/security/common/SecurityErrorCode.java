@@ -51,6 +51,12 @@ public enum SecurityErrorCode implements ErrorCode {
     /** Guard is not assigned to the gate. */
     GUARD_NOT_ASSIGNED(403, "Guard is not assigned to this gate"),
 
+    /** Gate entry record not found. */
+    GATE_ENTRY_NOT_FOUND(404, "Gate entry not found"),
+
+    /** Gate guard assignment not found. */
+    GATE_GUARD_ASSIGNMENT_NOT_FOUND(404, "Gate guard assignment not found"),
+
     // --- Vehicle ---
 
     /** License plate is missing. */
@@ -63,7 +69,16 @@ public enum SecurityErrorCode implements ErrorCode {
     VEHICLE_OWNER_INVALID(422, "Vehicle must have exactly one owner"),
 
     /** License number is already registered. */
-    VEHICLE_LICENSE_DUPLICATE(409, "License number is already registered");
+    VEHICLE_LICENSE_DUPLICATE(409, "License number is already registered"),
+
+    /** Access permit not found. */
+    ACCESS_PERMIT_NOT_FOUND(404, "Access permit not found"),
+
+    /** Gate not found. */
+    GATE_NOT_FOUND(404, "Gate not found"),
+
+    /** Vehicle not found. */
+    VEHICLE_NOT_FOUND(404, "Vehicle not found");
 
     private final int status;
     private final String defaultMessage;
