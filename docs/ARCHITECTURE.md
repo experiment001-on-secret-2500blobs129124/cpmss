@@ -320,6 +320,35 @@ entitlement checks, payroll close freezing, and payment subtype orchestration.
 
 ---
 
+## Selective CQRS
+
+CPMSS stays MVCS/layered by default. CQRS is used selectively when a bounded
+context has complex writes, read-heavy dashboards, or projections that would
+make one service mix too many responsibilities.
+
+Command services own validation, ownership, transactions, and mutation. Query
+services own read-only DTOs/read models. Read models do not own business
+invariants, and API routes remain stable unless a route change is explicitly
+approved.
+
+Selective CQRS candidates:
+
+| Context | Command side | Query/read-model side |
+|---------|--------------|-----------------------|
+| `finance` | payment creation, subtype orchestration, reconciliation | payment history, reconciliation queues, financial summaries |
+| `workforce` | attendance recording, payroll close | payroll summaries, attendance calendars, salary dashboards |
+| `performance` | KPI recording, KPI month close, reviews | KPI summaries, rating dashboards, performance history |
+| `leasing` | contract lifecycle, parties, installments, residency | contract overview, installment schedules, occupancy views |
+| `maintenance` | work-order lifecycle and assignments | work-order queues, vendor workload, status boards |
+| `communication` | report filing, read/unread, resolution | role inboxes, unread counts, report timelines |
+| `security` | gate entry recording, permit/vehicle assignment | gate logs, permit lookup, guard assignment views |
+| `hr` | recruitment, hiring, staff position/salary changes | applicant pipeline, staff history, compensation views |
+
+Catalog CRUD remains a normal service unless the read side becomes a real
+projection or dashboard.
+
+---
+
 ## Centralized Routes (ApiPaths.java)
 
 All endpoint strings live in one file. Controllers import constants, never

@@ -50,6 +50,33 @@ Preferred shapes:
 
 ---
 
+## Selective CQRS
+
+Keep normal CRUD in one service. Split command and query services only when a
+bounded context has complex writes, read-heavy dashboards, or read models that
+would make one service unclear.
+
+Use the split for these pressure points:
+
+- `finance`: payments, reconciliation, financial summaries,
+- `workforce`: attendance, payroll close, salary dashboards,
+- `performance`: KPI close, reviews, KPI dashboards,
+- `leasing`: contract lifecycle, installments, occupancy views,
+- `maintenance`: work-order lifecycle, queues, vendor workload,
+- `communication`: report resolution, role inboxes, unread counts,
+- `security`: gate entries, permit/vehicle assignment, gate logs,
+- `hr`: recruitment, hiring, staff history, compensation views.
+
+Rules:
+
+- Command services own validation, authorization, transactions, and mutation.
+- Query services are read-only and return DTOs/read models.
+- Read models do not enforce business invariants.
+- Catalog CRUD stays unsplit unless a real projection/dashboard exists.
+- API routes stay stable unless a route change is explicitly approved.
+
+---
+
 ## Entity Annotations
 
 Never use `@Data` on JPA entities. Lombok's `@Data` generates `equals()` and

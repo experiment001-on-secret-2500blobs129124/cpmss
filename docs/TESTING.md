@@ -165,6 +165,20 @@ Cover:
 Use real Spring beans and a real PostgreSQL database when the behavior depends
 on transactions, constraints, or persistence.
 
+## Selective CQRS Tests
+
+When a bounded context uses selective CQRS, command and query services have
+separate test responsibilities.
+
+| Surface | Required proof |
+|---------|----------------|
+| Command service | authorization, ownership, rules, transactions, orchestration, idempotency, snapshot/freeze behavior, mutation response shape |
+| Query service | read-only scope, filters, sorting, pagination, dashboard/read-model shape, aggregate calculations, stable DTO fields |
+| Shared mapper/read model | value conversion, masked fields, field names, backward-compatible JSON shape |
+
+Command-service tests are the home for write behavior and business invariants.
+Query-service tests are the home for read behavior and projection correctness.
+
 ## Repository And JPA Tests
 
 Use these for persistence behavior.
