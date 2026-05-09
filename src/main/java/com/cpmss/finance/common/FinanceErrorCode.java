@@ -111,7 +111,10 @@ public enum FinanceErrorCode implements ErrorCode {
     // --- Payroll ---
 
     /** Payroll period is missing. */
-    PAYROLL_PERIOD_REQUIRED(422, "Payroll period is required");
+    PAYROLL_PERIOD_REQUIRED(422, "Payroll period is required"),
+
+    /** User cannot access this finance record. */
+    FINANCE_RECORD_ACCESS_DENIED(403, "Finance record access denied");
 
     private final int status;
     private final String defaultMessage;

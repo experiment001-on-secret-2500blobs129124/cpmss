@@ -1,5 +1,7 @@
 package com.cpmss.leasing.contract;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.leasing.common.LeasingAccessRules;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.leasing.contract.dto.ContractResponse;
 import com.cpmss.leasing.contract.dto.CreateContractRequest;
@@ -54,7 +56,9 @@ public class ContractService {
     private final ContractPartyRepository contractPartyRepository;
     private final PersonResidesUnderRepository residesUnderRepository;
     private final ContractMapper mapper;
+    private final CurrentUserService currentUserService;
     private final ContractRules rules = new ContractRules();
+    private final LeasingAccessRules accessRules = new LeasingAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -73,7 +77,8 @@ public class ContractService {
                            PersonRepository personRepository,
                            ContractPartyRepository contractPartyRepository,
                            PersonResidesUnderRepository residesUnderRepository,
-                           ContractMapper mapper) {
+                           ContractMapper mapper,
+                           CurrentUserService currentUserService) {
         this.repository = repository;
         this.unitRepository = unitRepository;
         this.facilityRepository = facilityRepository;
@@ -81,6 +86,7 @@ public class ContractService {
         this.contractPartyRepository = contractPartyRepository;
         this.residesUnderRepository = residesUnderRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -92,6 +98,7 @@ public class ContractService {
      */
     @Transactional(readOnly = true)
     public ContractResponse getById(UUID id) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND)));
     }
@@ -104,6 +111,7 @@ public class ContractService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<ContractResponse> listAll(Pageable pageable) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -120,6 +128,7 @@ public class ContractService {
      */
     @Transactional
     public ContractResponse create(CreateContractRequest request) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         rules.validateExactlyOneTarget(request.unitId(), request.facilityId());
         rules.validateReferenceUnique(request.contractReference(),
                 repository.existsByContractReference(request.contractReference()));
@@ -151,6 +160,7 @@ public class ContractService {
      */
     @Transactional
     public ContractResponse update(UUID id, UpdateContractRequest request) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         Contract contract = repository.findById(id)
                 .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND));
 
@@ -191,6 +201,7 @@ public class ContractService {
      */
     @Transactional
     public ContractPartyResponse addParty(UUID contractId, AddContractPartyRequest request) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         Contract contract = findContractOrThrow(contractId);
         Person person = personRepository.findById(request.personId())
                 .orElseThrow(() -> new ApiException(LeasingErrorCode.PERSON_NOT_FOUND));
@@ -223,6 +234,7 @@ public class ContractService {
      */
     @Transactional(readOnly = true)
     public java.util.List<ContractPartyResponse> getParties(UUID contractId) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         findContractOrThrow(contractId);
         return contractPartyRepository.findByContractId(contractId)
                 .stream().map(this::toPartyResponse).toList();
@@ -241,6 +253,7 @@ public class ContractService {
     @Transactional
     public PersonResidesUnderResponse addResident(UUID contractId,
                                                    AddPersonResidesUnderRequest request) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         Contract contract = findContractOrThrow(contractId);
         Person resident = personRepository.findById(request.residentId())
                 .orElseThrow(() -> new ApiException(LeasingErrorCode.PERSON_NOT_FOUND));
@@ -265,6 +278,7 @@ public class ContractService {
      */
     @Transactional(readOnly = true)
     public java.util.List<PersonResidesUnderResponse> getResidents(UUID contractId) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
         findContractOrThrow(contractId);
         return residesUnderRepository.findByContractId(contractId)
                 .stream().map(this::toResidentResponse).toList();

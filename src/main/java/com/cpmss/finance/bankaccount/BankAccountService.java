@@ -3,7 +3,9 @@ package com.cpmss.finance.bankaccount;
 import com.cpmss.finance.bankaccount.dto.BankAccountResponse;
 import com.cpmss.finance.bankaccount.dto.CreateBankAccountRequest;
 import com.cpmss.finance.bankaccount.dto.UpdateBankAccountRequest;
+import com.cpmss.finance.common.FinanceAccessRules;
 import com.cpmss.finance.common.FinanceErrorCode;
+import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.maintenance.company.Company;
 import com.cpmss.maintenance.company.CompanyRepository;
@@ -45,7 +47,9 @@ public class BankAccountService {
     private final PersonRepository personRepository;
     private final CompanyRepository companyRepository;
     private final BankAccountMapper mapper;
+    private final CurrentUserService currentUserService;
     private final BankAccountRules rules = new BankAccountRules();
+    private final FinanceAccessRules accessRules = new FinanceAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -60,12 +64,14 @@ public class BankAccountService {
                               CompoundRepository compoundRepository,
                               PersonRepository personRepository,
                               CompanyRepository companyRepository,
-                              BankAccountMapper mapper) {
+                              BankAccountMapper mapper,
+                              CurrentUserService currentUserService) {
         this.repository = repository;
         this.compoundRepository = compoundRepository;
         this.personRepository = personRepository;
         this.companyRepository = companyRepository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -77,8 +83,10 @@ public class BankAccountService {
      */
     @Transactional(readOnly = true)
     public BankAccountResponse getById(UUID id) {
-        return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ApiException(FinanceErrorCode.BANK_ACCOUNT_NOT_FOUND)));
+        BankAccount account = repository.findById(id)
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.BANK_ACCOUNT_NOT_FOUND));
+        accessRules.requireCanViewBankAccount(currentUserService.currentUser(), account);
+        return mapper.toResponse(account);
     }
 
     /**
@@ -89,6 +97,7 @@ public class BankAccountService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<BankAccountResponse> listAll(Pageable pageable) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -101,6 +110,7 @@ public class BankAccountService {
      */
     @Transactional
     public BankAccountResponse create(CreateBankAccountRequest request) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         rules.validateExactlyOneOwner(
                 request.compoundId(), request.accountOwnerId(), request.companyId());
 
@@ -128,6 +138,7 @@ public class BankAccountService {
      */
     @Transactional
     public BankAccountResponse update(UUID id, UpdateBankAccountRequest request) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
         BankAccount account = repository.findById(id)
                 .orElseThrow(() -> new ApiException(FinanceErrorCode.BANK_ACCOUNT_NOT_FOUND));
 
