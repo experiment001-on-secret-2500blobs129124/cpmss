@@ -37,18 +37,18 @@ public class FacilityManager extends BaseAuditEntity {
     /** The facility being managed (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "facility_id")
+    @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;
 
     /** The person acting as manager (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "manager_id")
+    @JoinColumn(name = "manager_id", nullable = false)
     private Person manager;
 
     /** The date this management assignment started (part of composite PK). */
     @Id
-    @Column(name = "management_start_date")
+    @Column(name = "management_start_date", nullable = false)
     private LocalDate managementStartDate;
 
     /** The date this management assignment ended ({@code null} = still active). */

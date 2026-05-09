@@ -49,12 +49,12 @@ public class LawOfShiftAttendance extends BaseAuditEntity {
     /** The shift type this rule applies to (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shift_id")
+    @JoinColumn(name = "shift_id", nullable = false)
     private ShiftAttendanceType shift;
 
     /** The date this rule set became effective (part of composite PK). */
     @Id
-    @Column(name = "effective_date")
+    @Column(name = "effective_date", nullable = false)
     private LocalDate effectiveDate;
 
     /** Required same-day shift time window. */

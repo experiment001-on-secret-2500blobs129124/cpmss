@@ -36,13 +36,13 @@ public class WorkOrderAssignedTo extends BaseAuditEntity {
     /** The work order (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "work_order_id")
+    @JoinColumn(name = "work_order_id", nullable = false)
     private WorkOrder workOrder;
 
     /** The assigned company (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
+    @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
     /** The date the company was assigned. */

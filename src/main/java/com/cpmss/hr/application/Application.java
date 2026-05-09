@@ -37,17 +37,17 @@ public class Application extends BaseAuditEntity {
     /** The person applying (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "applicant_id")
+    @JoinColumn(name = "applicant_id", nullable = false)
     private Person applicant;
 
     /** The position applied for (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "position_id")
+    @JoinColumn(name = "position_id", nullable = false)
     private StaffPosition position;
 
     /** The date of the application (part of composite PK). */
     @Id
-    @Column(name = "application_date")
+    @Column(name = "application_date", nullable = false)
     private LocalDate applicationDate;
 }

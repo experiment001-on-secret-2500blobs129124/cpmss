@@ -38,7 +38,7 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "KPI_Policy")
-@AttributeOverride(name = "id", column = @Column(name = "kpi_policy_id"))
+@AttributeOverride(name = "id", column = @Column(name = "kpi_policy_id", nullable = false))
 @Getter
 @Setter
 @Builder

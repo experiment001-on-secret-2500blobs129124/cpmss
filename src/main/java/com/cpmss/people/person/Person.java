@@ -36,7 +36,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "Person")
-@AttributeOverride(name = "id", column = @Column(name = "person_id"))
+@AttributeOverride(name = "id", column = @Column(name = "person_id", nullable = false))
 @Getter
 @Setter
 @Builder
@@ -89,13 +89,13 @@ public class Person extends BaseEntity {
 
     /** Multi-value: phone numbers. */
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "Person_Phone", joinColumns = @JoinColumn(name = "person_id"))
+    @CollectionTable(name = "Person_Phone", joinColumns = @JoinColumn(name = "person_id", nullable = false))
     @Builder.Default
     private Set<PersonPhone> phones = new HashSet<>();
 
     /** Multi-value: email addresses. */
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "Person_Email", joinColumns = @JoinColumn(name = "person_id"))
+    @CollectionTable(name = "Person_Email", joinColumns = @JoinColumn(name = "person_id", nullable = false))
     @Builder.Default
     private Set<PersonEmail> emails = new HashSet<>();
 

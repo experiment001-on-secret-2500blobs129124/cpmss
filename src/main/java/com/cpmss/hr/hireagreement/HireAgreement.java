@@ -42,18 +42,18 @@ public class HireAgreement extends BaseAuditEntity {
     /** The applicant (part of composite PK, FK to Application). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "applicant_id")
+    @JoinColumn(name = "applicant_id", nullable = false)
     private Person applicant;
 
     /** The position (part of composite PK, FK to Application). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "position_id")
+    @JoinColumn(name = "position_id", nullable = false)
     private StaffPosition position;
 
     /** The application date (part of composite PK, FK to Application). */
     @Id
-    @Column(name = "application_date")
+    @Column(name = "application_date", nullable = false)
     private LocalDate applicationDate;
 
     /** Agreed employment start date. */

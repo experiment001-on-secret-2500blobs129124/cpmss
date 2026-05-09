@@ -38,12 +38,12 @@ public class PositionSalaryHistory extends BaseAuditEntity {
     /** The position this salary band applies to (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "position_id")
+    @JoinColumn(name = "position_id", nullable = false)
     private StaffPosition position;
 
     /** The date this salary band became effective (part of composite PK). */
     @Id
-    @Column(name = "salary_effective_date")
+    @Column(name = "salary_effective_date", nullable = false)
     private LocalDate salaryEffectiveDate;
 
     /** Maximum monthly salary for this position at this effective date. */

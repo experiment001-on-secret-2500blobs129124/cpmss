@@ -46,23 +46,23 @@ public class StaffKpiMonthlySummary extends BaseAuditEntity {
     /** The staff member (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staff_id")
+    @JoinColumn(name = "staff_id", nullable = false)
     private Person staff;
 
     /** The department (part of composite PK). */
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
+    @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
     /** The summary year (part of composite PK). */
     @Id
-    @Column(name = "year")
+    @Column(name = "year", nullable = false)
     private Integer year;
 
     /** The summary month (part of composite PK). */
     @Id
-    @Column(name = "month")
+    @Column(name = "month", nullable = false)
     private Integer month;
 
     /** Average KPI score for the month. */

@@ -33,7 +33,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "Vehicle")
-@AttributeOverride(name = "id", column = @Column(name = "vehicle_id"))
+@AttributeOverride(name = "id", column = @Column(name = "vehicle_id", nullable = false))
 @Getter
 @Setter
 @Builder
@@ -70,8 +70,8 @@ public class Vehicle extends BaseEntity {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "Vehicle_Permits",
-            joinColumns = @JoinColumn(name = "vehicle_id"),
-            inverseJoinColumns = @JoinColumn(name = "permit_id"))
+            joinColumns = @JoinColumn(name = "vehicle_id", nullable = false),
+            inverseJoinColumns = @JoinColumn(name = "permit_id", nullable = false))
     @Builder.Default
     private Set<AccessPermit> permits = new HashSet<>();
 
