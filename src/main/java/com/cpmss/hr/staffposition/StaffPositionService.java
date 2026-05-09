@@ -1,9 +1,11 @@
 package com.cpmss.hr.staffposition;
 
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.organization.common.OrganizationErrorCode;
 import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.hr.staffposition.dto.CreateStaffPositionRequest;
 import com.cpmss.hr.staffposition.dto.StaffPositionResponse;
 import com.cpmss.hr.staffposition.dto.UpdateStaffPositionRequest;
@@ -54,12 +56,12 @@ public class StaffPositionService {
      *
      * @param id the position's UUID primary key
      * @return the matching position response
-     * @throws ResourceNotFoundException if no position exists with this ID
+     * @throws ApiException if no position exists with this ID
      */
     @Transactional(readOnly = true)
     public StaffPositionResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffPosition", id)));
+                .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND)));
     }
 
     /**
@@ -78,12 +80,12 @@ public class StaffPositionService {
      *
      * @param request the create request with position name and department ID
      * @return the created position response
-     * @throws ResourceNotFoundException if the department does not exist
+     * @throws ApiException if the department does not exist
      */
     @Transactional
     public StaffPositionResponse create(CreateStaffPositionRequest request) {
         Department department = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         StaffPosition position = StaffPosition.builder()
                 .positionName(request.positionName())
@@ -100,15 +102,15 @@ public class StaffPositionService {
      * @param id      the position's UUID
      * @param request the update request with new values
      * @return the updated position response
-     * @throws ResourceNotFoundException if the position or department does not exist
+     * @throws ApiException if the position or department does not exist
      */
     @Transactional
     public StaffPositionResponse update(UUID id, UpdateStaffPositionRequest request) {
         StaffPosition position = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffPosition", id));
+                .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
 
         Department department = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Department", request.departmentId()));
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
 
         position.setPositionName(request.positionName());
         position.setDepartment(department);
@@ -121,12 +123,12 @@ public class StaffPositionService {
      * Deletes a staff position by ID.
      *
      * @param id the position's UUID
-     * @throws ResourceNotFoundException if no position exists with this ID
+     * @throws ApiException if no position exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
         StaffPosition position = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("StaffPosition", id));
+                .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
         repository.delete(position);
         log.info("StaffPosition deleted: {}", position.getPositionName());
     }

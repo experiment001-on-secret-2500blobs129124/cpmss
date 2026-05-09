@@ -53,6 +53,9 @@ public enum HrErrorCode implements ErrorCode {
     /** Staff position not found. */
     POSITION_NOT_FOUND(404, "Staff position not found"),
 
+    /** Staff profile not found. */
+    STAFF_PROFILE_NOT_FOUND(404, "Staff profile not found"),
+
     /** Person not found (HR context). */
     PERSON_NOT_FOUND(404, "Person not found"),
 
