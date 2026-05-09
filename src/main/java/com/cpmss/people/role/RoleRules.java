@@ -1,6 +1,7 @@
 package com.cpmss.people.role;
 
-import com.cpmss.platform.exception.ConflictException;
+import com.cpmss.people.common.PeopleErrorCode;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Business rules for {@link Role} operations.
@@ -14,11 +15,11 @@ public class RoleRules {
      *
      * @param name   the desired role name
      * @param exists whether a role with this name already exists
-     * @throws ConflictException if the name is already in use
+     * @throws ApiException if the name is already in use
      */
     public void validateNameUnique(String name, boolean exists) {
         if (exists) {
-            throw new ConflictException("Role '" + name + "' already exists");
+            throw new ApiException(PeopleErrorCode.ROLE_DUPLICATE);
         }
     }
 }

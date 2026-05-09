@@ -1,6 +1,6 @@
 package com.cpmss.people.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -36,16 +36,16 @@ public enum Gender {
      *
      * @param label the gender label
      * @return the matching gender
-     * @throws BusinessException if the label is missing or unsupported
+     * @throws ApiException if the label is missing or unsupported
      */
     public static Gender fromLabel(String label) {
         if (label == null || label.isBlank()) {
-            throw new BusinessException("Gender is required");
+            throw new ApiException(PeopleErrorCode.GENDER_REQUIRED);
         }
         return Arrays.stream(values())
                 .filter(value -> value.label.equals(label))
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("Gender must be one of: " + allowedLabels()));
+                .orElseThrow(() -> new ApiException(PeopleErrorCode.GENDER_REQUIRED));
     }
 
     /**
@@ -53,7 +53,7 @@ public enum Gender {
      *
      * @param label the optional gender label
      * @return the matching gender, or {@code null} when absent
-     * @throws BusinessException if the label is blank or unsupported
+     * @throws ApiException if the label is blank or unsupported
      */
     public static Gender fromNullableLabel(String label) {
         return label != null ? fromLabel(label) : null;

@@ -1,6 +1,6 @@
 package com.cpmss.people.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 
 /**
  * Passport number stored in {@code Person.passport_no}.
@@ -20,16 +20,16 @@ public record PassportNumber(String value) {
      * Creates a passport number.
      *
      * @param value the raw passport number
-     * @throws BusinessException if the passport is missing or too long
+     * @throws ApiException if the passport is missing or too long
      */
     public PassportNumber {
         if (value == null || value.isBlank()) {
-            throw new BusinessException("Passport number is required");
+            throw new ApiException(PeopleErrorCode.PASSPORT_REQUIRED);
         }
 
         value = value.strip();
         if (value.length() > MAX_LENGTH) {
-            throw new BusinessException("Passport number is too long");
+            throw new ApiException(PeopleErrorCode.PASSPORT_TOO_LONG);
         }
     }
 
@@ -38,7 +38,7 @@ public record PassportNumber(String value) {
      *
      * @param value the raw passport number
      * @return the validated passport number
-     * @throws BusinessException if the passport is missing or too long
+     * @throws ApiException if the passport is missing or too long
      */
     public static PassportNumber of(String value) {
         return new PassportNumber(value);

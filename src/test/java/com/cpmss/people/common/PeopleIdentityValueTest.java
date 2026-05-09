@@ -1,6 +1,6 @@
 package com.cpmss.people.common;
 
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +18,7 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsInvalidEmailAddresses() {
         assertThatThrownBy(() -> EmailAddress.of("user-at-example.com"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Email address is invalid");
     }
 
@@ -27,7 +27,7 @@ class PeopleIdentityValueTest {
         String tooLong = "a".repeat(142) + "@example.com";
 
         assertThatThrownBy(() -> EmailAddress.contact(tooLong))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Email address is too long");
     }
 
@@ -42,10 +42,10 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsMissingPhoneNumberParts() {
         assertThatThrownBy(() -> new PhoneNumber(null, "01000000000"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Phone country code is required");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Phone number is required");
         assertThatThrownBy(() -> new PhoneNumber("+20", " "))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Phone number is required");
     }
 
@@ -60,7 +60,7 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsInvalidEgyptianNationalIds() {
         assertThatThrownBy(() -> EgyptianNationalId.of("123"))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Egyptian national ID must be 14 digits");
     }
 
@@ -74,10 +74,10 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsInvalidPassportNumbers() {
         assertThatThrownBy(() -> PassportNumber.of(" "))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Passport number is required");
         assertThatThrownBy(() -> PassportNumber.of("A".repeat(21)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Passport number is too long");
     }
 
@@ -91,8 +91,8 @@ class PeopleIdentityValueTest {
     @Test
     void rejectsUnknownGenderLabels() {
         assertThatThrownBy(() -> Gender.fromLabel("Other"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Gender must be one of: Male, Female");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Gender is required");
     }
 
     @Test
