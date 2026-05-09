@@ -1,5 +1,8 @@
 package com.cpmss.security.entersat;
 
+import com.cpmss.identity.auth.CurrentUser;
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.security.accesspermit.AccessPermit;
 import com.cpmss.security.accesspermit.AccessPermitRepository;
 import com.cpmss.platform.common.PagedResponse;
@@ -8,6 +11,7 @@ import com.cpmss.security.entersat.dto.EntersAtResponse;
 import com.cpmss.platform.exception.ResourceNotFoundException;
 import com.cpmss.security.gate.Gate;
 import com.cpmss.security.gate.GateRepository;
+import com.cpmss.security.gateguardassignment.GateGuardAssignmentRepository;
 import com.cpmss.security.vehicle.LicensePlate;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
@@ -38,6 +42,8 @@ public class EntersAtService {
     private final GateRepository gateRepository;
     private final AccessPermitRepository accessPermitRepository;
     private final PersonRepository personRepository;
+    private final GateGuardAssignmentRepository gateGuardAssignmentRepository;
+    private final CurrentUserService currentUserService;
     private final EntersAtMapper mapper;
     private final EntersAtRules rules = new EntersAtRules();
 
@@ -48,17 +54,23 @@ public class EntersAtService {
      * @param gateRepository         gate data access (FK lookup)
      * @param accessPermitRepository permit data access (FK lookup)
      * @param personRepository       person data access (FK lookup)
+     * @param gateGuardAssignmentRepository guard posting data access
+     * @param currentUserService     authenticated user resolver
      * @param mapper                 entity-DTO mapper
      */
     public EntersAtService(EntersAtRepository repository,
                            GateRepository gateRepository,
                            AccessPermitRepository accessPermitRepository,
                            PersonRepository personRepository,
+                           GateGuardAssignmentRepository gateGuardAssignmentRepository,
+                           CurrentUserService currentUserService,
                            EntersAtMapper mapper) {
         this.repository = repository;
         this.gateRepository = gateRepository;
         this.accessPermitRepository = accessPermitRepository;
         this.personRepository = personRepository;
+        this.gateGuardAssignmentRepository = gateGuardAssignmentRepository;
+        this.currentUserService = currentUserService;
         this.mapper = mapper;
     }
 
@@ -90,15 +102,19 @@ public class EntersAtService {
      * Records a new gate access event.
      *
      * <p>Gate entries are immutable — once recorded they cannot
-     * be modified or deleted.
+     * be modified or deleted. Gate guards can create entries only for gates
+     * where they have an active posting at the event timestamp.
      *
      * @param request the entry details
      * @return the created entry response
      * @throws com.cpmss.platform.exception.BusinessException if entry method rule is violated
+     * @throws com.cpmss.platform.exception.ForbiddenException if a gate guard is outside their post
      */
     @Transactional
     public EntersAtResponse create(CreateEntersAtRequest request) {
         rules.validateExactlyOneEntryMethod(request.permitId(), request.manualPlateEntry());
+        CurrentUser actor = currentUserService.currentUser();
+        Person currentGuard = resolveCurrentGuardIfNeeded(actor, request);
 
         Gate gate = gateRepository.findById(request.gateId())
                 .orElseThrow(() -> new ResourceNotFoundException("Gate", request.gateId()));
@@ -110,7 +126,7 @@ public class EntersAtService {
                 .enteredAt(request.enteredAt())
                 .direction(GateDirection.fromLabel(request.direction()))
                 .purpose(request.purpose())
-                .processedBy(resolvePersonNullable(request.processedById()))
+                .processedBy(resolveProcessedBy(request, actor, currentGuard))
                 .requestedBy(resolvePersonNullable(request.requestedById()))
                 .build();
         entry = repository.save(entry);
@@ -120,6 +136,33 @@ public class EntersAtService {
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private Person resolveCurrentGuardIfNeeded(CurrentUser actor, CreateEntersAtRequest request) {
+        if (!actor.hasRole(SystemRole.GATE_GUARD)) {
+            return null;
+        }
+        UUID guardPersonId = actor.requirePersonId("Gate entry logging");
+        boolean assignedToGate = gateGuardAssignmentRepository.existsActivePostingAtGate(
+                guardPersonId, request.gateId(), request.enteredAt());
+        rules.validateGateGuardAssignedToGate(actor.systemRole(), assignedToGate);
+        rules.validateGateGuardProcessesOnlySelf(
+                actor.systemRole(), guardPersonId, request.processedById());
+        return personRepository.findById(guardPersonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Person", guardPersonId));
+    }
+
+    private Person resolveProcessedBy(CreateEntersAtRequest request,
+                                      CurrentUser actor,
+                                      Person currentGuard) {
+        if (!actor.hasRole(SystemRole.GATE_GUARD)) {
+            return resolvePersonNullable(request.processedById());
+        }
+        boolean anonymousEntry = request.permitId() == null;
+        if (anonymousEntry || request.processedById() != null) {
+            return currentGuard;
+        }
+        return null;
+    }
 
     private AccessPermit resolvePermit(UUID id) {
         if (id == null) {
