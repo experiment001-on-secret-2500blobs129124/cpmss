@@ -8,7 +8,8 @@ Application classes use SLF4J class loggers. Services log meaningful business
 transitions, the exception boundary logs handled failures, and security
 boundaries log authentication/authorization failures without leaking secrets.
 Logs use stable event names and request IDs so production behavior can be
-traced across controllers, services, errors, and security filters.
+traced across controllers, services, errors, and security filters. This
+standard covers application event logging, error logging, and security logging.
 
 ## Levels
 
@@ -19,6 +20,22 @@ traced across controllers, services, errors, and security filters.
 | `info` | Important business or system transitions. |
 | `warn` | Denied actions, recoverable problems, validation/rule failures worth noticing. |
 | `error` | Unexpected failures that require investigation. |
+
+## Runtime Output
+
+Application code logs through SLF4J, and Spring Boot routes those logs through
+Logback.
+
+Rules:
+
+- The default operational sink is process stdout/stderr so the runtime,
+  container platform, or service manager can capture logs.
+- Deployment-specific rolling files or external collectors may be added without
+  changing application log calls.
+- Operational logs are not stored in CPMSS business tables or Flyway-managed
+  schema.
+- Durable business history belongs in domain tables and audit columns, not in
+  the operational logging sink.
 
 ## Request ID Policy
 
@@ -88,6 +105,7 @@ Examples:
 ## Services
 
 Services own business transitions and are the best place for meaningful logs.
+These are application logs, not just error logs.
 
 Good service logs:
 
@@ -186,12 +204,16 @@ business references:
 
 ## Required Components
 
+- Application classes use SLF4J loggers and follow the event-name taxonomy for
+  business transitions.
 - `RequestIdFilter` sets up MDC, adds `X-Request-Id`, and clears MDC in a
   `finally` block.
 - Error response creation includes `requestId`.
 - Spring Security 401/403 handlers reuse the same error response factory as
   controller-level errors.
 - Service transition logs use the event-name taxonomy above.
+- Runtime log retention is owned by stdout capture, file appenders, or an
+  external log collector rather than the application database.
 - Sensitive values are masked or replaced with UUIDs/business references.
 - Tests cover request ID propagation, response headers, error body request IDs,
   and MDC cleanup.
