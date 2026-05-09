@@ -1,5 +1,7 @@
 package com.cpmss.property.compound;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.property.common.PropertyAccessRules;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
 import com.cpmss.property.common.PropertyErrorCode;
@@ -30,6 +32,8 @@ public class CompoundService {
 
     private final CompoundRepository repository;
     private final CompoundMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final PropertyAccessRules accessRules = new PropertyAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -37,9 +41,11 @@ public class CompoundService {
      * @param repository compound data access
      * @param mapper     entity-DTO mapper
      */
-    public CompoundService(CompoundRepository repository, CompoundMapper mapper) {
+    public CompoundService(CompoundRepository repository, CompoundMapper mapper,
+                           CurrentUserService currentUserService) {
         this.repository = repository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -51,6 +57,7 @@ public class CompoundService {
      */
     @Transactional(readOnly = true)
     public CompoundResponse getById(UUID id) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND)));
     }
@@ -63,6 +70,7 @@ public class CompoundService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<CompoundResponse> listAll(Pageable pageable) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -74,6 +82,7 @@ public class CompoundService {
      */
     @Transactional
     public CompoundResponse create(CreateCompoundRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Compound compound = mapper.toEntity(request);
         compound = repository.save(compound);
         log.info("Compound created: {}", compound.getCompoundName());
@@ -90,6 +99,7 @@ public class CompoundService {
      */
     @Transactional
     public CompoundResponse update(UUID id, UpdateCompoundRequest request) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Compound compound = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
         compound.setCompoundName(request.compoundName());
@@ -109,6 +119,7 @@ public class CompoundService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requirePropertyAdministrator(currentUserService.currentUser());
         Compound compound = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PropertyErrorCode.COMPOUND_NOT_FOUND));
         repository.delete(compound);

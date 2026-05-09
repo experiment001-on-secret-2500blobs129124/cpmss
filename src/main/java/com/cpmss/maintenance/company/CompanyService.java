@@ -1,5 +1,7 @@
 package com.cpmss.maintenance.company;
 
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.maintenance.common.MaintenanceAccessRules;
 import com.cpmss.maintenance.common.MaintenanceErrorCode;
 import com.cpmss.maintenance.company.dto.CompanyResponse;
 import com.cpmss.maintenance.company.dto.CreateCompanyRequest;
@@ -30,6 +32,8 @@ public class CompanyService {
 
     private final CompanyRepository repository;
     private final CompanyMapper mapper;
+    private final CurrentUserService currentUserService;
+    private final MaintenanceAccessRules accessRules = new MaintenanceAccessRules();
 
     /**
      * Constructs the service with required dependencies.
@@ -37,9 +41,11 @@ public class CompanyService {
      * @param repository company data access
      * @param mapper     entity-DTO mapper
      */
-    public CompanyService(CompanyRepository repository, CompanyMapper mapper) {
+    public CompanyService(CompanyRepository repository, CompanyMapper mapper,
+                          CurrentUserService currentUserService) {
         this.repository = repository;
         this.mapper = mapper;
+        this.currentUserService = currentUserService;
     }
 
     /**
@@ -51,6 +57,7 @@ public class CompanyService {
      */
     @Transactional(readOnly = true)
     public CompanyResponse getById(UUID id) {
+        accessRules.requireMaintenanceReader(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND)));
     }
@@ -63,6 +70,7 @@ public class CompanyService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<CompanyResponse> listAll(Pageable pageable) {
+        accessRules.requireMaintenanceReader(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 
@@ -74,6 +82,7 @@ public class CompanyService {
      */
     @Transactional
     public CompanyResponse create(CreateCompanyRequest request) {
+        accessRules.requireMaintenanceAdministrator(currentUserService.currentUser());
         Company company = mapper.toEntity(request);
         company = repository.save(company);
         log.info("Company created: {}", company.getCompanyName());
@@ -90,6 +99,7 @@ public class CompanyService {
      */
     @Transactional
     public CompanyResponse update(UUID id, UpdateCompanyRequest request) {
+        accessRules.requireMaintenanceAdministrator(currentUserService.currentUser());
         Company company = repository.findById(id)
                 .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
         company.setCompanyName(request.companyName());
@@ -109,6 +119,7 @@ public class CompanyService {
      */
     @Transactional
     public void delete(UUID id) {
+        accessRules.requireMaintenanceAdministrator(currentUserService.currentUser());
         Company company = repository.findById(id)
                 .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
         repository.delete(company);

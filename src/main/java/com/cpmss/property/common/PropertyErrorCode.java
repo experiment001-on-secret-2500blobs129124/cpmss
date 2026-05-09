@@ -70,7 +70,10 @@ public enum PropertyErrorCode implements ErrorCode {
     FACILITY_MGMT_MISMATCH_RESIDENTIAL(422, "Residential compounds require self management"),
 
     /** Commercial compound requires company management. */
-    FACILITY_MGMT_MISMATCH_COMMERCIAL(422, "Commercial compounds require company management");
+    FACILITY_MGMT_MISMATCH_COMMERCIAL(422, "Commercial compounds require company management"),
+
+    /** User cannot access this property record. */
+    PROPERTY_RECORD_ACCESS_DENIED(403, "Property record access denied");
 
     private final int status;
     private final String defaultMessage;
