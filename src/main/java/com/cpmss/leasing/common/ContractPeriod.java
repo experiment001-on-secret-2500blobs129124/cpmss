@@ -2,7 +2,7 @@ package com.cpmss.leasing.common;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -39,17 +39,17 @@ public class ContractPeriod {
      *
      * @param startDate the required contract start date
      * @param endDate the optional contract end date
-     * @throws BusinessException if the start date is missing or the end date
+     * @throws ApiException if the start date is missing or the end date
      *                           is not after the start date
      */
     @JsonCreator
     public ContractPeriod(@JsonProperty("startDate") LocalDate startDate,
                           @JsonProperty("endDate") LocalDate endDate) {
         if (startDate == null) {
-            throw new BusinessException("Contract start date is required");
+            throw new ApiException(LeasingErrorCode.CONTRACT_START_DATE_REQUIRED);
         }
         if (endDate != null && !endDate.isAfter(startDate)) {
-            throw new BusinessException("Contract end date must be after start date");
+            throw new ApiException(LeasingErrorCode.CONTRACT_END_DATE_INVALID);
         }
         this.startDate = startDate;
         this.endDate = endDate;

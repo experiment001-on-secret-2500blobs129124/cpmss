@@ -1,7 +1,7 @@
 package com.cpmss.leasing.common;
 
 import com.cpmss.finance.money.Money;
-import com.cpmss.platform.exception.BusinessException;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -27,7 +27,7 @@ class LeasingValueTest {
         assertThatThrownBy(() -> new ContractPeriod(
                 LocalDate.of(2026, 5, 1),
                 LocalDate.of(2026, 5, 1)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Contract end date must be after start date");
     }
 
@@ -46,7 +46,7 @@ class LeasingValueTest {
         assertThatThrownBy(() -> new ResidencyPeriod(
                 LocalDate.of(2026, 5, 1),
                 LocalDate.of(2026, 5, 1)))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ApiException.class)
                 .hasMessage("Move-out date must be after move-in date");
     }
 
@@ -61,11 +61,11 @@ class LeasingValueTest {
     @Test
     void rejectsUnknownContractVocabularyLabels() {
         assertThatThrownBy(() -> ContractType.fromLabel("Parking"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Contract type must be one of: Residential, Commercial");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Contract type is required");
         assertThatThrownBy(() -> ContractStatus.fromLabel("Closed"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Contract status must be one of: Draft, Active, Expired, Terminated, Renewed");
+                .isInstanceOf(ApiException.class)
+                .hasMessage("Contract status is required");
     }
 
     @Test

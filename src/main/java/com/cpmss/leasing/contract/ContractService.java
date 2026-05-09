@@ -9,8 +9,8 @@ import com.cpmss.leasing.contractparty.ContractParty;
 import com.cpmss.leasing.contractparty.ContractPartyRepository;
 import com.cpmss.leasing.contractparty.dto.AddContractPartyRequest;
 import com.cpmss.leasing.contractparty.dto.ContractPartyResponse;
-import com.cpmss.platform.exception.BusinessException;
-import com.cpmss.platform.exception.ResourceNotFoundException;
+import com.cpmss.leasing.common.LeasingErrorCode;
+import com.cpmss.platform.exception.ApiException;
 import com.cpmss.property.facility.Facility;
 import com.cpmss.property.facility.FacilityRepository;
 import com.cpmss.people.person.Person;
@@ -88,12 +88,12 @@ public class ContractService {
      *
      * @param id the contract's UUID primary key
      * @return the matching contract response
-     * @throws ResourceNotFoundException if no contract exists with this ID
+     * @throws ApiException if no contract exists with this ID
      */
     @Transactional(readOnly = true)
     public ContractResponse getById(UUID id) {
         return mapper.toResponse(repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Contract", id)));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND)));
     }
 
     /**
@@ -115,8 +115,8 @@ public class ContractService {
      *
      * @param request the create request with contract details and target ID
      * @return the created contract response
-     * @throws com.cpmss.platform.exception.BusinessException if target rule is violated
-     * @throws com.cpmss.platform.exception.ConflictException  if reference is duplicate
+     * @throws ApiException if target rule is violated or reference is duplicate
+
      */
     @Transactional
     public ContractResponse create(CreateContractRequest request) {
@@ -147,12 +147,12 @@ public class ContractService {
      * @param id      the contract's UUID
      * @param request the update request with new values
      * @return the updated contract response
-     * @throws ResourceNotFoundException if no contract exists with this ID
+     * @throws ApiException if no contract exists with this ID
      */
     @Transactional
     public ContractResponse update(UUID id, UpdateContractRequest request) {
         Contract contract = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Contract", id));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND));
 
         rules.validateExactlyOneTarget(request.unitId(), request.facilityId());
 
@@ -187,21 +187,19 @@ public class ContractService {
      * @param contractId the contract's UUID
      * @param request    the party details
      * @return the created contract party response
-     * @throws ResourceNotFoundException if contract or person not found
-     * @throws BusinessException if a Primary Signer already exists
+     * @throws ApiException if contract or person not found or primary signer exists
      */
     @Transactional
     public ContractPartyResponse addParty(UUID contractId, AddContractPartyRequest request) {
         Contract contract = findContractOrThrow(contractId);
         Person person = personRepository.findById(request.personId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.personId()));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.PERSON_NOT_FOUND));
 
         if (request.role() == ContractPartyRole.PRIMARY_SIGNER) {
             boolean hasPrimary = contractPartyRepository.findByContractId(contractId)
                     .stream().anyMatch(cp -> cp.getRole() == ContractPartyRole.PRIMARY_SIGNER);
             if (hasPrimary) {
-                throw new BusinessException(
-                        "Contract already has a Primary Signer — only one is allowed");
+                throw new ApiException(LeasingErrorCode.PRIMARY_SIGNER_DUPLICATE);
             }
         }
 
@@ -221,7 +219,7 @@ public class ContractService {
      *
      * @param contractId the contract's UUID
      * @return list of contract party responses
-     * @throws ResourceNotFoundException if contract not found
+     * @throws ApiException if contract not found
      */
     @Transactional(readOnly = true)
     public java.util.List<ContractPartyResponse> getParties(UUID contractId) {
@@ -238,14 +236,14 @@ public class ContractService {
      * @param contractId the contract's UUID
      * @param request    the resident details
      * @return the created residency response
-     * @throws ResourceNotFoundException if contract or person not found
+     * @throws ApiException if contract or person not found
      */
     @Transactional
     public PersonResidesUnderResponse addResident(UUID contractId,
                                                    AddPersonResidesUnderRequest request) {
         Contract contract = findContractOrThrow(contractId);
         Person resident = personRepository.findById(request.residentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Person", request.residentId()));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.PERSON_NOT_FOUND));
 
         PersonResidesUnder record = new PersonResidesUnder();
         record.setResident(resident);
@@ -263,7 +261,7 @@ public class ContractService {
      *
      * @param contractId the contract's UUID
      * @return list of residency responses
-     * @throws ResourceNotFoundException if contract not found
+     * @throws ApiException if contract not found
      */
     @Transactional(readOnly = true)
     public java.util.List<PersonResidesUnderResponse> getResidents(UUID contractId) {
@@ -276,7 +274,7 @@ public class ContractService {
 
     private Contract findContractOrThrow(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Contract", id));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND));
     }
 
     private ContractPartyResponse toPartyResponse(ContractParty cp) {
@@ -300,7 +298,7 @@ public class ContractService {
             return null;
         }
         return unitRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Unit", id));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.UNIT_NOT_FOUND));
     }
 
     private Facility resolveFacility(UUID id) {
@@ -308,6 +306,6 @@ public class ContractService {
             return null;
         }
         return facilityRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Facility", id));
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.FACILITY_NOT_FOUND));
     }
 }
