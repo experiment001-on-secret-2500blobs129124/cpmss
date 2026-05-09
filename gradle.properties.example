@@ -1,0 +1,6 @@
+# Copy to gradle.properties when Gradle cannot find the local Java 21 JDK.
+# Keep gradle.properties untracked; it may contain machine-specific paths.
+
+# Example for Homebrew Linux:
+# org.gradle.java.home=/home/linuxbrew/.linuxbrew/opt/openjdk@21/libexec
+# org.gradle.java.installations.paths=/home/linuxbrew/.linuxbrew/opt/openjdk@21/libexec
