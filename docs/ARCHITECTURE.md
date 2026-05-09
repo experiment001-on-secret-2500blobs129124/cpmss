@@ -369,22 +369,23 @@ for the full contract and example.
 
 ---
 
-## Exception Hierarchy
+## Exception Handling
 
 ```mermaid
 flowchart TD
-    RE["RuntimeException"] --> BE["BusinessException → 422"]
-    RE --> RNF["ResourceNotFoundException → 404"]
-    RE --> FE["ForbiddenException → 403"]
-    RE --> CE["ConflictException → 409"]
-
-    BE --> GEH["GlobalExceptionHandler"]
-    RNF --> GEH
-    FE --> GEH
-    CE --> GEH
-
+    AE["ApiException"] --> EC["ErrorCode"]
+    EC --> GEH["GlobalExceptionHandler"]
+    VALID["MethodArgumentNotValidException"] --> GEH
+    AUTH["Spring Security 401/403"] --> SH["JSON security handlers"]
     GEH --> R["Structured JSON Error Response"]
+    SH --> R
 ```
+
+`ApiException` is the single application exception type for API errors.
+Its `ErrorCode` determines the HTTP status, stable client-facing code, and
+fallback message. Spring Security authentication and route authorization
+failures happen before MVC exception handling, so they use JSON security
+handlers that build the same response envelope.
 
 Standard error response format:
 

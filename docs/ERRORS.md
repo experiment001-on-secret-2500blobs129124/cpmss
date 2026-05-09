@@ -8,27 +8,28 @@ standard error envelope documented here.
 
 ## Exception Sources
 
-- `GlobalExceptionHandler` handles application exceptions raised after a
-  request reaches Spring MVC.
+- `GlobalExceptionHandler` handles `ApiException` raised after a request
+  reaches Spring MVC.
+- `ApiException` carries a typed `ErrorCode`; the code determines the HTTP
+  status, stable client code, and default message.
 - `MethodArgumentNotValidException` returns field validation errors with
   status `400`.
-- `BusinessException` returns status `422`.
-- `ConflictException` returns status `409`.
-- `ForbiddenException` returns status `403`.
-- `ResourceNotFoundException` returns status `404`.
-- A fallback `Exception` handler returns status `500`.
-- `401` responses are produced by Spring Security before controller handling.
+- A fallback `Exception` handler returns status `500` and never exposes the
+  internal exception message.
+- `401` and route-level `403` responses are produced by Spring Security before
+  controller handling and use the same error envelope through the JSON security
+  handlers.
 
 ## HTTP Mapping
 
 | Status | Source | Meaning |
 |--------|--------|---------|
-| 400 | `MethodArgumentNotValidException` | Request DTO validation failed. |
+| 400 | `MethodArgumentNotValidException` / `VALIDATION_FAILED` | Request DTO validation failed. |
 | 401 | Spring Security/auth layer | Missing, invalid, or expired authentication. |
-| 403 | `ForbiddenException` | Authenticated user is not allowed to perform the action. |
-| 404 | `ResourceNotFoundException` | Requested resource does not exist. |
-| 409 | `ConflictException` | Unique, duplicate, or state conflict. |
-| 422 | `BusinessException` | Request shape is valid, but a business rule was violated. |
+| 403 | `ApiException` / Spring Security access-denied handler | Authenticated user is not allowed to perform the action. |
+| 404 | `ApiException` with a not-found error code | Requested resource does not exist. |
+| 409 | `ApiException` with a conflict error code | Unique, duplicate, or state conflict. |
+| 422 | `ApiException` with a business-rule error code | Request shape is valid, but a business rule was violated. |
 | 500 | fallback `Exception` handler | Unexpected server error. |
 
 ## Standard Error Envelope

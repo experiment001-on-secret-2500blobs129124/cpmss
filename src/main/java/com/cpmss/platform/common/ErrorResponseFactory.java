@@ -1,6 +1,7 @@
 package com.cpmss.platform.common;
 
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.platform.exception.CommonErrorCode;
 import com.cpmss.platform.exception.ErrorCode;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
@@ -38,15 +39,7 @@ public final class ErrorResponseFactory {
      */
     public static ErrorResponse fromApiException(ApiException ex) {
         ErrorCode errorCode = ex.getErrorCode();
-        return new ErrorResponse(
-                errorCode.status(),
-                errorCode.code(),
-                HttpStatus.valueOf(errorCode.status()).getReasonPhrase(),
-                ex.getMessage(),
-                ex.getFields(),
-                MDC.get(MDC_REQUEST_ID),
-                Instant.now()
-        );
+        return build(errorCode, ex.getMessage(), ex.getFields());
     }
 
     /**
@@ -59,15 +52,7 @@ public final class ErrorResponseFactory {
      * @return the error response
      */
     public static ErrorResponse fromErrorCode(ErrorCode errorCode) {
-        return new ErrorResponse(
-                errorCode.status(),
-                errorCode.code(),
-                HttpStatus.valueOf(errorCode.status()).getReasonPhrase(),
-                errorCode.defaultMessage(),
-                null,
-                MDC.get(MDC_REQUEST_ID),
-                Instant.now()
-        );
+        return build(errorCode, errorCode.defaultMessage(), null);
     }
 
     /**
@@ -80,42 +65,8 @@ public final class ErrorResponseFactory {
      */
     public static ErrorResponse fromValidationFields(
             Map<String, List<ApiException.FieldError>> fields) {
-        return new ErrorResponse(
-                400,
-                "VALIDATION_FAILED",
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Request validation failed",
-                fields,
-                MDC.get(MDC_REQUEST_ID),
-                Instant.now()
-        );
-    }
-
-    /**
-     * Builds an error response for legacy exceptions not yet migrated
-     * to {@link ApiException}.
-     *
-     * <p>This method bridges the old string-only exceptions to the new
-     * envelope shape. It will be removed after all throw sites are
-     * migrated.
-     *
-     * @param status  the HTTP status code
-     * @param code    the error code string
-     * @param message the error message
-     * @return the error response
-     * @deprecated Remove after all throw sites use {@link ApiException}
-     */
-    @Deprecated
-    public static ErrorResponse fromLegacyException(int status, String code, String message) {
-        return new ErrorResponse(
-                status,
-                code,
-                HttpStatus.valueOf(status).getReasonPhrase(),
-                message,
-                null,
-                MDC.get(MDC_REQUEST_ID),
-                Instant.now()
-        );
+        return build(CommonErrorCode.VALIDATION_FAILED,
+                CommonErrorCode.VALIDATION_FAILED.defaultMessage(), fields);
     }
 
     /**
@@ -126,12 +77,18 @@ public final class ErrorResponseFactory {
      * @return the error response with status 500
      */
     public static ErrorResponse fromUnexpectedError() {
+        return fromErrorCode(CommonErrorCode.UNEXPECTED_ERROR);
+    }
+
+    private static ErrorResponse build(ErrorCode errorCode,
+                                       String message,
+                                       Map<String, List<ApiException.FieldError>> fields) {
         return new ErrorResponse(
-                500,
-                "UNEXPECTED_ERROR",
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "An unexpected error occurred",
-                null,
+                errorCode.status(),
+                errorCode.code(),
+                HttpStatus.valueOf(errorCode.status()).getReasonPhrase(),
+                message,
+                fields,
                 MDC.get(MDC_REQUEST_ID),
                 Instant.now()
         );

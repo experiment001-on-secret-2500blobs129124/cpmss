@@ -73,7 +73,7 @@ public class UnitService {
      *
      * @param id the unit's UUID primary key
      * @return the matching unit response
-     * @throws ResourceNotFoundException if no unit exists with this ID
+     * @throws ApiException if no unit exists with this ID
      */
     @Transactional(readOnly = true)
     public UnitResponse getById(UUID id) {
@@ -97,7 +97,7 @@ public class UnitService {
      *
      * @param request the create request with unit details and building ID
      * @return the created unit response
-     * @throws ResourceNotFoundException if the building does not exist
+     * @throws ApiException if the building does not exist
      */
     @Transactional
     public UnitResponse create(CreateUnitRequest request) {
@@ -133,7 +133,7 @@ public class UnitService {
      * @param id      the unit's UUID
      * @param request the update request with new values
      * @return the updated unit response
-     * @throws ResourceNotFoundException if the unit or building does not exist
+     * @throws ApiException if the unit or building does not exist
      */
     @Transactional
     public UnitResponse update(UUID id, UpdateUnitRequest request) {
@@ -172,7 +172,7 @@ public class UnitService {
      * Deletes a unit by ID.
      *
      * @param id the unit's UUID
-     * @throws ResourceNotFoundException if no unit exists with this ID
+     * @throws ApiException if no unit exists with this ID
      */
     @Transactional
     public void delete(UUID id) {
@@ -190,7 +190,7 @@ public class UnitService {
      * @param unitId  the unit's UUID
      * @param request the pricing details (effective date + listing price)
      * @return the created pricing history response
-     * @throws ResourceNotFoundException if the unit does not exist
+     * @throws ApiException if the unit does not exist
      */
     @Transactional
     public UnitPricingHistoryResponse addPricingHistory(UUID unitId,
@@ -214,7 +214,7 @@ public class UnitService {
      *
      * @param unitId the unit's UUID
      * @return pricing history entries, most recent first
-     * @throws ResourceNotFoundException if the unit does not exist
+     * @throws ApiException if the unit does not exist
      */
     @Transactional(readOnly = true)
     public List<UnitPricingHistoryResponse> getPricingHistory(UUID unitId) {
@@ -236,7 +236,7 @@ public class UnitService {
      * @param unitId  the unit's UUID
      * @param request the status details (effective date + status)
      * @return the created status history response
-     * @throws ResourceNotFoundException if the unit does not exist
+     * @throws ApiException if the unit does not exist
      */
     @Transactional
     public UnitStatusHistoryResponse addStatusHistory(UUID unitId,
@@ -260,7 +260,7 @@ public class UnitService {
      *
      * @param unitId the unit's UUID
      * @return status history entries, most recent first
-     * @throws ResourceNotFoundException if the unit does not exist
+     * @throws ApiException if the unit does not exist
      */
     @Transactional(readOnly = true)
     public List<UnitStatusHistoryResponse> getStatusHistory(UUID unitId) {

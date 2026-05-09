@@ -347,7 +347,7 @@ public class {Feature}Rules {
 
     public void validateCanAddUnit({Feature} entity) {
         if (entity.getUnits().size() >= entity.getMaxUnits()) {
-            throw new BusinessException("{Feature} has reached maximum unit capacity");
+            throw new ApiException({Feature}ErrorCode.UNIT_CAPACITY_REACHED);
         }
     }
 }
