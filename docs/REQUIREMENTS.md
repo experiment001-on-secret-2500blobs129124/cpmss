@@ -15,7 +15,30 @@
 4. [Functional Requirements by Role](#4-functional-requirements-by-role)
 5. [Business Rules](#5-business-rules)
 6. [User Stories (Multi-Step Workflows)](#6-user-stories-multi-step-workflows)
-7. [Admin Production Lockdown](#7-admin-production-lockdown)
+7. [Planned Product Areas and Open Questions](#7-planned-product-areas-and-open-questions)
+8. [Admin Production Lockdown](#8-admin-production-lockdown)
+
+---
+
+## How to Read This Document
+
+This document is the product contract used before implementation:
+
+- **Functional requirements** define what the system does for each role.
+- **Business rules** define domain rules the backend must enforce.
+- **Permissions** define who can do each action.
+- **Data scope** defines which records an allowed user can touch.
+- **Workflows** define multi-step business processes that must be transactional
+  where partial completion would corrupt the business state.
+- **Open questions** mark behavior that is not safe to invent during coding.
+
+Status labels:
+
+- **Implemented**: behavior exists on the current committed branch.
+- **Partial**: some behavior exists, but the requirement is not complete.
+- **Planned**: product requirement is accepted but not implemented yet.
+- **Future**: useful later, outside the current implementation queue.
+- **Open question**: needs a product decision before implementation.
 
 ---
 
@@ -35,14 +58,15 @@ the data structures in V1 — every table implies someone who reads or writes it
 | **Gate Guard** | Processes gate entries, scans permits, logs anonymous vehicle plates. | Enters_At (write), Gate_Guard_Assignment (read own), Access_Permit (read/verify) |
 | **Regular Staff** | Views own attendance, own tasks, own salary history, own profile. Cannot modify anything except maybe own contact info. | Attends (read own), Assigned_Task (read own), Staff_Salary_History (read own), Staff_Profile (read own) |
 | **Tenant** | Views own contract, installment schedule, payment history. NOT a system user — interacts via **frontend portal** (future). | Contract (read own), Installment (read own), Payment (read own), Person_Resides_Under (read own) |
-| **Investor** | Views investment stakes, compound financials (dashboards). **Logs in** — the one non-staff persona with software access. | Person_Invests_in_Compound (read own), Payment (read aggregates), Contract (read occupancy rates) |
+| **Investor** | Views investment stakes, compound financials (dashboards). **Logs in** as a non-staff read-only role. | Person_Invests_in_Compound (read own), Payment (read aggregates), Contract (read occupancy rates) |
 | **Visitor** | No system access. Exists only as a Person record + Visitor role + Access_Permit for gate entry. | None directly |
 
 > **Key insight**: Not every persona needs a unique `system_role`. Some personas
 > never log in (Tenant, Visitor). Their identity is captured by their
 > **business role** in the `Person_Role` table. Only personas who need software
-> access get an `App_User` row with a `system_role`. The **Investor** is the one
-> non-staff persona who logs in — they get a read-only dashboard role.
+> access get an `App_User` row with a `system_role`. **Investor** and
+> **Applicant** are the current non-staff login roles. **Tenant** and
+> **Visitor** remain non-login personas for the current scope.
 
 ---
 
@@ -80,9 +104,36 @@ These are **software permission levels**. Only people who need to LOG IN get one
 | `INVESTOR` | Compound investor | **Read-only dashboard.** Investment stakes, compound financial summaries, occupancy rates. Non-staff. | None (read-only) |
 | `APPLICANT` | Job applicants | Job portal only: browse positions, submit applications, upload CV. Non-staff. | Application (write own), Person (write own profile) |
 
-> **Audit result**: 12 roles. 9 staff-based + 3 non-staff (ADMIN, INVESTOR, APPLICANT).
-> Every V1 table cluster is covered. No "sales" role needed —
-> leasing/sales operations map to ACCOUNTANT (contracts + pricing).
+> **Role model**: 12 roles. 9 staff-based + 3 non-staff
+> (`ADMIN`, `INVESTOR`, `APPLICANT`). Leasing and sales duties are handled by
+> `ACCOUNTANT` because the current product scope treats contracts, pricing,
+> installments, and payment collection as finance work.
+
+### Permission Policy
+
+- Backend authorization is **default deny**: if an action is not explicitly
+  allowed, the server must deny it.
+- Frontend hiding controls is not security. The backend must enforce every
+  permission and data-scope rule.
+- Broad route access and resource ownership are separate checks. A role may be
+  allowed to call an endpoint but still be denied for a specific record.
+- `GENERAL_MANAGER` can access all business records.
+- `ADMIN` is break-glass access for setup and recovery, not normal business
+  operations.
+
+### Data Scopes
+
+| Scope | Meaning |
+|-------|---------|
+| Own record | Records linked to the logged-in person's `person_id`. |
+| Own department | Staff, tasks, attendance, KPI, and reviews for the department the actor manages or belongs to. |
+| Own team / supervisees | Staff linked through active `Person_Supervision` rows. |
+| Assigned gate | Gate entry work for the guard's active gate assignment. |
+| Assigned role inbox | Internal reports assigned to the actor's `system_role`. |
+| Own application | Applications and interviews linked to the applicant's own person record. |
+| Own investment stake | Investment records linked to the investor's own person record. |
+| All business records | `GENERAL_MANAGER` business visibility across the compound. |
+| Break-glass | `ADMIN` recovery access, limited by production operating policy. |
 
 ---
 
@@ -414,11 +465,17 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 > **User Story**: The Applicant is a job seeker who registers on the portal.
 > They are NOT staff — they have no access to any operational data.
+>
+> **Status**: Planned. Applicant login exists as a system role in the
+> requirements, but the full applicant portal and CV workflow are not complete
+> in the current implementation.
 
 ```
 - Can self-register (creates own Person + AppUser with role = APPLICANT)
 - Can update own profile (name, contact info, qualifications)
 - Can upload CV (via MinIO — stored as file_url)
+- Future: can view applicant document/CV history when document metadata is
+  added.
 - Can view open positions (Staff_Position catalog — read only)
 - Can submit Applications (applicant_id = self, position_id, application_date)
 - Can view own application status and history
@@ -429,6 +486,9 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 ```
 
 ### INVESTOR
+
+> **Status**: Planned. Investor login is a required read-only portal role; the
+> dedicated dashboard/read model is not complete in the current implementation.
 
 ```
 - Can view own investment stakes (Person_Invests_in_Compound — own records)
@@ -467,6 +527,22 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 - Blacklisted persons cannot be issued new Access_Permits
   → AccessPermitRules.java
+```
+
+### Supervision Rules
+
+```
+- A person cannot supervise themselves
+  → Implemented in schema by chk_no_self_supervision; service enforcement must
+    remain explicit when supervision workflows are completed.
+
+- Open question: should supervision cycles be rejected across the whole chain?
+
+- Open question: must supervisor and supervisee belong to the same department?
+
+- Open question: can a supervisee have more than one active supervisor?
+
+- Open question: must every supervision chain end at the department manager?
 ```
 
 ### Staff & Position Rules
@@ -651,6 +727,21 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
   → AuthRules.java
 ```
 
+### Time Policy
+
+```
+- Business timezone is Africa/Cairo.
+
+- Backend code must not rely on the server default timezone for business dates,
+  month closes, permit validity, payroll periods, or KPI periods.
+
+- Date/time behavior must use timezone database rules so summer/winter time
+  changes follow the official Africa/Cairo timezone.
+
+- Open question: exact cutoff times for payroll close, KPI close, permit
+  expiry, and overdue installment classification.
+```
+
 ---
 
 ## 6. User Stories (Multi-Step Workflows)
@@ -818,6 +909,10 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 > As a **job seeker**, I want to register on the portal, browse open
 > positions, and submit my application without staff involvement.
+>
+> **Status**: Planned. The role and target workflow are part of the product
+> requirements; MinIO CV upload and applicant-owned document history still need
+> implementation.
 
 ```
 1. Applicant visits /register → creates own Person record + AppUser (role = APPLICANT)
@@ -832,7 +927,74 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 
 ---
 
-## 7. Admin Production Lockdown
+## 7. Planned Product Areas and Open Questions
+
+This section prevents accepted future work from being forgotten while keeping
+it separate from behavior that already exists.
+
+### Applicant Portal
+
+**Status**: Planned.
+
+```
+- Applicant login through APPLICANT system role.
+- Own profile management.
+- Own applications and interview schedule/history.
+- CV upload/download through MinIO.
+- Future applicant document history after document metadata exists.
+```
+
+### Investor Portal
+
+**Status**: Planned.
+
+```
+- Investor login through INVESTOR system role.
+- Own investment stake visibility.
+- Read-only dashboard.
+- Aggregate financial and occupancy statistics.
+- No operational write access.
+```
+
+### Payment Provider Demo
+
+**Status**: Planned.
+
+```
+- Fake provider interface for demos, e.g. fake Fawry.
+- Payment attempt history with provider reference and provider status.
+- No raw card storage.
+- Masked card display only if a UI needs it.
+- Open question: exact provider statuses and retry/cancel behavior.
+```
+
+### Supervision Policy
+
+**Status**: Open question.
+
+```
+- No self-supervision is required.
+- Decide whether supervision cycles are forbidden.
+- Decide whether supervisor and supervisee must share a department.
+- Decide whether there can be only one active supervisor per supervisee.
+- Decide whether every supervision chain must terminate at a department manager.
+```
+
+### Time and Calendar Policy
+
+**Status**: Partial.
+
+```
+- Business timezone is Africa/Cairo.
+- Do not depend on server default timezone.
+- Use timezone database behavior for summer/winter time.
+- Decide exact close/cutoff times before implementing payroll, KPI, permit,
+  and installment overdue automation.
+```
+
+---
+
+## 8. Admin Production Lockdown
 
 When the system goes to production, the ADMIN account should be treated as a
 "break-glass" emergency access account — not an everyday login.
@@ -872,12 +1034,13 @@ public void validateRoleChangeAllowed(SystemRole changerRole, SystemRole targetR
 
 ## Appendix A: Security Layer Mapping
 
-Once this document is filled in, the engineering implementation is:
+Engineering mapping:
 
 | This document section | Maps to code layer |
 |----------------------|-------------------|
 | System Roles | `SystemRole.java` enum + `V4__add_auth_constraints.sql` |
-| "Who can do it" column | `SecurityConfig.java` (`.requestMatchers().hasRole()`) + `@PreAuthorize` |
+| Permissions / "who can do it" | Security configuration, role-policy classes, and method-level checks |
+| Data scope / "which records" | Service and rules classes using repository-backed ownership checks |
 | Business Rules | `{Feature}Rules.java` |
 | Workflows | `{Feature}Service.java` (`@Transactional`) |
 | Functional Requirements | Controller endpoints + Service methods |
