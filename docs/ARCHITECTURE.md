@@ -392,9 +392,9 @@ Standard error response format:
 ```json
 {
   "status": 422,
-  "code": "BUSINESS_RULE_VIOLATION",
+  "code": "DOMAIN_RULE_INVALID",
   "error": "Unprocessable Entity",
-  "message": "Domain rule violated",
+  "message": "Domain rule is invalid"
   "requestId": "5c27db63-8c1f-44df-a06f-869cfbfc6ad5",
   "timestamp": "2026-05-09T12:00:00Z"
 }

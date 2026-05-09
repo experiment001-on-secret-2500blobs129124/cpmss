@@ -149,7 +149,6 @@ only when a rule or error boundary needs a distinct client contract.
 | `ACCESS_DENIED` | 403 | Authenticated user lacks route or resource permission. |
 | `RESOURCE_NOT_FOUND` | 404 | Requested entity or aggregate was not found. |
 | `RESOURCE_CONFLICT` | 409 | Existing state conflicts with the requested change. |
-| `BUSINESS_RULE_VIOLATION` | 422 | Temporary fallback while migrating older string-only rules. |
 | `UNEXPECTED_ERROR` | 500 | Unexpected server failure. |
 
 ### Identity And Authorization
@@ -367,8 +366,8 @@ only when a rule or error boundary needs a distinct client contract.
 - Error codes live in a typed Java enum under `platform.common` or
   `platform.exception`.
 - Custom exceptions carry a stable code and human-readable message.
-- `BUSINESS_RULE_VIOLATION` is only a fallback for legacy string-only rules;
-  new rules use specific codes.
+- Do not add generic fallback business-rule codes. New rules require
+  specific domain or platform codes.
 - Tests prove that each exception maps to the intended status and code.
 
 ### Request IDs

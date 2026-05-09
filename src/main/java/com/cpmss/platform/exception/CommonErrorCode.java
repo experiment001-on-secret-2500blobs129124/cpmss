@@ -49,13 +49,6 @@ public enum CommonErrorCode implements ErrorCode {
     /** Existing state conflicts with the requested change. */
     RESOURCE_CONFLICT(409, "Resource state conflict"),
 
-    // --- Business Rule Fallback ---
-
-    /**
-     * Temporary fallback for legacy string-only throw sites not yet
-     * migrated to a specific error code.
-     */
-    BUSINESS_RULE_VIOLATION(422, "Business rule violated"),
 
     // --- Unexpected ---
 
