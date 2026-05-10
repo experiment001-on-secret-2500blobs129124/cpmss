@@ -1,8 +1,8 @@
 package com.cpmss.performance.staffperformancereview;
 
 import com.cpmss.performance.common.PerformanceErrorCode;
-import com.cpmss.platform.exception.ApiException;
 import com.cpmss.performance.common.PerformanceRating;
+import com.cpmss.platform.exception.ApiException;
 
 import java.util.UUID;
 
@@ -49,5 +49,23 @@ public class StaffPerformanceReviewRules {
             throw new ApiException(PerformanceErrorCode.POOR_RATING_INCONSISTENT);
         }
         return rating;
+    }
+
+    /**
+     * Validates that workflow outcome flags are not changed by the generic
+     * review update endpoint. Outcome changes require the create workflow
+     * because promotion and raise details must be written atomically.
+     *
+     * @param currentPromotion current promotion flag
+     * @param currentRaise current raise flag
+     * @param nextPromotion requested promotion flag
+     * @param nextRaise requested raise flag
+     * @throws ApiException if an outcome flag would change
+     */
+    public void validateOutcomeFlagsUnchanged(boolean currentPromotion, boolean currentRaise,
+                                              boolean nextPromotion, boolean nextRaise) {
+        if (currentPromotion != nextPromotion || currentRaise != nextRaise) {
+            throw new ApiException(PerformanceErrorCode.REVIEW_OUTCOME_IMMUTABLE);
+        }
     }
 }

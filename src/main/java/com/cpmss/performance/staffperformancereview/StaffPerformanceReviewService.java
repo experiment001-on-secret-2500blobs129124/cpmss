@@ -1,5 +1,13 @@
 package com.cpmss.performance.staffperformancereview;
 
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.hr.staffposition.StaffPosition;
+import com.cpmss.hr.staffposition.StaffPositionRepository;
+import com.cpmss.hr.staffpositionhistory.StaffPositionHistory;
+import com.cpmss.hr.staffpositionhistory.StaffPositionHistoryRepository;
+import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistory;
+import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistoryRepository;
+import com.cpmss.hr.staffsalaryhistory.StaffSalaryRules;
 import com.cpmss.identity.auth.CurrentUser;
 import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.organization.common.DepartmentScopeService;
@@ -44,10 +52,14 @@ public class StaffPerformanceReviewService {
     private final StaffPerformanceReviewRepository repository;
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
+    private final StaffPositionRepository staffPositionRepository;
+    private final StaffPositionHistoryRepository positionHistoryRepository;
+    private final StaffSalaryHistoryRepository salaryHistoryRepository;
     private final StaffPerformanceReviewMapper mapper;
     private final CurrentUserService currentUserService;
     private final DepartmentScopeService departmentScopeService;
     private final StaffPerformanceReviewRules rules = new StaffPerformanceReviewRules();
+    private final StaffSalaryRules salaryRules = new StaffSalaryRules();
     private final PerformanceAccessRules accessRules = new PerformanceAccessRules();
 
     /**
@@ -56,17 +68,26 @@ public class StaffPerformanceReviewService {
      * @param repository repository for review rows
      * @param personRepository repository used to resolve staff and reviewers
      * @param departmentRepository repository used to resolve departments
+     * @param staffPositionRepository repository used to resolve promotion positions
+     * @param positionHistoryRepository repository used to write promotion history
+     * @param salaryHistoryRepository repository used to write raise history
      * @param mapper mapper used to expose primitive DTO values
      */
     public StaffPerformanceReviewService(StaffPerformanceReviewRepository repository,
                                          PersonRepository personRepository,
                                          DepartmentRepository departmentRepository,
+                                         StaffPositionRepository staffPositionRepository,
+                                         StaffPositionHistoryRepository positionHistoryRepository,
+                                         StaffSalaryHistoryRepository salaryHistoryRepository,
                                          StaffPerformanceReviewMapper mapper,
                                          CurrentUserService currentUserService,
                                          DepartmentScopeService departmentScopeService) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.departmentRepository = departmentRepository;
+        this.staffPositionRepository = staffPositionRepository;
+        this.positionHistoryRepository = positionHistoryRepository;
+        this.salaryHistoryRepository = salaryHistoryRepository;
         this.mapper = mapper;
         this.currentUserService = currentUserService;
         this.departmentScopeService = departmentScopeService;
@@ -147,11 +168,13 @@ public class StaffPerformanceReviewService {
                 .overallKpiScore(overallScore)
                 .overallRating(rating)
                 .notes(request.notes())
-                .resultedInPromotion(request.resultedInPromotion() != null ? request.resultedInPromotion() : false)
-                .resultedInRaise(request.resultedInRaise() != null ? request.resultedInRaise() : false)
+                .resultedInPromotion(Boolean.TRUE.equals(request.resultedInPromotion()))
+                .resultedInRaise(Boolean.TRUE.equals(request.resultedInRaise()))
                 .build();
         review = repository.save(review);
-        log.info("Performance review created: {} for staff {}", review.getId(), request.staffId());
+        applyReviewOutcomes(request, review, staff, reviewer);
+        log.info("performance_review_created reviewId={} staffId={}",
+                review.getId(), request.staffId());
         return mapper.toResponse(review);
     }
 
@@ -161,27 +184,103 @@ public class StaffPerformanceReviewService {
      * @param id the performance review UUID
      * @param request the replacement review values
      * @return the updated performance review response
-      * @throws ApiException if no review exists with this ID or the rating or
-      *                      score is invalid
+     * @throws ApiException if no review exists with this ID or the rating or
+     *                      score is invalid
      */
     @Transactional
-    public StaffPerformanceReviewResponse update(UUID id, UpdateStaffPerformanceReviewRequest request) {
+    public StaffPerformanceReviewResponse update(UUID id,
+                                                 UpdateStaffPerformanceReviewRequest request) {
         CurrentUser user = currentUserService.currentUser();
         StaffPerformanceReview review = findOrThrow(id);
         accessRules.requireCanManageDepartment(
                 user, review.getDepartment().getId(), departmentScopeService);
+        boolean nextPromotion = request.resultedInPromotion() != null
+                ? request.resultedInPromotion()
+                : Boolean.TRUE.equals(review.getResultedInPromotion());
+        boolean nextRaise = request.resultedInRaise() != null
+                ? request.resultedInRaise()
+                : Boolean.TRUE.equals(review.getResultedInRaise());
+        rules.validateOutcomeFlagsUnchanged(
+                Boolean.TRUE.equals(review.getResultedInPromotion()),
+                Boolean.TRUE.equals(review.getResultedInRaise()),
+                nextPromotion, nextRaise);
         PerformanceRating rating = rules.validatePromotionConsistency(
-                request.overallRating(),
-                request.resultedInPromotion() != null && request.resultedInPromotion(),
-                request.resultedInRaise() != null && request.resultedInRaise());
+                request.overallRating(), nextPromotion, nextRaise);
         review.setOverallKpiScore(KpiScore.nullable(request.overallKpiScore()));
         review.setOverallRating(rating);
         review.setNotes(request.notes());
-        review.setResultedInPromotion(request.resultedInPromotion() != null ? request.resultedInPromotion() : false);
-        review.setResultedInRaise(request.resultedInRaise() != null ? request.resultedInRaise() : false);
+        review.setResultedInPromotion(nextPromotion);
+        review.setResultedInRaise(nextRaise);
         review = repository.save(review);
-        log.info("Performance review updated: {}", review.getId());
+        log.info("performance_review_updated reviewId={}", review.getId());
         return mapper.toResponse(review);
+    }
+
+    private void applyReviewOutcomes(CreateStaffPerformanceReviewRequest request,
+                                     StaffPerformanceReview review,
+                                     Person staff,
+                                     Person reviewer) {
+        if (Boolean.TRUE.equals(request.resultedInPromotion())) {
+            applyPromotion(request, review, staff, reviewer);
+        }
+        if (Boolean.TRUE.equals(request.resultedInRaise())) {
+            applyRaise(request, review, staff, reviewer);
+        }
+    }
+
+    private void applyPromotion(CreateStaffPerformanceReviewRequest request,
+                                StaffPerformanceReview review,
+                                Person staff,
+                                Person reviewer) {
+        if (request.newPositionId() == null) {
+            throw new ApiException(PerformanceErrorCode.PROMOTION_POSITION_REQUIRED);
+        }
+        StaffPosition position = staffPositionRepository.findById(request.newPositionId())
+                .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
+        positionHistoryRepository.findByPersonIdAndEndDateIsNull(staff.getId())
+                .ifPresent(current -> {
+                    if (!current.getEffectiveDate().isBefore(request.reviewDate())) {
+                        throw new ApiException(HrErrorCode.STAFF_POSITION_ASSIGNMENT_OVERLAP);
+                    }
+                    current.setEndDate(request.reviewDate().minusDays(1));
+                    positionHistoryRepository.save(current);
+                });
+
+        StaffPositionHistory history = new StaffPositionHistory();
+        history.setPerson(staff);
+        history.setPosition(position);
+        history.setEffectiveDate(request.reviewDate());
+        history.setAuthorizedBy(reviewer);
+        positionHistoryRepository.save(history);
+    }
+
+    private void applyRaise(CreateStaffPerformanceReviewRequest request,
+                            StaffPerformanceReview review,
+                            Person staff,
+                            Person reviewer) {
+        if (request.newBaseDailyRate() == null || request.newMaximumSalary() == null) {
+            throw new ApiException(PerformanceErrorCode.RAISE_SALARY_REQUIRED);
+        }
+        salaryRules.validateBaseDailyRatePositive(request.newBaseDailyRate());
+        salaryRules.validateMaximumSalaryPositive(request.newMaximumSalary());
+        if (salaryHistoryRepository.existsByStaffIdAndEffectiveDate(
+                staff.getId(), request.reviewDate())) {
+            throw new ApiException(HrErrorCode.STAFF_SALARY_HISTORY_DUPLICATE);
+        }
+        salaryHistoryRepository.findByStaffIdAndEndDateIsNull(staff.getId())
+                .ifPresent(current -> {
+                    current.setEndDate(request.reviewDate().minusDays(1));
+                    salaryHistoryRepository.save(current);
+                });
+
+        StaffSalaryHistory history = new StaffSalaryHistory();
+        history.setStaff(staff);
+        history.setEffectiveDate(request.reviewDate());
+        history.setBaseDailyRate(request.newBaseDailyRate());
+        history.setMaximumSalary(request.newMaximumSalary());
+        history.setApprovedBy(reviewer);
+        history.setReviewId(review.getId());
+        salaryHistoryRepository.save(history);
     }
 
     private boolean canViewReview(CurrentUser user, StaffPerformanceReview review) {

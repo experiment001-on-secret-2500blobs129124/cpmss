@@ -20,6 +20,9 @@ import java.util.UUID;
  * @param notes                free-text review notes (optional)
  * @param resultedInPromotion  whether this review resulted in a promotion
  * @param resultedInRaise      whether this review resulted in a raise
+ * @param newPositionId        promotion target position (required for promotion)
+ * @param newBaseDailyRate     raise daily rate (required for raise)
+ * @param newMaximumSalary     raise salary cap (required for raise)
  */
 public record CreateStaffPerformanceReviewRequest(
         @NotNull UUID staffId,
@@ -30,5 +33,8 @@ public record CreateStaffPerformanceReviewRequest(
         @Size(max = 20) String overallRating,
         String notes,
         Boolean resultedInPromotion,
-        Boolean resultedInRaise
+        Boolean resultedInRaise,
+        UUID newPositionId,
+        BigDecimal newBaseDailyRate,
+        BigDecimal newMaximumSalary
 ) {}
