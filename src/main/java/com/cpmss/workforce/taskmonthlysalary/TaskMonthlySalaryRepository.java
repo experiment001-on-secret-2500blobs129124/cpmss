@@ -3,6 +3,7 @@ package com.cpmss.workforce.taskmonthlysalary;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -24,4 +25,28 @@ public interface TaskMonthlySalaryRepository
      */
     List<TaskMonthlySalary> findByDepartmentIdAndYearAndMonth(
             UUID departmentId, Integer year, Integer month);
+
+    /**
+     * Finds a closed payroll row for a specific staff, department, and month.
+     *
+     * @param staffId the staff member UUID
+     * @param departmentId the department UUID
+     * @param year the payroll year
+     * @param month the payroll month
+     * @return the payroll row, if closed
+     */
+    Optional<TaskMonthlySalary> findByStaffIdAndDepartmentIdAndYearAndMonth(
+            UUID staffId, UUID departmentId, Integer year, Integer month);
+
+    /**
+     * Checks whether payroll was already closed for a staff/department/month.
+     *
+     * @param staffId the staff member UUID
+     * @param departmentId the department UUID
+     * @param year the payroll year
+     * @param month the payroll month
+     * @return true when a row already exists
+     */
+    boolean existsByStaffIdAndDepartmentIdAndYearAndMonth(
+            UUID staffId, UUID departmentId, Integer year, Integer month);
 }
