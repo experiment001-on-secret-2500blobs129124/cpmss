@@ -1,10 +1,23 @@
 package com.cpmss.identity.auth;
 
+import com.cpmss.hr.application.Application;
+import com.cpmss.hr.application.ApplicationRepository;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.hr.staffposition.StaffPosition;
+import com.cpmss.hr.staffposition.StaffPositionRepository;
 import com.cpmss.identity.auth.dto.AppUserResponse;
+import com.cpmss.identity.auth.dto.ApplicantRegistrationResponse;
 import com.cpmss.identity.auth.dto.CreateAppUserRequest;
+import com.cpmss.identity.auth.dto.RegisterApplicantRequest;
 import com.cpmss.identity.auth.dto.UpdateUserRoleRequest;
-import com.cpmss.people.common.EmailAddress;
 import com.cpmss.identity.common.IdentityErrorCode;
+import com.cpmss.people.common.EmailAddress;
+import com.cpmss.people.common.PassportNumber;
+import com.cpmss.people.person.Person;
+import com.cpmss.people.person.PersonEmail;
+import com.cpmss.people.person.PersonPhone;
+import com.cpmss.people.person.PersonRules;
+import com.cpmss.people.person.PersonRepository;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
 import com.cpmss.platform.util.AuthUtils;
@@ -18,6 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -39,24 +53,37 @@ public class AppUserService {
 
     private final AppUserRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final PersonRepository personRepository;
+    private final StaffPositionRepository staffPositionRepository;
+    private final ApplicationRepository applicationRepository;
     private final AppUserMapper mapper;
     private final CurrentUserService currentUserService;
     private final AppUserRules rules = new AppUserRules();
     private final AppUserAccessRules accessRules = new AppUserAccessRules();
+    private final PersonRules personRules = new PersonRules();
 
     /**
      * Constructs the service with required dependencies.
      *
      * @param repository      user data access
      * @param passwordEncoder BCrypt password encoder
+     * @param personRepository person data access for applicant profiles
+     * @param staffPositionRepository staff position data access for applications
+     * @param applicationRepository application data access
      * @param mapper          entity-DTO mapper
      */
     public AppUserService(AppUserRepository repository,
                           PasswordEncoder passwordEncoder,
+                          PersonRepository personRepository,
+                          StaffPositionRepository staffPositionRepository,
+                          ApplicationRepository applicationRepository,
                           AppUserMapper mapper,
                           CurrentUserService currentUserService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.personRepository = personRepository;
+        this.staffPositionRepository = staffPositionRepository;
+        this.applicationRepository = applicationRepository;
         this.mapper = mapper;
         this.currentUserService = currentUserService;
     }
@@ -132,7 +159,7 @@ public class AppUserService {
                 .personId(request.personId())
                 .build();
         user = repository.save(user);
-        log.info("User account created: {} with role {}", user.getEmail(), user.getSystemRole());
+        log.info("user_account_created userId={} role={}", user.getId(), user.getSystemRole());
         return mapper.toResponse(user);
     }
 
@@ -157,11 +184,69 @@ public class AppUserService {
                 .systemRole(SystemRole.APPLICANT)
                 .active(true)
                 .forcePasswordChange(false)
-                .personId(request.personId())
+                .personId(null)
                 .build();
         user = repository.save(user);
-        log.info("Applicant self-registered: {}", user.getEmail());
+        log.info("applicant_account_registered userId={}", user.getId());
         return mapper.toResponse(user);
+    }
+
+
+    /**
+     * Registers a new applicant, creates their Person profile, and records the
+     * first job application in one transaction.
+     *
+     * @param request applicant registration and application details
+     * @return created account, person, and application identifiers
+     */
+    @Transactional
+    public ApplicantRegistrationResponse registerApplicant(RegisterApplicantRequest request) {
+        EmailAddress loginEmail = EmailAddress.of(request.email());
+        PassportNumber passportNo = PassportNumber.of(request.passportNo());
+        rules.validateEmailUnique(loginEmail.value(), repository.existsByEmail(loginEmail));
+        personRules.validatePassportUnique(
+                passportNo, personRepository.existsByPassportNo(passportNo));
+        StaffPosition position = staffPositionRepository.findById(request.positionId())
+                .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
+
+        Person person = Person.builder()
+                .passportNo(passportNo)
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .isBlacklisted(false)
+                .build();
+        person.getEmails().add(new PersonEmail(loginEmail.value()));
+        person.getPhones().add(new PersonPhone(request.countryCode(), request.phone()));
+        person = personRepository.save(person);
+
+        LocalDate applicationDate = request.applicationDate() != null
+                ? request.applicationDate() : LocalDate.now();
+        if (applicationRepository.existsByApplicantIdAndPositionIdAndApplicationDate(
+                person.getId(), request.positionId(), applicationDate)) {
+            throw new ApiException(HrErrorCode.APPLICATION_DUPLICATE);
+        }
+
+        AppUser user = AppUser.builder()
+                .email(loginEmail)
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .systemRole(SystemRole.APPLICANT)
+                .active(true)
+                .forcePasswordChange(false)
+                .personId(person.getId())
+                .build();
+        user = repository.save(user);
+
+        Application application = new Application();
+        application.setApplicant(person);
+        application.setPosition(position);
+        application.setApplicationDate(applicationDate);
+        applicationRepository.save(application);
+
+        log.info("applicant_registered_and_applied "
+                        + "userId={} personId={} positionId={} applicationDate={}",
+                user.getId(), person.getId(), position.getId(), applicationDate);
+        return new ApplicantRegistrationResponse(
+                mapper.toResponse(user), person.getId(), position.getId(), applicationDate);
     }
 
     /**
@@ -188,8 +273,8 @@ public class AppUserService {
         AppUser user = findOrThrow(userId);
         user.setSystemRole(request.systemRole());
         user = repository.save(user);
-        log.info("User {} role changed to {} by {}",
-                user.getEmail(), user.getSystemRole(), actorId);
+        log.info("user_role_changed userId={} role={} actorId={}",
+                user.getId(), user.getSystemRole(), actorId);
         return mapper.toResponse(user);
     }
 
@@ -217,8 +302,8 @@ public class AppUserService {
         AppUser user = findOrThrow(userId);
         user.setActive(active);
         user = repository.save(user);
-        log.info("User {} active status changed to {} by {}",
-                user.getEmail(), active, actorId);
+        log.info("user_status_changed userId={} active={} actorId={}",
+                user.getId(), active, actorId);
         return mapper.toResponse(user);
     }
 

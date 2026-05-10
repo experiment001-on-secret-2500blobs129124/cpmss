@@ -36,7 +36,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Orchestrates KPI scoring and monthly close workflow (US-9).
+ * Orchestrates KPI scoring and monthly close workflow (US-8).
  *
  * <p>Request and response DTOs keep primitive score and period fields, while
  * this service converts score input and monthly snapshot output through
@@ -134,7 +134,7 @@ public class KpiService {
         record.setNotes(request.notes());
         record = kpiRecordRepository.save(record);
 
-        log.info("KPI recorded: staff={}, department={}, date={}, score={}",
+        log.info("kpi_recorded staffId={} departmentId={} recordDate={} score={}",
                 request.staffId(), request.departmentId(),
                 request.recordDate(), request.kpiScore());
         return toKpiRecordResponse(record);
@@ -171,8 +171,8 @@ public class KpiService {
      * @param month        the month (1-12)
      * @param closedById   the manager/HR who is closing
      * @return list of created summary responses
-          * @throws ApiException if the department or closer does not exist, or the
-          *                      closer/period is invalid
+     * @throws ApiException if the department or closer does not exist, or the
+     *                      closer/period is invalid
      */
     @Transactional
     public List<StaffKpiMonthlySummaryResponse> closeMonthlyKpi(
@@ -205,6 +205,10 @@ public class KpiService {
         for (var entry : byStaff.entrySet()) {
             List<StaffKpiRecord> staffRecords = entry.getValue();
             StaffKpiRecord sample = staffRecords.get(0);
+            if (kpiSummaryRepository.existsByStaffIdAndDepartmentIdAndYearAndMonth(
+                    sample.getStaff().getId(), departmentId, period.year(), period.month())) {
+                throw new ApiException(PerformanceErrorCode.KPI_MONTH_ALREADY_CLOSED);
+            }
 
             BigDecimal totalScore = staffRecords.stream()
                     .map(StaffKpiRecord::getKpiScore)
@@ -232,7 +236,7 @@ public class KpiService {
             results.add(kpiSummaryRepository.save(summary));
         }
 
-        log.info("Monthly KPI closed: department={}, period={}-{}, summaries={}",
+        log.info("kpi_month_closed departmentId={} year={} month={} summaries={}",
                 departmentId, year, month, results.size());
         return results.stream().map(this::toSummaryResponse).toList();
     }

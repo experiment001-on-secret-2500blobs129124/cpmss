@@ -10,6 +10,7 @@ import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
 import com.cpmss.leasing.installment.Installment;
 import com.cpmss.leasing.installment.InstallmentRepository;
+import com.cpmss.leasing.common.InstallmentStatus;
 import com.cpmss.leasing.common.LeasingErrorCode;
 import com.cpmss.finance.installmentpayment.InstallmentPayment;
 import com.cpmss.finance.installmentpayment.InstallmentPaymentRepository;
@@ -27,6 +28,7 @@ import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.maintenance.workorder.WorkOrder;
 import com.cpmss.maintenance.workorder.WorkOrderRepository;
+import com.cpmss.maintenance.workorder.WorkOrderStatus;
 import com.cpmss.platform.exception.ApiException;
 import com.cpmss.finance.workorderpayment.WorkOrderPayment;
 import com.cpmss.finance.workorderpayment.WorkOrderPaymentRepository;
@@ -36,6 +38,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalary;
+import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalaryRepository;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -65,6 +69,7 @@ public class PaymentService {
     private final InstallmentRepository installmentRepository;
     private final WorkOrderRepository workOrderRepository;
     private final DepartmentRepository departmentRepository;
+    private final TaskMonthlySalaryRepository taskMonthlySalaryRepository;
     private final CurrentUserService currentUserService;
     private final PaymentRules rules = new PaymentRules();
     private final FinanceAccessRules accessRules = new FinanceAccessRules();
@@ -90,6 +95,8 @@ public class PaymentService {
      * @param workOrderRepository repository used to resolve work orders
      * @param departmentRepository repository used to resolve payroll
      *                             departments
+     * @param taskMonthlySalaryRepository repository used to validate payroll
+     *                                    close rows before disbursement
      */
     public PaymentService(PaymentRepository paymentRepository,
                           InstallmentPaymentRepository installmentPaymentRepository,
@@ -100,6 +107,7 @@ public class PaymentService {
                           InstallmentRepository installmentRepository,
                           WorkOrderRepository workOrderRepository,
                           DepartmentRepository departmentRepository,
+                          TaskMonthlySalaryRepository taskMonthlySalaryRepository,
                           CurrentUserService currentUserService) {
         this.paymentRepository = paymentRepository;
         this.installmentPaymentRepository = installmentPaymentRepository;
@@ -110,6 +118,7 @@ public class PaymentService {
         this.installmentRepository = installmentRepository;
         this.workOrderRepository = workOrderRepository;
         this.departmentRepository = departmentRepository;
+        this.taskMonthlySalaryRepository = taskMonthlySalaryRepository;
         this.currentUserService = currentUserService;
     }
 
@@ -133,10 +142,14 @@ public class PaymentService {
     @Transactional
     public PaymentResponse createInstallmentPayment(CreateInstallmentPaymentRequest request) {
         accessRules.requireFinanceAuthority(currentUserService.currentUser());
-        Payment payment = createParentPayment(request.payment(), PaymentType.INSTALLMENT);
+        Payment payment = createParentPayment(request.payment(), PaymentType.INSTALLMENT,
+                PaymentDirection.INBOUND);
 
         Installment installment = installmentRepository.findById(request.installmentId())
                 .orElseThrow(() -> new ApiException(LeasingErrorCode.INSTALLMENT_NOT_FOUND));
+
+        ensureNoInstallmentPayment(payment.getId());
+        updateInstallmentStatus(installment, payment);
 
         InstallmentPayment child = new InstallmentPayment();
         child.setPayment(payment);
@@ -156,8 +169,8 @@ public class PaymentService {
      *
      * <p>Persists the parent {@link Payment} as an outbound vendor payment
      * and the child {@link WorkOrderPayment} that links it to the completed
-     * work order. This method does not perform work-order lifecycle changes;
-     * it only records the financial movement.
+     * work order. The work order must already be completed and is marked
+     * paid after the child payment row is created.
      *
      * @param request the work-order payment request, including parent payment
      *                data and the target work order
@@ -169,10 +182,16 @@ public class PaymentService {
     @Transactional
     public PaymentResponse createWorkOrderPayment(CreateWorkOrderPaymentRequest request) {
         accessRules.requireFinanceAuthority(currentUserService.currentUser());
-        Payment payment = createParentPayment(request.payment(), PaymentType.WORK_ORDER);
+        Payment payment = createParentPayment(request.payment(), PaymentType.WORK_ORDER,
+                PaymentDirection.OUTBOUND);
 
         WorkOrder workOrder = workOrderRepository.findById(request.workOrderId())
                 .orElseThrow(() -> new ApiException(MaintenanceErrorCode.WORK_ORDER_NOT_FOUND));
+
+        ensureNoWorkOrderPayment(payment.getId());
+        validateWorkOrderPayable(workOrder);
+        workOrder.setJobStatus(WorkOrderStatus.PAID);
+        workOrderRepository.save(workOrder);
 
         WorkOrderPayment child = new WorkOrderPayment();
         child.setPayment(payment);
@@ -205,12 +224,29 @@ public class PaymentService {
     @Transactional
     public PaymentResponse createPayrollPayment(CreatePayrollPaymentRequest request) {
         accessRules.requireFinanceAuthority(currentUserService.currentUser());
-        Payment payment = createParentPayment(request.payment(), PaymentType.PAYROLL);
+        Payment payment = createParentPayment(request.payment(), PaymentType.PAYROLL,
+                PaymentDirection.OUTBOUND);
 
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Department department = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND));
+
+        ensureNoPayrollPayment(payment.getId());
+        TaskMonthlySalary salary = taskMonthlySalaryRepository
+                .findByStaffIdAndDepartmentIdAndYearAndMonth(
+                        request.staffId(), request.departmentId(),
+                        request.payrollPeriod().year(), request.payrollPeriod().month())
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYROLL_RECORD_NOT_FOUND));
+        Money monthlyNetSalary = salary.getMonthlyNetSalary();
+        if (monthlyNetSalary != null && payment.getMoney() != null) {
+            if (!monthlyNetSalary.getCurrency().equals(payment.getMoney().getCurrency())) {
+                throw new ApiException(FinanceErrorCode.MONEY_CURRENCY_MISMATCH);
+            }
+            if (monthlyNetSalary.getAmount().compareTo(payment.getMoney().getAmount()) != 0) {
+                throw new ApiException(FinanceErrorCode.PAYMENT_AMOUNT_INVALID);
+            }
+        }
 
         PayrollPayment child = new PayrollPayment();
         child.setPayment(payment);
@@ -256,8 +292,12 @@ public class PaymentService {
 
     // ── Private helpers ─────────────────────────────────────────────────
 
-    private Payment createParentPayment(CreatePaymentRequest req, PaymentType enforceType) {
+    private Payment createParentPayment(CreatePaymentRequest req, PaymentType enforceType,
+                                        PaymentDirection expectedDirection) {
         PaymentDirection direction = rules.validateDirection(req.direction());
+        if (direction != expectedDirection) {
+            throw new ApiException(FinanceErrorCode.PAYMENT_DIRECTION_MISMATCH);
+        }
         PaymentMethod method = rules.validateMethod(req.method());
         Money money = Money.positive(req.money().getAmount(), req.money().getCurrency());
 
@@ -280,6 +320,51 @@ public class PaymentService {
                 .processedBy(processedBy)
                 .build();
         return paymentRepository.save(payment);
+    }
+
+
+    private void ensureNoInstallmentPayment(UUID paymentId) {
+        if (installmentPaymentRepository.existsByPaymentId(paymentId)) {
+            throw new ApiException(FinanceErrorCode.PAYMENT_DETAIL_DUPLICATE);
+        }
+    }
+
+    private void ensureNoWorkOrderPayment(UUID paymentId) {
+        if (workOrderPaymentRepository.existsByPaymentId(paymentId)) {
+            throw new ApiException(FinanceErrorCode.PAYMENT_DETAIL_DUPLICATE);
+        }
+    }
+
+    private void ensureNoPayrollPayment(UUID paymentId) {
+        if (payrollPaymentRepository.existsByPaymentId(paymentId)) {
+            throw new ApiException(FinanceErrorCode.PAYMENT_DETAIL_DUPLICATE);
+        }
+    }
+
+    private void updateInstallmentStatus(Installment installment, Payment payment) {
+        if (installment.getInstallmentStatus() == InstallmentStatus.PAID) {
+            throw new ApiException(LeasingErrorCode.INSTALLMENT_ALREADY_PAID);
+        }
+        InstallmentStatus nextStatus;
+        if (installment.getAmountExpected() != null && payment.getMoney() != null
+                && payment.getMoney().getAmount().compareTo(
+                        installment.getAmountExpected().getAmount()) >= 0) {
+            nextStatus = InstallmentStatus.PAID;
+        } else {
+            nextStatus = InstallmentStatus.PARTIALLY_PAID;
+        }
+        if (!installment.getInstallmentStatus().canTransitionTo(nextStatus)) {
+            throw new ApiException(LeasingErrorCode.INSTALLMENT_STATUS_TRANSITION_INVALID);
+        }
+        installment.setInstallmentStatus(nextStatus);
+        installmentRepository.save(installment);
+    }
+
+    private void validateWorkOrderPayable(WorkOrder workOrder) {
+        if (workOrder.getJobStatus() != WorkOrderStatus.COMPLETED
+                || !workOrder.getJobStatus().canTransitionTo(WorkOrderStatus.PAID)) {
+            throw new ApiException(FinanceErrorCode.WORK_ORDER_NOT_PAYABLE);
+        }
     }
 
     private PaymentResponse toResponse(Payment p) {

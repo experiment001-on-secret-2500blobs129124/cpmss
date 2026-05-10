@@ -20,4 +20,15 @@ public interface ApplicationRepository extends JpaRepository<Application, Applic
      * @return applications for that person, most recent first
      */
     List<Application> findByApplicantIdOrderByApplicationDateDesc(UUID applicantId);
+
+    /**
+     * Checks whether an application already exists for the same composite key.
+     *
+     * @param applicantId the applicant UUID
+     * @param positionId the position UUID
+     * @param applicationDate the application date
+     * @return true when the application already exists
+     */
+    boolean existsByApplicantIdAndPositionIdAndApplicationDate(
+            UUID applicantId, UUID positionId, java.time.LocalDate applicationDate);
 }

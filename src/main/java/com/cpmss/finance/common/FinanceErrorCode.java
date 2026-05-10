@@ -79,6 +79,9 @@ public enum FinanceErrorCode implements ErrorCode {
     /** Payment reference format or length is invalid. */
     PAYMENT_REFERENCE_INVALID(422, "Payment reference must be at most 100 characters"),
 
+    /** Payment amount does not match the required subtype amount. */
+    PAYMENT_AMOUNT_INVALID(422, "Payment amount does not match required amount"),
+
     // --- Bank Account ---
 
     /** Bank account has zero or multiple owners. */
@@ -104,6 +107,18 @@ public enum FinanceErrorCode implements ErrorCode {
 
     /** Bank account not found. */
     BANK_ACCOUNT_NOT_FOUND(404, "Bank account not found"),
+
+    /** Payment direction does not match the requested payment subtype. */
+    PAYMENT_DIRECTION_MISMATCH(422, "Payment direction does not match payment subtype"),
+
+    /** Payment subtype child row already exists. */
+    PAYMENT_DETAIL_DUPLICATE(409, "Payment detail already exists for this payment"),
+
+    /** Payroll close record is required before paying payroll. */
+    PAYROLL_RECORD_NOT_FOUND(404, "Payroll close record not found"),
+
+    /** Work order must be completed before it can be paid. */
+    WORK_ORDER_NOT_PAYABLE(422, "Work order must be completed before payment"),
 
     /** Payment not found. */
     PAYMENT_NOT_FOUND(404, "Payment not found"),

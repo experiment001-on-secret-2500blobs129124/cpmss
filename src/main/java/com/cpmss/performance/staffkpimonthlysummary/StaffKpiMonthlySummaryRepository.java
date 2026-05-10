@@ -24,4 +24,16 @@ public interface StaffKpiMonthlySummaryRepository
      */
     List<StaffKpiMonthlySummary> findByDepartmentIdAndYearAndMonth(
             UUID departmentId, Integer year, Integer month);
+
+    /**
+     * Checks whether KPI close already exists for staff/department/month.
+     *
+     * @param staffId the staff member UUID
+     * @param departmentId the department UUID
+     * @param year the close year
+     * @param month the close month
+     * @return true when the monthly summary already exists
+     */
+    boolean existsByStaffIdAndDepartmentIdAndYearAndMonth(
+            UUID staffId, UUID departmentId, Integer year, Integer month);
 }

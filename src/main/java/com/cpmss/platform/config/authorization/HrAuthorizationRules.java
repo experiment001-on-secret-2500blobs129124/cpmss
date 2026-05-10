@@ -59,7 +59,19 @@ final class HrAuthorizationRules {
                                 ApiPaths.HIRE_AGREEMENTS, RoleGroups.HR),
                         // Allow HR to record staff salary history.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.STAFF_SALARY,
-                                RoleGroups.HR)
+                                RoleGroups.HR),
+                        // Allow HR to assign staff position history rows.
+                        EndpointAuthorizationRules.allow(HttpMethod.POST,
+                                ApiPaths.STAFF_POSITION_HISTORY, RoleGroups.HR),
+                        // Allow HR to inspect staff position history rows.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.STAFF_POSITION_HISTORY_BY_PERSON, RoleGroups.HR),
+                        // Allow HR to record position salary history.
+                        EndpointAuthorizationRules.allow(HttpMethod.POST,
+                                ApiPaths.STAFF_POSITIONS_SALARY_HISTORY, RoleGroups.HR),
+                        // Allow HR to inspect position salary history.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.STAFF_POSITIONS_SALARY_HISTORY, RoleGroups.HR)
                 )
         ).stream().flatMap(List::stream).toList();
     }

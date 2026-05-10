@@ -61,6 +61,12 @@ public enum WorkforceErrorCode implements ErrorCode {
     /** Payroll period is required. */
     PAYROLL_PERIOD_REQUIRED(422, "Payroll period is required"),
 
+    /** Payroll was already closed for the staff member and period. */
+    PAYROLL_ALREADY_CLOSED(409, "Payroll is already closed for this staff member and period"),
+
+    /** Payroll net amount exceeds the active salary cap. */
+    PAYROLL_NET_EXCEEDS_SALARY_CAP(422, "Payroll net amount exceeds active salary cap"),
+
     /** Task not found. */
     TASK_NOT_FOUND(404, "Task not found"),
 

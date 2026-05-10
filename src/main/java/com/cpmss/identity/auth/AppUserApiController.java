@@ -1,7 +1,9 @@
 package com.cpmss.identity.auth;
 
 import com.cpmss.identity.auth.dto.AppUserResponse;
+import com.cpmss.identity.auth.dto.ApplicantRegistrationResponse;
 import com.cpmss.identity.auth.dto.CreateAppUserRequest;
+import com.cpmss.identity.auth.dto.RegisterApplicantRequest;
 import com.cpmss.identity.auth.dto.UpdateUserRoleRequest;
 import com.cpmss.identity.auth.dto.UpdateUserStatusRequest;
 import com.cpmss.platform.common.ApiPaths;
@@ -25,7 +27,7 @@ import java.util.UUID;
  * <p>Exposes user creation, listing, role changes, and account
  * activation/deactivation under {@link ApiPaths#USERS}. Also
  * provides the public APPLICANT self-registration endpoint at
- * {@link ApiPaths#REGISTER}.
+ * {@link ApiPaths#REGISTER} and {@link ApiPaths#REGISTER_APPLICANT}.
  *
  * <p>Auth-only endpoints (login, setup, refresh) remain in
  * {@link AuthApiController}.
@@ -127,5 +129,18 @@ public class AppUserApiController {
             @Valid @RequestBody CreateAppUserRequest request) {
         return ResponseEntity.status(201)
                 .body(ApiResponse.created(appUserService.register(request)));
+    }
+
+    /**
+     * Applicant self-registration with first job application (public).
+     *
+     * @param request the applicant profile and application details
+     * @return 201 Created with account, person, and application details
+     */
+    @PostMapping(ApiPaths.REGISTER_APPLICANT)
+    public ResponseEntity<ApiResponse<ApplicantRegistrationResponse>> registerApplicant(
+            @Valid @RequestBody RegisterApplicantRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(appUserService.registerApplicant(request)));
     }
 }
