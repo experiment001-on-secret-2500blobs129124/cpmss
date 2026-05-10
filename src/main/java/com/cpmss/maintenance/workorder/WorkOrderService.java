@@ -14,6 +14,10 @@ import com.cpmss.people.person.PersonRepository;
 import com.cpmss.maintenance.workorder.dto.CreateWorkOrderRequest;
 import com.cpmss.maintenance.workorder.dto.UpdateWorkOrderRequest;
 import com.cpmss.maintenance.workorder.dto.WorkOrderResponse;
+import com.cpmss.maintenance.workorderassignedto.WorkOrderAssignedTo;
+import com.cpmss.maintenance.workorderassignedto.WorkOrderAssignedToRepository;
+import com.cpmss.maintenance.workorderassignedto.dto.AssignWorkOrderCompanyRequest;
+import com.cpmss.maintenance.workorderassignedto.dto.WorkOrderAssignmentResponse;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
@@ -22,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -41,6 +46,7 @@ public class WorkOrderService {
     private final PersonRepository personRepository;
     private final FacilityRepository facilityRepository;
     private final CompanyRepository companyRepository;
+    private final WorkOrderAssignedToRepository assignmentRepository;
     private final WorkOrderMapper mapper;
     private final CurrentUserService currentUserService;
     private final MaintenanceAccessRules accessRules = new MaintenanceAccessRules();
@@ -53,18 +59,21 @@ public class WorkOrderService {
      * @param personRepository   person data access (requester FK)
      * @param facilityRepository facility data access (FK lookup)
      * @param companyRepository  company data access (FK lookup)
+     * @param assignmentRepository assignment data access
      * @param mapper             entity-DTO mapper
      */
     public WorkOrderService(WorkOrderRepository repository,
                             PersonRepository personRepository,
                             FacilityRepository facilityRepository,
                             CompanyRepository companyRepository,
+                            WorkOrderAssignedToRepository assignmentRepository,
                             WorkOrderMapper mapper,
                             CurrentUserService currentUserService) {
         this.repository = repository;
         this.personRepository = personRepository;
         this.facilityRepository = facilityRepository;
         this.companyRepository = companyRepository;
+        this.assignmentRepository = assignmentRepository;
         this.mapper = mapper;
         this.currentUserService = currentUserService;
     }
@@ -155,6 +164,60 @@ public class WorkOrderService {
         return mapper.toResponse(workOrder);
     }
 
+
+    /**
+     * Assigns a vendor company to a work order and mirrors the current company
+     * on the parent work order record.
+     *
+     * @param workOrderId the work order UUID
+     * @param request     the vendor assignment details
+     * @return the created vendor assignment
+     * @throws ApiException if the work order, company, or assignment is invalid
+     */
+    @Transactional
+    public WorkOrderAssignmentResponse assignCompany(UUID workOrderId,
+                                                     AssignWorkOrderCompanyRequest request) {
+        accessRules.requireMaintenanceAdministrator(currentUserService.currentUser());
+        WorkOrder workOrder = findOrThrow(workOrderId);
+        Company company = resolveCompany(request.companyId());
+
+        if (assignmentRepository.existsByWorkOrderIdAndCompanyId(workOrderId, request.companyId())) {
+            throw new ApiException(MaintenanceErrorCode.WORK_ORDER_ASSIGNMENT_DUPLICATE);
+        }
+
+        WorkOrderAssignedTo assignment = new WorkOrderAssignedTo();
+        assignment.setWorkOrder(workOrder);
+        assignment.setCompany(company);
+        assignment.setDateAssigned(request.dateAssigned());
+        assignment = assignmentRepository.save(assignment);
+
+        workOrder.setCompany(company);
+        repository.save(workOrder);
+
+        log.info("Vendor assigned to work order: workOrder={}, company={}, date={}",
+                workOrderId, request.companyId(), request.dateAssigned());
+        return toAssignmentResponse(assignment);
+    }
+
+    /**
+     * Lists vendor assignment rows for a work order.
+     *
+     * @param workOrderId the work order UUID
+     * @return vendor assignments, newest first
+     * @throws ApiException if the work order does not exist
+     */
+    @Transactional(readOnly = true)
+    public List<WorkOrderAssignmentResponse> getAssignments(UUID workOrderId) {
+        accessRules.requireMaintenanceReader(currentUserService.currentUser());
+        if (!repository.existsById(workOrderId)) {
+            throw new ApiException(MaintenanceErrorCode.WORK_ORDER_NOT_FOUND);
+        }
+        return assignmentRepository.findByWorkOrderIdOrderByDateAssignedDesc(workOrderId)
+                .stream()
+                .map(this::toAssignmentResponse)
+                .toList();
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────
 
     private WorkOrder findOrThrow(UUID id) {
@@ -176,5 +239,12 @@ public class WorkOrderService {
         }
         return companyRepository.findById(id)
                 .orElseThrow(() -> new ApiException(MaintenanceErrorCode.COMPANY_NOT_FOUND));
+    }
+
+    private WorkOrderAssignmentResponse toAssignmentResponse(WorkOrderAssignedTo assignment) {
+        return new WorkOrderAssignmentResponse(
+                assignment.getWorkOrder().getId(),
+                assignment.getCompany().getId(),
+                assignment.getDateAssigned());
     }
 }

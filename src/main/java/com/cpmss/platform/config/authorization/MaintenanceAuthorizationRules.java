@@ -39,7 +39,13 @@ final class MaintenanceAuthorizationRules {
                                 RoleGroups.FACILITY),
                         // Allow facility officers to update work orders.
                         EndpointAuthorizationRules.allow(HttpMethod.PUT,
-                                ApiPaths.WORK_ORDERS_BY_ID, RoleGroups.FACILITY)
+                                ApiPaths.WORK_ORDERS_BY_ID, RoleGroups.FACILITY),
+                        // Allow facility officers to assign vendors to work orders.
+                        EndpointAuthorizationRules.allow(HttpMethod.POST,
+                                ApiPaths.WORK_ORDERS_ASSIGNMENTS, RoleGroups.FACILITY),
+                        // Allow facility and finance readers to inspect vendor assignments.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.WORK_ORDERS_ASSIGNMENTS, RoleGroups.FACILITY_READERS)
                 )
         ).stream().flatMap(List::stream).toList();
     }

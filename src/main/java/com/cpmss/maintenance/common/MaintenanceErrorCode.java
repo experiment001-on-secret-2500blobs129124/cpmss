@@ -47,6 +47,9 @@ public enum MaintenanceErrorCode implements ErrorCode {
     /** Company not found. */
     COMPANY_NOT_FOUND(404, "Company not found"),
 
+    /** Work-order vendor assignment already exists. */
+    WORK_ORDER_ASSIGNMENT_DUPLICATE(409, "Work order is already assigned to this company"),
+
     /** User cannot access this maintenance record. */
     MAINTENANCE_RECORD_ACCESS_DENIED(403, "Maintenance record access denied");
 

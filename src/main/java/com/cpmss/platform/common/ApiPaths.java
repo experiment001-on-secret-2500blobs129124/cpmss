@@ -27,12 +27,22 @@ public final class ApiPaths {
     public static final String DEPARTMENTS_BY_ID = "/api/v1/departments/{id}";
     public static final String DEPARTMENTS_LOCATION_HISTORY = "/api/v1/departments/{id}/location-history";
     public static final String DEPARTMENTS_MANAGERS = "/api/v1/departments/{id}/managers";
+    public static final String DEPARTMENTS_CURRENT_MANAGER = "/api/v1/departments/{id}/managers/current";
+    public static final String PERSON_SUPERVISIONS = "/api/v1/person-supervisions";
+    public static final String PERSON_SUPERVISIONS_END = "/api/v1/person-supervisions/end";
+    public static final String PERSON_SUPERVISIONS_BY_SUPERVISOR =
+            "/api/v1/person-supervisions/supervisors/{supervisorId}";
+    public static final String PERSON_SUPERVISIONS_BY_SUPERVISEE =
+            "/api/v1/person-supervisions/supervisees/{superviseeId}";
     public static final String ROLES = "/api/v1/roles";
     public static final String ROLES_BY_ID = "/api/v1/roles/{id}";
     public static final String QUALIFICATIONS = "/api/v1/qualifications";
     public static final String QUALIFICATIONS_BY_ID = "/api/v1/qualifications/{id}";
     public static final String SHIFT_ATTENDANCE_TYPES = "/api/v1/shift-attendance-types";
     public static final String SHIFT_ATTENDANCE_TYPES_BY_ID = "/api/v1/shift-attendance-types/{id}";
+    public static final String SHIFT_ATTENDANCE_TYPES_LAWS = "/api/v1/shift-attendance-types/{id}/laws";
+    public static final String SHIFT_ATTENDANCE_TYPES_CURRENT_LAW =
+            "/api/v1/shift-attendance-types/{id}/laws/current";
     public static final String TASKS = "/api/v1/tasks";
     public static final String TASKS_BY_ID = "/api/v1/tasks/{id}";
 
@@ -53,6 +63,7 @@ public final class ApiPaths {
     public static final String FACILITIES_BY_ID = "/api/v1/facilities/{id}";
     public static final String FACILITIES_HOURS_HISTORY = "/api/v1/facilities/{id}/hours-history";
     public static final String FACILITIES_MANAGERS = "/api/v1/facilities/{id}/managers";
+    public static final String FACILITIES_CURRENT_MANAGER = "/api/v1/facilities/{id}/managers/current";
     public static final String GATES = "/api/v1/gates";
     public static final String GATES_BY_ID = "/api/v1/gates/{id}";
     public static final String VEHICLES = "/api/v1/vehicles";
@@ -97,6 +108,7 @@ public final class ApiPaths {
     // Phase 9 — Work Orders
     public static final String WORK_ORDERS = "/api/v1/work-orders";
     public static final String WORK_ORDERS_BY_ID = "/api/v1/work-orders/{id}";
+    public static final String WORK_ORDERS_ASSIGNMENTS = "/api/v1/work-orders/{id}/assignments";
 
     // Phase 10 — Payments
     public static final String PAYMENTS = "/api/v1/payments";
@@ -110,23 +122,23 @@ public final class ApiPaths {
     public static final String INTERNAL_REPORTS_RESOLVE = "/api/v1/internal-reports/{id}/resolve";
     public static final String INTERNAL_REPORTS_UNREAD_COUNT = "/api/v1/internal-reports/unread/count";
 
-    // Phase C.2 — Recruitment / Hiring Pipeline
+    // Recruitment / Hiring Pipeline
     public static final String INTERVIEWS = "/api/v1/interviews";
     public static final String INTERVIEWS_RESULT = "/api/v1/interviews/result";
     public static final String HIRE_AGREEMENTS = "/api/v1/hire-agreements";
 
-    // Phase C.3 — Payroll / Attendance / Salary
+    // Payroll / Attendance / Salary
     public static final String ATTENDANCE = "/api/v1/attendance";
     public static final String PAYROLL_CLOSE = "/api/v1/payroll/close";
     public static final String PAYROLL = "/api/v1/payroll";
     public static final String STAFF_SALARY = "/api/v1/staff-salary";
 
-    // Phase C.4 — KPI Scoring
+    // KPI Scoring
     public static final String KPI_RECORDS = "/api/v1/kpi-records";
     public static final String KPI_CLOSE = "/api/v1/kpi/close";
     public static final String KPI_SUMMARIES = "/api/v1/kpi-summaries";
 
-    // Phase C.5 — Polymorphic Payments
+    // Polymorphic Payments
     public static final String PAYMENTS_INSTALLMENT = "/api/v1/payments/installment";
     public static final String PAYMENTS_WORK_ORDER = "/api/v1/payments/work-order";
     public static final String PAYMENTS_PAYROLL = "/api/v1/payments/payroll";

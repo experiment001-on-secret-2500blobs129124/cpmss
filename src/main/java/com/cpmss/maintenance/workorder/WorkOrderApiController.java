@@ -6,6 +6,8 @@ import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.maintenance.workorder.dto.CreateWorkOrderRequest;
 import com.cpmss.maintenance.workorder.dto.UpdateWorkOrderRequest;
 import com.cpmss.maintenance.workorder.dto.WorkOrderResponse;
+import com.cpmss.maintenance.workorderassignedto.dto.AssignWorkOrderCompanyRequest;
+import com.cpmss.maintenance.workorderassignedto.dto.WorkOrderAssignmentResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -58,6 +61,34 @@ public class WorkOrderApiController {
             @Valid @RequestBody CreateWorkOrderRequest request) {
         return ResponseEntity.status(201)
                 .body(ApiResponse.created(workOrderService.create(request)));
+    }
+
+
+    /**
+     * Assigns a vendor company to a work order.
+     *
+     * @param id      the work order UUID
+     * @param request the assignment details
+     * @return 201 Created with the new assignment
+     */
+    @PostMapping(ApiPaths.WORK_ORDERS_ASSIGNMENTS)
+    public ResponseEntity<ApiResponse<WorkOrderAssignmentResponse>> assignCompany(
+            @PathVariable UUID id,
+            @Valid @RequestBody AssignWorkOrderCompanyRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(workOrderService.assignCompany(id, request)));
+    }
+
+    /**
+     * Retrieves vendor assignment history for a work order.
+     *
+     * @param id the work order UUID
+     * @return 200 OK with assignment rows
+     */
+    @GetMapping(ApiPaths.WORK_ORDERS_ASSIGNMENTS)
+    public ResponseEntity<ApiResponse<List<WorkOrderAssignmentResponse>>> getAssignments(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(workOrderService.getAssignments(id)));
     }
 
     /** Updates an existing work order. */
