@@ -1,5 +1,7 @@
 package com.cpmss.workforce.shiftattendancetype;
 
+import com.cpmss.hr.lawofshiftattendance.dto.CreateShiftAttendanceLawRequest;
+import com.cpmss.hr.lawofshiftattendance.dto.ShiftAttendanceLawResponse;
 import com.cpmss.platform.common.ApiPaths;
 import com.cpmss.platform.common.ApiResponse;
 import com.cpmss.platform.common.PagedResponse;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -73,6 +76,48 @@ public class ShiftAttendanceTypeApiController {
             @Valid @RequestBody CreateShiftAttendanceTypeRequest request) {
         return ResponseEntity.status(201)
                 .body(ApiResponse.created(shiftAttendanceTypeService.create(request)));
+    }
+
+    /**
+     * Adds an attendance law to a shift type.
+     *
+     * @param id      the shift type UUID
+     * @param request the law details
+     * @return 201 Created with the new attendance law
+     */
+    @PostMapping(ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS)
+    public ResponseEntity<ApiResponse<ShiftAttendanceLawResponse>> addAttendanceLaw(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreateShiftAttendanceLawRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(
+                        shiftAttendanceTypeService.addAttendanceLaw(id, request)));
+    }
+
+    /**
+     * Retrieves attendance laws for a shift type.
+     *
+     * @param id the shift type UUID
+     * @return 200 OK with attendance laws
+     */
+    @GetMapping(ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS)
+    public ResponseEntity<ApiResponse<List<ShiftAttendanceLawResponse>>> getAttendanceLaws(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                shiftAttendanceTypeService.getAttendanceLaws(id)));
+    }
+
+    /**
+     * Retrieves the current attendance law for a shift type.
+     *
+     * @param id the shift type UUID
+     * @return 200 OK with the current attendance law
+     */
+    @GetMapping(ApiPaths.SHIFT_ATTENDANCE_TYPES_CURRENT_LAW)
+    public ResponseEntity<ApiResponse<ShiftAttendanceLawResponse>> getCurrentAttendanceLaw(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                shiftAttendanceTypeService.getCurrentAttendanceLaw(id)));
     }
 
     /**

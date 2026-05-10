@@ -36,6 +36,15 @@ final class HrAuthorizationRules {
                         // Allow HR to browse job applications.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.APPLICATIONS,
                                 RoleGroups.HR),
+                        // Allow HR to add shift attendance laws.
+                        EndpointAuthorizationRules.allow(HttpMethod.POST,
+                                ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS, RoleGroups.HR),
+                        // Allow HR to inspect shift attendance laws.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS, RoleGroups.HR),
+                        // Allow HR to inspect the current shift attendance law.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.SHIFT_ATTENDANCE_TYPES_CURRENT_LAW, RoleGroups.HR),
                         // Allow HR to submit or import job applications.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.APPLICATIONS,
                                 RoleGroups.HR),

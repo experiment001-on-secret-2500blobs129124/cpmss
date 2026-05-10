@@ -2,23 +2,44 @@ package com.cpmss.hr.lawofshiftattendance;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Spring Data repository for {@link LawOfShiftAttendance} entities.
  *
- * <p>Provides CRUD via {@link JpaRepository} and custom query
- * methods for SCD Type 2 shift rule lookups.
+ * <p>Provides CRUD via {@link JpaRepository} and effective-dated lookup helpers
+ * used by shift attendance workflows.
  */
 public interface LawOfShiftAttendanceRepository
         extends JpaRepository<LawOfShiftAttendance, LawOfShiftAttendanceId> {
 
     /**
-     * Finds all shift rules for a given shift type, ordered by effective date descending.
+     * Checks whether a law row already exists for the shift and date.
      *
-     * @param shiftId the shift type's UUID
-     * @return shift rules, most recent first
+     * @param shiftId       the shift type UUID
+     * @param effectiveDate the law effective date
+     * @return true when a row exists
+     */
+    boolean existsByShiftIdAndEffectiveDate(UUID shiftId, LocalDate effectiveDate);
+
+    /**
+     * Finds law rows attached to a shift type, newest first.
+     *
+     * @param shiftId the shift type UUID
+     * @return shift attendance laws
      */
     List<LawOfShiftAttendance> findByShiftIdOrderByEffectiveDateDesc(UUID shiftId);
+
+    /**
+     * Finds the active law row for a shift as of a given date.
+     *
+     * @param shiftId the shift type UUID
+     * @param asOf    the date used for effective-dated lookup
+     * @return the newest law effective on or before the date
+     */
+    Optional<LawOfShiftAttendance> findFirstByShiftIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
+            UUID shiftId, LocalDate asOf);
 }

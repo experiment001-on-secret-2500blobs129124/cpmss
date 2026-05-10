@@ -62,6 +62,12 @@ public enum HrErrorCode implements ErrorCode {
     /** Qualification not found. */
     QUALIFICATION_NOT_FOUND(404, "Qualification not found"),
 
+    /** Shift attendance law row was not found. */
+    SHIFT_ATTENDANCE_LAW_NOT_FOUND(404, "Shift attendance law not found"),
+
+    /** Shift attendance law row already exists for this effective date. */
+    SHIFT_ATTENDANCE_LAW_DUPLICATE(409, "Shift attendance law already exists for this effective date"),
+
     /** User cannot access this HR record. */
     HR_RECORD_ACCESS_DENIED(403, "HR record access denied");
 
