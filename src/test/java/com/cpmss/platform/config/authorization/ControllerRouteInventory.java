@@ -57,8 +57,16 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.GET, ApiPaths.DEPARTMENTS_LOCATION_HISTORY);
         add(routes, HttpMethod.POST, ApiPaths.DEPARTMENTS_MANAGERS);
         add(routes, HttpMethod.GET, ApiPaths.DEPARTMENTS_MANAGERS);
+        add(routes, HttpMethod.GET, ApiPaths.DEPARTMENTS_CURRENT_MANAGER);
+        add(routes, HttpMethod.POST, ApiPaths.PERSON_SUPERVISIONS);
+        add(routes, HttpMethod.PUT, ApiPaths.PERSON_SUPERVISIONS_END);
+        add(routes, HttpMethod.GET, ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISOR);
+        add(routes, HttpMethod.GET, ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISEE);
         crud(routes, ApiPaths.STAFF_POSITIONS, ApiPaths.STAFF_POSITIONS_BY_ID);
         crud(routes, ApiPaths.SHIFT_ATTENDANCE_TYPES, ApiPaths.SHIFT_ATTENDANCE_TYPES_BY_ID);
+        add(routes, HttpMethod.POST, ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS);
+        add(routes, HttpMethod.GET, ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS);
+        add(routes, HttpMethod.GET, ApiPaths.SHIFT_ATTENDANCE_TYPES_CURRENT_LAW);
         crud(routes, ApiPaths.TASKS, ApiPaths.TASKS_BY_ID);
     }
 
@@ -80,6 +88,7 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.GET, ApiPaths.FACILITIES_HOURS_HISTORY);
         add(routes, HttpMethod.POST, ApiPaths.FACILITIES_MANAGERS);
         add(routes, HttpMethod.GET, ApiPaths.FACILITIES_MANAGERS);
+        add(routes, HttpMethod.GET, ApiPaths.FACILITIES_CURRENT_MANAGER);
     }
 
     private static void addSecurity(Set<String> routes) {
@@ -168,6 +177,8 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.GET, ApiPaths.WORK_ORDERS_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.WORK_ORDERS);
         add(routes, HttpMethod.PUT, ApiPaths.WORK_ORDERS_BY_ID);
+        add(routes, HttpMethod.POST, ApiPaths.WORK_ORDERS_ASSIGNMENTS);
+        add(routes, HttpMethod.GET, ApiPaths.WORK_ORDERS_ASSIGNMENTS);
     }
 
     private static void addCommunication(Set<String> routes) {
