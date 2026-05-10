@@ -93,6 +93,9 @@ public enum LeasingErrorCode implements ErrorCode {
     /** Installment status transition is invalid. */
     INSTALLMENT_STATUS_TRANSITION_INVALID(422, "Invalid installment status transition"),
 
+    /** Contract status transition is invalid. */
+    CONTRACT_STATUS_TRANSITION_INVALID(422, "Invalid contract status transition"),
+
     /** Contract must cover exactly one target. */
     CONTRACT_TARGET_INVALID(422, "A contract must cover exactly one target (unit or facility)"),
 

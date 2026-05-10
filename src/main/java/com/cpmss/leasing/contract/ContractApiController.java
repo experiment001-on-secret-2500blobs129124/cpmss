@@ -6,6 +6,7 @@ import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.leasing.contract.dto.ContractResponse;
 import com.cpmss.leasing.contract.dto.CreateContractRequest;
 import com.cpmss.leasing.contract.dto.UpdateContractRequest;
+import com.cpmss.leasing.contract.dto.UpdateContractStatusRequest;
 import com.cpmss.leasing.contractparty.dto.AddContractPartyRequest;
 import com.cpmss.leasing.contractparty.dto.ContractPartyResponse;
 import com.cpmss.leasing.personresidesunder.dto.AddPersonResidesUnderRequest;
@@ -93,6 +94,20 @@ public class ContractApiController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateContractRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.update(id, request)));
+    }
+
+    /**
+     * Transitions the contract lifecycle status.
+     *
+     * @param id the contract UUID
+     * @param request the requested status
+     * @return 200 OK with the updated contract
+     */
+    @PutMapping(ApiPaths.CONTRACTS_STATUS)
+    public ResponseEntity<ApiResponse<ContractResponse>> updateStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateContractStatusRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.updateStatus(id, request)));
     }
 
     // ── Contract Party Sub-Endpoints ────────────────────────────────────

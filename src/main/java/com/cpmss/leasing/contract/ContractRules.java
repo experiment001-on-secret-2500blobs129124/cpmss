@@ -1,5 +1,6 @@
 package com.cpmss.leasing.contract;
 
+import com.cpmss.leasing.common.ContractStatus;
 import com.cpmss.leasing.common.LeasingErrorCode;
 import com.cpmss.platform.exception.ApiException;
 
@@ -44,6 +45,19 @@ public class ContractRules {
     public void validateReferenceUnique(String contractReference, boolean exists) {
         if (exists) {
             throw new ApiException(LeasingErrorCode.CONTRACT_REFERENCE_DUPLICATE);
+        }
+    }
+
+    /**
+     * Validates a contract lifecycle transition.
+     *
+     * @param current the current status
+     * @param next the requested next status
+     * @throws ApiException if the transition is not allowed
+     */
+    public void validateStatusTransition(ContractStatus current, ContractStatus next) {
+        if (current == null || next == null || !current.canTransitionTo(next)) {
+            throw new ApiException(LeasingErrorCode.CONTRACT_STATUS_TRANSITION_INVALID);
         }
     }
 }

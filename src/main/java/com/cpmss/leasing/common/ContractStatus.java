@@ -41,6 +41,23 @@ public enum ContractStatus {
     }
 
     /**
+     * Checks whether this status may transition to the requested status.
+     *
+     * @param next the requested next status
+     * @return true when the transition is allowed
+     */
+    public boolean canTransitionTo(ContractStatus next) {
+        if (this == next) {
+            return true;
+        }
+        return switch (this) {
+            case DRAFT -> next == ACTIVE || next == TERMINATED;
+            case ACTIVE -> next == EXPIRED || next == TERMINATED || next == RENEWED;
+            case EXPIRED, TERMINATED, RENEWED -> false;
+        };
+    }
+
+    /**
      * Parses a required contract status label.
      *
      * @param label the contract status label

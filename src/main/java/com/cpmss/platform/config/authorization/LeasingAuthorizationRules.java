@@ -47,6 +47,9 @@ final class LeasingAuthorizationRules {
                 // Allow finance to update lease contracts.
                 EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.CONTRACTS_BY_ID,
                         RoleGroups.FINANCE),
+                // Allow finance to transition lease contract status.
+                EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.CONTRACTS_STATUS,
+                        RoleGroups.FINANCE),
                 // Allow finance to browse installments.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.INSTALLMENTS,
                         RoleGroups.FINANCE),

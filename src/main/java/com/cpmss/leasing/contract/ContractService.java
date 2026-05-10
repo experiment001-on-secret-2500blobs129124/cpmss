@@ -6,6 +6,7 @@ import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.leasing.contract.dto.ContractResponse;
 import com.cpmss.leasing.contract.dto.CreateContractRequest;
 import com.cpmss.leasing.contract.dto.UpdateContractRequest;
+import com.cpmss.leasing.contract.dto.UpdateContractStatusRequest;
 import com.cpmss.leasing.common.ContractPartyRole;
 import com.cpmss.leasing.contractparty.ContractParty;
 import com.cpmss.leasing.contractparty.ContractPartyRepository;
@@ -146,7 +147,8 @@ public class ContractService {
                 .facility(resolveFacility(request.facilityId()))
                 .build();
         contract = repository.save(contract);
-        log.info("Contract created: {}", contract.getContractReference());
+        log.info("contract_created contractId={} contractReference={}",
+                contract.getId(), contract.getContractReference());
         return mapper.toResponse(contract);
     }
 
@@ -182,7 +184,27 @@ public class ContractService {
         contract.setUnit(resolveUnit(request.unitId()));
         contract.setFacility(resolveFacility(request.facilityId()));
         contract = repository.save(contract);
-        log.info("Contract updated: {}", contract.getContractReference());
+        log.info("contract_updated contractId={} contractReference={}",
+                contract.getId(), contract.getContractReference());
+        return mapper.toResponse(contract);
+    }
+
+    /**
+     * Transitions a contract status through the explicit lifecycle table.
+     *
+     * @param id the contract UUID
+     * @param request the requested next status
+     * @return the updated contract response
+     */
+    @Transactional
+    public ContractResponse updateStatus(UUID id, UpdateContractStatusRequest request) {
+        accessRules.requireLeasingAuthority(currentUserService.currentUser());
+        Contract contract = repository.findById(id)
+                .orElseThrow(() -> new ApiException(LeasingErrorCode.CONTRACT_NOT_FOUND));
+        rules.validateStatusTransition(contract.getContractStatus(), request.contractStatus());
+        contract.setContractStatus(request.contractStatus());
+        contract = repository.save(contract);
+        log.info("contract_status_updated contractId={} status={}", id, request.contractStatus());
         return mapper.toResponse(contract);
     }
 
@@ -220,7 +242,7 @@ public class ContractService {
         party.setRole(request.role());
         party.setDateSigned(request.dateSigned());
         party = contractPartyRepository.save(party);
-        log.info("Party added to contract {}: person {} as {}",
+        log.info("contract_party_added contractId={} personId={} role={}",
                 contractId, request.personId(), request.role());
         return toPartyResponse(party);
     }
@@ -264,7 +286,7 @@ public class ContractService {
         record.setResidencyPeriod(request.residencyPeriod());
         record.setHouseholdRelationship(request.householdRelationship());
         record = residesUnderRepository.save(record);
-        log.info("Resident added to contract {}: person {} as {}",
+        log.info("contract_resident_added contractId={} personId={} relationship={}",
                 contractId, request.residentId(), request.householdRelationship());
         return toResidentResponse(record);
     }
