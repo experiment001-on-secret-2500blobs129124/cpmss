@@ -17,6 +17,15 @@ public enum OrganizationErrorCode implements ErrorCode {
     /** A person cannot supervise themselves. */
     SELF_SUPERVISION_FORBIDDEN(422, "A person cannot supervise themselves"),
 
+    /** Supervision row already exists for this start date. */
+    PERSON_SUPERVISION_DUPLICATE(409, "Person supervision already exists for this start date"),
+
+    /** Supervision row not found. */
+    PERSON_SUPERVISION_NOT_FOUND(404, "Person supervision not found"),
+
+    /** Department manager assignment was not found. */
+    DEPARTMENT_MANAGER_NOT_FOUND(404, "Department manager assignment not found"),
+
     /** Department not found. */
     DEPARTMENT_NOT_FOUND(404, "Department not found"),
 

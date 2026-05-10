@@ -155,6 +155,19 @@ public class DepartmentApiController {
                 .body(ApiResponse.created(departmentService.assignManager(id, request)));
     }
 
+
+    /**
+     * Retrieves the current manager assignment for a department.
+     *
+     * @param id the department UUID
+     * @return 200 OK with current manager assignment
+     */
+    @GetMapping(ApiPaths.DEPARTMENTS_CURRENT_MANAGER)
+    public ResponseEntity<ApiResponse<DeptManagerResponse>> getCurrentManager(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(departmentService.getCurrentManager(id)));
+    }
+
     /**
      * Retrieves all manager assignments for a department.
      *

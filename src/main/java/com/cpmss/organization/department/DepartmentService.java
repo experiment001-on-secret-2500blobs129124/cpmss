@@ -297,6 +297,27 @@ public class DepartmentService {
                 .stream().map(this::toManagerResponse).toList();
     }
 
+
+    /**
+     * Retrieves the current manager assignment for a department.
+     *
+     * @param departmentId the department UUID
+     * @return current manager assignment
+     * @throws ApiException if the department or current manager assignment does not exist
+     */
+    @Transactional(readOnly = true)
+    public DeptManagerResponse getCurrentManager(UUID departmentId) {
+        CurrentUser user = currentUserService.currentUser();
+        accessRules.requireCanViewDepartment(user, departmentId, departmentScopeService);
+        if (!repository.existsById(departmentId)) {
+            throw new ApiException(OrganizationErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+        return managersRepository
+                .findFirstByDepartmentIdAndManagementEndDateIsNullOrderByManagementStartDateDesc(departmentId)
+                .map(this::toManagerResponse)
+                .orElseThrow(() -> new ApiException(OrganizationErrorCode.DEPARTMENT_MANAGER_NOT_FOUND));
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────
 
     private boolean canViewDepartment(CurrentUser user, UUID departmentId) {
