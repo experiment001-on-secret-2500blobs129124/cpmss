@@ -212,7 +212,7 @@ public class StaffPositionService {
      */
     @Transactional(readOnly = true)
     public List<StaffPositionHistoryResponse> positionHistoryForPerson(UUID personId) {
-        accessRules.requireHrAdministrator(currentUserService.currentUser());
+        accessRules.requireCanViewStaffProfile(currentUserService.currentUser(), personId);
         return positionHistoryRepository.findByPersonIdOrderByEffectiveDateDesc(personId)
                 .stream()
                 .map(this::toPositionHistoryResponse)

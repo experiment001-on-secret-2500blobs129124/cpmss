@@ -27,6 +27,17 @@ public interface TaskMonthlySalaryRepository
             UUID departmentId, Integer year, Integer month);
 
     /**
+     * Finds payroll records for one staff member in a period.
+     *
+     * @param staffId the staff member UUID
+     * @param year    the payroll year
+     * @param month   the payroll month
+     * @return payroll records for that staff member and period
+     */
+    List<TaskMonthlySalary> findByStaffIdAndYearAndMonth(
+            UUID staffId, Integer year, Integer month);
+
+    /**
      * Finds a closed payroll row for a specific staff, department, and month.
      *
      * @param staffId the staff member UUID

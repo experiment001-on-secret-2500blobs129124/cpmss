@@ -80,19 +80,21 @@ public class KpiApiController {
     }
 
     /**
-     * Retrieves KPI summaries for a department in a given period.
+     * Retrieves KPI summaries for a department or staff member in a period.
      *
-     * @param departmentId the department UUID
+     * @param departmentId optional department UUID for broad department summaries
+     * @param staffId      optional staff UUID for self-scoped summaries
      * @param year         the year
      * @param month        the month
      * @return 200 OK with summary records
      */
     @GetMapping(ApiPaths.KPI_SUMMARIES)
     public ResponseEntity<ApiResponse<List<StaffKpiMonthlySummaryResponse>>> getKpiSummaries(
-            @RequestParam UUID departmentId,
+            @RequestParam(required = false) UUID departmentId,
+            @RequestParam(required = false) UUID staffId,
             @RequestParam int year,
             @RequestParam int month) {
         return ResponseEntity.ok(ApiResponse.ok(
-                kpiService.getKpiSummaries(departmentId, year, month)));
+                kpiService.getKpiSummaries(departmentId, staffId, year, month)));
     }
 }

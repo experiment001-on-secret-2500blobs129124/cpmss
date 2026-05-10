@@ -251,16 +251,36 @@ public class PayrollService {
     }
 
     /**
-     * Retrieves monthly payroll records for a department in a given period.
+     * Retrieves monthly payroll records for a department or staff member.
      *
-     * @param departmentId the department UUID
+     * @param departmentId optional department UUID for broad finance lookup
+     * @param staffId      optional staff UUID for self-scoped lookup
      * @param year         the payroll year
      * @param month        the payroll month
      * @return list of monthly salary responses
      */
     @Transactional(readOnly = true)
     public List<TaskMonthlySalaryResponse> getMonthlyPayroll(UUID departmentId, int year, int month) {
-        workforceAccessRules.requirePayrollFinance(currentUserService.currentUser());
+        return getMonthlyPayroll(departmentId, null, year, month);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskMonthlySalaryResponse> getMonthlyPayroll(
+            UUID departmentId, UUID staffId, int year, int month) {
+        CurrentUser user = currentUserService.currentUser();
+        if (staffId != null) {
+            return monthlySalaryRepository.findByStaffIdAndYearAndMonth(staffId, year, month)
+                    .stream()
+                    .filter(payroll -> departmentId == null
+                            || payroll.getDepartment().getId().equals(departmentId))
+                    .filter(payroll -> canViewPayroll(user, payroll))
+                    .map(this::toMonthlySalaryResponse)
+                    .toList();
+        }
+        if (departmentId == null) {
+            throw new ApiException(WorkforceErrorCode.PAYROLL_SCOPE_REQUIRED);
+        }
+        workforceAccessRules.requirePayrollFinance(user);
         return monthlySalaryRepository.findByDepartmentIdAndYearAndMonth(departmentId, year, month)
                 .stream().map(this::toMonthlySalaryResponse).toList();
     }
@@ -318,6 +338,15 @@ public class PayrollService {
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private boolean canViewPayroll(CurrentUser user, TaskMonthlySalary payroll) {
+        try {
+            workforceAccessRules.requireCanViewPayrollRecord(user, payroll);
+            return true;
+        } catch (ApiException ex) {
+            return false;
+        }
+    }
 
     private boolean canViewAttendance(CurrentUser user, Attends attends) {
         UUID departmentId = departmentScopeService.activeDepartmentForStaff(

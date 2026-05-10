@@ -88,20 +88,22 @@ public class PayrollApiController {
     }
 
     /**
-     * Retrieves monthly payroll records for a department.
+     * Retrieves monthly payroll records for a department or staff member.
      *
-     * @param departmentId the department UUID
+     * @param departmentId optional department UUID for broad finance lookup
+     * @param staffId      optional staff UUID for self-scoped lookup
      * @param year         the payroll year
      * @param month        the payroll month
      * @return 200 OK with monthly salary records
      */
     @GetMapping(ApiPaths.PAYROLL)
     public ResponseEntity<ApiResponse<List<TaskMonthlySalaryResponse>>> getPayroll(
-            @RequestParam UUID departmentId,
+            @RequestParam(required = false) UUID departmentId,
+            @RequestParam(required = false) UUID staffId,
             @RequestParam int year,
             @RequestParam int month) {
         return ResponseEntity.ok(ApiResponse.ok(
-                payrollService.getMonthlyPayroll(departmentId, year, month)));
+                payrollService.getMonthlyPayroll(departmentId, staffId, year, month)));
     }
 
     /**

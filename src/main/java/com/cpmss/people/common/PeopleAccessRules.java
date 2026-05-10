@@ -39,10 +39,19 @@ public class PeopleAccessRules {
     /**
      * Requires authority to update person records.
      *
-     * @param user current authenticated user
+     * <p>HR/security roles may maintain person rows broadly. Linked users may
+     * update only their own contact fields when the service confirms the
+     * request is contact-only.
+     *
+     * @param user              current authenticated user
+     * @param personId          person UUID being updated
+     * @param contactOnlyUpdate true when only phones/emails change
      */
-    public void requireCanUpdatePerson(CurrentUser user) {
-        if (isHrAuthority(user) || user.hasRole(SystemRole.SECURITY_OFFICER)) {
+    public void requireCanUpdatePerson(CurrentUser user, UUID personId,
+                                       boolean contactOnlyUpdate) {
+        if (isHrAuthority(user)
+                || user.hasRole(SystemRole.SECURITY_OFFICER)
+                || (contactOnlyUpdate && isOwnPerson(user, personId))) {
             return;
         }
         throw new ApiException(PeopleErrorCode.PEOPLE_RECORD_ACCESS_DENIED);

@@ -64,6 +64,9 @@ public enum WorkforceErrorCode implements ErrorCode {
     /** Payroll was already closed for the staff member and period. */
     PAYROLL_ALREADY_CLOSED(409, "Payroll is already closed for this staff member and period"),
 
+    /** Payroll lookup requires a department or staff scope. */
+    PAYROLL_SCOPE_REQUIRED(422, "Payroll lookup requires departmentId or staffId"),
+
     /** Payroll net amount exceeds the active salary cap. */
     PAYROLL_NET_EXCEEDS_SALARY_CAP(422, "Payroll net amount exceeds active salary cap"),
 

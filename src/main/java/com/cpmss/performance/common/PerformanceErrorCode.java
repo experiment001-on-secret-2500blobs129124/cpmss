@@ -72,6 +72,9 @@ public enum PerformanceErrorCode implements ErrorCode {
     /** KPI monthly summary already exists. */
     KPI_MONTH_ALREADY_CLOSED(409, "KPI month is already closed for this staff member"),
 
+    /** KPI summary lookup requires a department or staff scope. */
+    KPI_SUMMARY_SCOPE_REQUIRED(422, "KPI summary lookup requires departmentId or staffId"),
+
     /** Promotion requires a target position. */
     PROMOTION_POSITION_REQUIRED(422, "Promotion requires a target position"),
 

@@ -119,7 +119,7 @@ class BoundedContextOwnershipAccessRulesTest {
     }
 
     @Test
-    void peopleRowsAllowOwnReadButReserveMutationToHrOrSecurity() {
+    void peopleRowsAllowOwnReadAndContactUpdateOnly() {
         UUID personId = UUID.randomUUID();
         PeopleAccessRules rules = new PeopleAccessRules();
 
@@ -127,10 +127,13 @@ class BoundedContextOwnershipAccessRulesTest {
                 user(SystemRole.STAFF, personId), personId))
                 .doesNotThrowAnyException();
         assertThatThrownBy(() -> rules.requireCanUpdatePerson(
-                user(SystemRole.STAFF, personId)))
+                user(SystemRole.STAFF, personId), personId, false))
                 .isInstanceOf(ApiException.class);
         assertThatCode(() -> rules.requireCanUpdatePerson(
-                user(SystemRole.SECURITY_OFFICER, UUID.randomUUID())))
+                user(SystemRole.STAFF, personId), personId, true))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> rules.requireCanUpdatePerson(
+                user(SystemRole.SECURITY_OFFICER, UUID.randomUUID()), personId, false))
                 .doesNotThrowAnyException();
     }
 

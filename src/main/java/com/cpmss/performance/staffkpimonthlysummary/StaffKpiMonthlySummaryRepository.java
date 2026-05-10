@@ -26,6 +26,17 @@ public interface StaffKpiMonthlySummaryRepository
             UUID departmentId, Integer year, Integer month);
 
     /**
+     * Finds all KPI summaries for one staff member in a given period.
+     *
+     * @param staffId the staff member UUID
+     * @param year    the summary year
+     * @param month   the summary month
+     * @return monthly KPI summaries for that staff member and period
+     */
+    List<StaffKpiMonthlySummary> findByStaffIdAndYearAndMonth(
+            UUID staffId, Integer year, Integer month);
+
+    /**
      * Checks whether KPI close already exists for staff/department/month.
      *
      * @param staffId the staff member UUID

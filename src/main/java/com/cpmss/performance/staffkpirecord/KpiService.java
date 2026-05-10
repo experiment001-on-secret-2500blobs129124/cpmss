@@ -242,23 +242,53 @@ public class KpiService {
     }
 
     /**
-     * Retrieves KPI summaries for a department in a given period.
+     * Retrieves KPI summaries for a department or a staff member in a period.
      *
-     * @param departmentId the department UUID
-     * @param year the calendar year
-     * @param month the calendar month number from 1 to 12
-     * @return KPI summary responses for the department and period
+     * @param departmentId optional department UUID for broad department summaries
+     * @param staffId      optional staff UUID for self-scoped summaries
+     * @param year         the calendar year
+     * @param month        the calendar month number from 1 to 12
+     * @return KPI summary responses for the requested scope and period
      */
     @Transactional(readOnly = true)
     public List<StaffKpiMonthlySummaryResponse> getKpiSummaries(
             UUID departmentId, int year, int month) {
-        accessRules.requireCanManageDepartment(
-                currentUserService.currentUser(), departmentId, departmentScopeService);
+        return getKpiSummaries(departmentId, null, year, month);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StaffKpiMonthlySummaryResponse> getKpiSummaries(
+            UUID departmentId, UUID staffId, int year, int month) {
+        CurrentUser user = currentUserService.currentUser();
+        if (staffId != null) {
+            return kpiSummaryRepository.findByStaffIdAndYearAndMonth(staffId, year, month)
+                    .stream()
+                    .filter(summary -> canViewKpiSummary(user, summary))
+                    .filter(summary -> departmentId == null
+                            || summary.getDepartment().getId().equals(departmentId))
+                    .map(this::toSummaryResponse)
+                    .toList();
+        }
+        if (departmentId == null) {
+            throw new ApiException(PerformanceErrorCode.KPI_SUMMARY_SCOPE_REQUIRED);
+        }
+        accessRules.requireCanManageDepartment(user, departmentId, departmentScopeService);
         return kpiSummaryRepository.findByDepartmentIdAndYearAndMonth(departmentId, year, month)
                 .stream().map(this::toSummaryResponse).toList();
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private boolean canViewKpiSummary(CurrentUser user, StaffKpiMonthlySummary summary) {
+        try {
+            accessRules.requireCanViewStaffPerformance(
+                    user, summary.getStaff().getId(),
+                    summary.getDepartment().getId(), departmentScopeService);
+            return true;
+        } catch (ApiException ex) {
+            return false;
+        }
+    }
 
     private boolean canViewKpiRecord(CurrentUser user, StaffKpiRecord record) {
         try {

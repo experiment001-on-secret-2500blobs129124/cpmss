@@ -25,6 +25,7 @@ final class RoleGroups {
     static final String SUPERVISOR = role(SystemRole.SUPERVISOR);
     static final String GATE_GUARD = role(SystemRole.GATE_GUARD);
     static final String STAFF = role(SystemRole.STAFF);
+    static final String INVESTOR = role(SystemRole.INVESTOR);
     static final String APPLICANT = role(SystemRole.APPLICANT);
 
     /** Roles allowed to create login accounts for people they onboard. */
@@ -70,7 +71,7 @@ final class RoleGroups {
     static final List<String> SUPERVISION_READERS = roles(
             ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER, SUPERVISOR);
 
-    /** Roles allowed to read broad person records before self-scoped APIs exist. */
+    /** Roles allowed to browse broad person record lists. */
     static final List<String> PERSON_READERS = roles(
             ADMIN, GENERAL_MANAGER, HR_OFFICER, SECURITY_OFFICER);
 
@@ -86,10 +87,19 @@ final class RoleGroups {
     static final List<String> ENTRY_WRITERS = roles(
             ADMIN, GENERAL_MANAGER, SECURITY_OFFICER, GATE_GUARD);
 
-    /** Internal staff roles that can file and participate in internal reports. */
-    static final List<String> INTERNAL_REPORT_USERS = roles(
+    /** Staff-based roles allowed to enter service-filtered self/owned read routes. */
+    static final List<String> STAFF_SELF_READERS = roles(
             ADMIN, GENERAL_MANAGER, HR_OFFICER, ACCOUNTANT, SECURITY_OFFICER,
             FACILITY_OFFICER, DEPARTMENT_MANAGER, SUPERVISOR, GATE_GUARD, STAFF);
+
+    /** Roles allowed to enter service-filtered own person profile routes. */
+    static final List<String> PERSON_SELF_READERS = roles(
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, ACCOUNTANT, SECURITY_OFFICER,
+            FACILITY_OFFICER, DEPARTMENT_MANAGER, SUPERVISOR, GATE_GUARD, STAFF,
+            INVESTOR, APPLICANT);
+
+    /** Internal staff roles that can file and participate in internal reports. */
+    static final List<String> INTERNAL_REPORT_USERS = STAFF_SELF_READERS;
 
     private RoleGroups() {
     }

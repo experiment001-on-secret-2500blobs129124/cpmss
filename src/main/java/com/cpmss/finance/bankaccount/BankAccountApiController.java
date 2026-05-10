@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -44,13 +45,16 @@ public class BankAccountApiController {
     /**
      * Lists all bank accounts with pagination.
      *
-     * @param pageable pagination parameters (page, size, sort)
+     * @param pageable       pagination parameters (page, size, sort)
+     * @param accountOwnerId optional person UUID for self-scoped account lookup
      * @return 200 OK with paginated bank account list
      */
     @GetMapping(ApiPaths.BANK_ACCOUNTS)
     public ResponseEntity<ApiResponse<PagedResponse<BankAccountResponse>>> listAll(
-            Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(bankAccountService.listAll(pageable)));
+            Pageable pageable,
+            @RequestParam(required = false) UUID accountOwnerId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                bankAccountService.listAll(pageable, accountOwnerId)));
     }
 
     /**

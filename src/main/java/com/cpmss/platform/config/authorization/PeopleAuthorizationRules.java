@@ -8,9 +8,9 @@ import java.util.List;
 /**
  * Role gates for people, contact identity, and HR catalog routes.
  *
- * <p>Broad person reads are limited to roles that need personal records for
- * HR or security work. Self-service person views require service-level
- * ownership checks and are not granted by these broad route rules.
+ * <p>Person list routes stay limited to HR/security readers. Single-person
+ * read and contact-update routes admit self-service roles because service
+ * rules validate current-user ownership before returning or mutating rows.
  */
 final class PeopleAuthorizationRules {
 
@@ -34,16 +34,15 @@ final class PeopleAuthorizationRules {
                         // Allow HR and security readers to browse person records.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.PERSONS,
                                 RoleGroups.PERSON_READERS),
-                        // Allow HR and security readers to inspect a person record.
+                        // Allow self-service roles to inspect owned person records.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.PERSONS_BY_ID,
-                                RoleGroups.PERSON_READERS),
+                                RoleGroups.PERSON_SELF_READERS),
                         // Allow HR to create person records during onboarding.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.PERSONS,
                                 RoleGroups.HR),
-                        // Allow HR and security to update person attributes they own.
+                        // Allow self-service roles to update owned contact fields.
                         EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.PERSONS_BY_ID,
-                                RoleGroups.roles(RoleGroups.ADMIN, RoleGroups.GENERAL_MANAGER,
-                                        RoleGroups.HR_OFFICER, RoleGroups.SECURITY_OFFICER)),
+                                RoleGroups.PERSON_SELF_READERS),
                         // Allow HR to remove person records where deletion is valid.
                         EndpointAuthorizationRules.allow(HttpMethod.DELETE, ApiPaths.PERSONS_BY_ID,
                                 RoleGroups.HR)

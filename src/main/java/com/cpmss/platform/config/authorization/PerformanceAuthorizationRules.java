@@ -35,12 +35,12 @@ final class PerformanceAuthorizationRules {
                 // Allow HR to update KPI policies.
                 EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.KPI_POLICIES_BY_ID,
                         RoleGroups.HR),
-                // Allow HR and department managers to browse performance reviews.
+                // Allow staff-based users to browse service-filtered performance reviews.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.PERFORMANCE_REVIEWS,
-                        RoleGroups.PERFORMANCE),
-                // Allow HR and department managers to inspect a performance review.
+                        RoleGroups.STAFF_SELF_READERS),
+                // Allow staff-based users to inspect service-filtered performance reviews.
                 EndpointAuthorizationRules.allow(HttpMethod.GET,
-                        ApiPaths.PERFORMANCE_REVIEWS_BY_ID, RoleGroups.PERFORMANCE),
+                        ApiPaths.PERFORMANCE_REVIEWS_BY_ID, RoleGroups.STAFF_SELF_READERS),
                 // Allow HR and department managers to create performance reviews.
                 EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.PERFORMANCE_REVIEWS,
                         RoleGroups.PERFORMANCE),
@@ -50,15 +50,15 @@ final class PerformanceAuthorizationRules {
                 // Allow department operations roles to record daily KPI values.
                 EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.KPI_RECORDS,
                         RoleGroups.DEPARTMENT_OPERATIONS),
-                // Allow HR and department managers to browse KPI records.
+                // Allow staff-based users to browse service-filtered KPI records.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.KPI_RECORDS,
-                        RoleGroups.PERFORMANCE),
+                        RoleGroups.STAFF_SELF_READERS),
                 // Allow HR and department managers to close monthly KPI summaries.
                 EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.KPI_CLOSE,
                         RoleGroups.PERFORMANCE),
-                // Allow HR and department managers to inspect KPI summaries.
+                // Allow staff-based users to inspect service-filtered KPI summaries.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.KPI_SUMMARIES,
-                        RoleGroups.PERFORMANCE)
+                        RoleGroups.STAFF_SELF_READERS)
         );
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -153,9 +154,10 @@ public class PersonService {
      */
     @Transactional
     public PersonResponse update(UUID id, UpdatePersonRequest request) {
-        accessRules.requireCanUpdatePerson(currentUserService.currentUser());
         Person person = repository.findById(id)
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
+        accessRules.requireCanUpdatePerson(
+                currentUserService.currentUser(), id, isContactOnlyUpdate(person, request));
 
         Gender gender = rules.validateGender(request.gender());
         EgyptianNationalId nationalId = rules.validateEgyptianNationalId(
@@ -215,6 +217,20 @@ public class PersonService {
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private boolean isContactOnlyUpdate(Person person, UpdatePersonRequest request) {
+        return (request.roleIds() == null || request.roleIds().isEmpty())
+                && Objects.equals(person.getPassportNo(), request.passportNo())
+                && Objects.equals(person.getEgyptianNationalId(), request.egyptianNationalId())
+                && Objects.equals(person.getFirstName(), request.firstName())
+                && Objects.equals(person.getMiddleName(), request.middleName())
+                && Objects.equals(person.getLastName(), request.lastName())
+                && Objects.equals(person.getNationality(), request.nationality())
+                && Objects.equals(person.getCity(), request.city())
+                && Objects.equals(person.getStreet(), request.street())
+                && Objects.equals(person.getDateOfBirth(), request.dateOfBirth())
+                && Objects.equals(person.getGender(), request.gender());
+    }
 
     private void assignRoles(Person person, List<UUID> roleIds) {
         for (UUID roleId : roleIds) {

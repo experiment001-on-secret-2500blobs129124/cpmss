@@ -4,6 +4,7 @@ import com.cpmss.identity.auth.CurrentUser;
 import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.organization.common.DepartmentScopeService;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.workforce.taskmonthlysalary.TaskMonthlySalary;
 
 import java.util.UUID;
 
@@ -77,12 +78,29 @@ public class WorkforceAccessRules {
      * @param user current authenticated user
      */
     public void requirePayrollFinance(CurrentUser user) {
-        if (user.hasRole(SystemRole.ADMIN)
-                || user.hasRole(SystemRole.GENERAL_MANAGER)
-                || user.hasRole(SystemRole.ACCOUNTANT)) {
+        if (hasPayrollFinance(user)) {
             return;
         }
         throw new ApiException(WorkforceErrorCode.WORKFORCE_RECORD_ACCESS_DENIED);
+    }
+
+    /**
+     * Allows payroll finance or the linked staff member to read a payroll row.
+     *
+     * @param user    current authenticated user
+     * @param payroll payroll row being read
+     */
+    public void requireCanViewPayrollRecord(CurrentUser user, TaskMonthlySalary payroll) {
+        if (hasPayrollFinance(user) || isOwnPerson(user, payroll.getStaff().getId())) {
+            return;
+        }
+        throw new ApiException(WorkforceErrorCode.WORKFORCE_RECORD_ACCESS_DENIED);
+    }
+
+    private boolean hasPayrollFinance(CurrentUser user) {
+        return user.hasRole(SystemRole.ADMIN)
+                || user.hasRole(SystemRole.GENERAL_MANAGER)
+                || user.hasRole(SystemRole.ACCOUNTANT);
     }
 
     private boolean canManageResolvedDepartment(CurrentUser user, UUID staffId,

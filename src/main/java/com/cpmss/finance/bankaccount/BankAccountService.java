@@ -97,7 +97,16 @@ public class BankAccountService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<BankAccountResponse> listAll(Pageable pageable) {
-        accessRules.requireFinanceAuthority(currentUserService.currentUser());
+        return listAll(pageable, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<BankAccountResponse> listAll(Pageable pageable, UUID accountOwnerId) {
+        accessRules.requireCanListBankAccounts(currentUserService.currentUser(), accountOwnerId);
+        if (accountOwnerId != null) {
+            return PagedResponse.from(
+                    repository.findByAccountOwnerId(accountOwnerId, pageable), mapper::toResponse);
+        }
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 

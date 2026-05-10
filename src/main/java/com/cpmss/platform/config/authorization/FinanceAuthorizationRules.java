@@ -39,12 +39,12 @@ final class FinanceAuthorizationRules {
                 // Allow finance to inspect a payment.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.PAYMENTS_BY_ID,
                         RoleGroups.FINANCE),
-                // Allow finance to browse bank accounts.
+                // Allow staff-based users to browse service-filtered bank accounts.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.BANK_ACCOUNTS,
-                        RoleGroups.FINANCE),
-                // Allow finance to inspect a bank account.
+                        RoleGroups.STAFF_SELF_READERS),
+                // Allow staff-based users to inspect service-filtered bank accounts.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.BANK_ACCOUNTS_BY_ID,
-                        RoleGroups.FINANCE),
+                        RoleGroups.STAFF_SELF_READERS),
                 // Allow finance to create bank accounts.
                 EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.BANK_ACCOUNTS,
                         RoleGroups.FINANCE),

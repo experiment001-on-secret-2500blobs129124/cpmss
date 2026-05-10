@@ -5,6 +5,8 @@ import com.cpmss.identity.auth.CurrentUser;
 import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.platform.exception.ApiException;
 
+import java.util.UUID;
+
 /**
  * Service-level authorization rules for finance records.
  */
@@ -29,13 +31,34 @@ public class FinanceAccessRules {
      * @param account bank account being read
      */
     public void requireCanViewBankAccount(CurrentUser user, BankAccount account) {
-        if (hasFinanceAuthority(user)
-                || (account.getAccountOwner() != null
-                && user.personId() != null
-                && user.personId().equals(account.getAccountOwner().getId()))) {
+        if (hasFinanceAuthority(user) || isOwnedPersonAccount(user, account)) {
             return;
         }
         throw new ApiException(FinanceErrorCode.FINANCE_RECORD_ACCESS_DENIED);
+    }
+
+    /**
+     * Allows finance authority or the linked person to request their bank accounts.
+     *
+     * @param user           current authenticated user
+     * @param accountOwnerId person UUID whose accounts are requested
+     */
+    public void requireCanListBankAccounts(CurrentUser user, UUID accountOwnerId) {
+        if (accountOwnerId == null) {
+            requireFinanceAuthority(user);
+            return;
+        }
+        if (hasFinanceAuthority(user)
+                || (user.personId() != null && user.personId().equals(accountOwnerId))) {
+            return;
+        }
+        throw new ApiException(FinanceErrorCode.FINANCE_RECORD_ACCESS_DENIED);
+    }
+
+    private boolean isOwnedPersonAccount(CurrentUser user, BankAccount account) {
+        return account.getAccountOwner() != null
+                && user.personId() != null
+                && user.personId().equals(account.getAccountOwner().getId());
     }
 
     private boolean hasFinanceAuthority(CurrentUser user) {

@@ -9,14 +9,27 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.cpmss.platform.common.ApiPaths.APPLICATIONS;
+import static com.cpmss.platform.common.ApiPaths.ASSIGNED_TASKS;
+import static com.cpmss.platform.common.ApiPaths.ASSIGNED_TASKS_BY_ID;
+import static com.cpmss.platform.common.ApiPaths.ATTENDANCE;
+import static com.cpmss.platform.common.ApiPaths.BANK_ACCOUNTS;
+import static com.cpmss.platform.common.ApiPaths.BANK_ACCOUNTS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.ENTRIES;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.INTERNAL_REPORTS;
+import static com.cpmss.platform.common.ApiPaths.KPI_RECORDS;
+import static com.cpmss.platform.common.ApiPaths.KPI_SUMMARIES;
+import static com.cpmss.platform.common.ApiPaths.PAYROLL;
+import static com.cpmss.platform.common.ApiPaths.PERFORMANCE_REVIEWS;
+import static com.cpmss.platform.common.ApiPaths.PERFORMANCE_REVIEWS_BY_ID;
+import static com.cpmss.platform.common.ApiPaths.PERSONS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.DEPARTMENTS_MANAGERS;
 import static com.cpmss.platform.common.ApiPaths.DEPARTMENTS_CURRENT_MANAGER;
 import static com.cpmss.platform.common.ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISEE;
 import static com.cpmss.platform.common.ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISOR;
+import static com.cpmss.platform.common.ApiPaths.STAFF_POSITION_HISTORY_BY_PERSON;
+import static com.cpmss.platform.common.ApiPaths.STAFF_PROFILES_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.USERS;
 import static com.cpmss.platform.common.ApiPaths.USERS_ROLE;
 import static com.cpmss.platform.common.ApiPaths.USERS_STATUS;
@@ -78,14 +91,20 @@ class EndpointAuthorizationRolePolicyTest {
     }
 
     /**
-     * Confirms applicant access stays limited to submitting their own application.
+     * Confirms applicant access stays limited to owned profile and application routes.
      */
     @Test
-    void allowsApplicantOnlyToSubmitApplications() {
+    void allowsApplicantOnlyOnServiceOwnedRoutes() {
         EndpointAuthorizationRule applicationCreate =
                 rule(HttpMethod.POST, APPLICATIONS).orElseThrow();
+        EndpointAuthorizationRule personRead =
+                rule(HttpMethod.GET, PERSONS_BY_ID).orElseThrow();
+        EndpointAuthorizationRule personUpdate =
+                rule(HttpMethod.PUT, PERSONS_BY_ID).orElseThrow();
 
         assertThat(applicationCreate.roles()).contains(role(SystemRole.APPLICANT));
+        assertThat(personRead.roles()).contains(role(SystemRole.APPLICANT));
+        assertThat(personUpdate.roles()).contains(role(SystemRole.APPLICANT));
         assertThat(rulesContaining(SystemRole.APPLICANT))
                 .allSatisfy(endpointRule ->
                         assertThat(isServiceOwnedRoute(endpointRule))
@@ -134,7 +153,35 @@ class EndpointAuthorizationRolePolicyTest {
                 || isGateEntryCreate(rule)
                 || isApplicantApplicationSubmit(rule)
                 || isDepartmentManagerRead(rule)
-                || isSupervisionRead(rule);
+                || isSupervisionRead(rule)
+                || isSelfServiceRoute(rule);
+    }
+
+
+    private static boolean isSelfServiceRoute(EndpointAuthorizationRule rule) {
+        if (rule.method() == HttpMethod.PUT) {
+            return rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(PERSONS_BY_ID));
+        }
+        if (rule.method() != HttpMethod.GET) {
+            return false;
+        }
+        return Set.of(
+                PERSONS_BY_ID,
+                STAFF_PROFILES_BY_ID,
+                STAFF_POSITION_HISTORY_BY_PERSON,
+                BANK_ACCOUNTS,
+                BANK_ACCOUNTS_BY_ID,
+                ASSIGNED_TASKS,
+                ASSIGNED_TASKS_BY_ID,
+                ATTENDANCE,
+                PAYROLL,
+                PERFORMANCE_REVIEWS,
+                PERFORMANCE_REVIEWS_BY_ID,
+                KPI_RECORDS,
+                KPI_SUMMARIES
+        ).stream()
+                .map(EndpointAuthorizationRules::pathPattern)
+                .anyMatch(rule.pathPattern()::equals);
     }
 
     private static boolean isInternalReportRoute(EndpointAuthorizationRule rule) {

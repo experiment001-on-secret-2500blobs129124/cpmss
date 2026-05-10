@@ -28,13 +28,13 @@ final class WorkforceAuthorizationRules {
                 EndpointAuthorizationRules.crud(ApiPaths.TASKS, ApiPaths.TASKS_BY_ID,
                         RoleGroups.DEPARTMENT_OPERATIONS),
                 List.of(
-                        // Allow department operations roles to browse task assignments.
+                        // Allow staff-based users to browse service-filtered task assignments.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.ASSIGNED_TASKS,
-                                RoleGroups.DEPARTMENT_OPERATIONS),
-                        // Allow department operations roles to inspect a task assignment.
+                                RoleGroups.STAFF_SELF_READERS),
+                        // Allow staff-based users to inspect service-filtered task assignments.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,
                                 ApiPaths.ASSIGNED_TASKS_BY_ID,
-                                RoleGroups.DEPARTMENT_OPERATIONS),
+                                RoleGroups.STAFF_SELF_READERS),
                         // Allow department operations roles to assign staff to tasks.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.ASSIGNED_TASKS,
                                 RoleGroups.DEPARTMENT_OPERATIONS),
@@ -47,14 +47,13 @@ final class WorkforceAuthorizationRules {
                                 RoleGroups.DEPARTMENT_OPERATIONS),
                         // Allow HR and department operations roles to review attendance.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.ATTENDANCE,
-                                RoleGroups.roles(RoleGroups.ADMIN, RoleGroups.GENERAL_MANAGER,
-                                        RoleGroups.HR_OFFICER, RoleGroups.DEPARTMENT_MANAGER)),
+                                RoleGroups.STAFF_SELF_READERS),
                         // Allow finance to close monthly payroll.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.PAYROLL_CLOSE,
                                 RoleGroups.FINANCE),
                         // Allow finance to inspect payroll snapshots.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.PAYROLL,
-                                RoleGroups.FINANCE)
+                                RoleGroups.STAFF_SELF_READERS)
                 )
         ).stream().flatMap(List::stream).toList();
     }
