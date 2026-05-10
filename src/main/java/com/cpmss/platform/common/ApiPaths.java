@@ -21,6 +21,7 @@ public final class ApiPaths {
     public static final String USERS_ROLE = "/api/v1/users/{id}/role";
     public static final String USERS_STATUS = "/api/v1/users/{id}/status";
     public static final String REGISTER = "/register";
+    public static final String REGISTER_APPLICANT = "/register/applicant";
 
     // Phase 2 — Catalogs
     public static final String DEPARTMENTS = "/api/v1/departments";
@@ -73,6 +74,11 @@ public final class ApiPaths {
     // Phase 4 — Staff & HR
     public static final String STAFF_POSITIONS = "/api/v1/staff-positions";
     public static final String STAFF_POSITIONS_BY_ID = "/api/v1/staff-positions/{id}";
+    public static final String STAFF_POSITIONS_SALARY_HISTORY =
+            "/api/v1/staff-positions/{id}/salary-history";
+    public static final String STAFF_POSITION_HISTORY = "/api/v1/staff-position-history";
+    public static final String STAFF_POSITION_HISTORY_BY_PERSON =
+            "/api/v1/staff-position-history/persons/{personId}";
     public static final String STAFF_PROFILES = "/api/v1/staff-profiles";
     public static final String STAFF_PROFILES_BY_ID = "/api/v1/staff-profiles/{id}";
     public static final String BANK_ACCOUNTS = "/api/v1/bank-accounts";
@@ -81,6 +87,7 @@ public final class ApiPaths {
     // Phase 5 — Contracts & Occupancy
     public static final String CONTRACTS = "/api/v1/contracts";
     public static final String CONTRACTS_BY_ID = "/api/v1/contracts/{id}";
+    public static final String CONTRACTS_STATUS = "/api/v1/contracts/{id}/status";
     public static final String CONTRACT_PARTIES = "/api/v1/contracts/{id}/parties";
     public static final String CONTRACT_RESIDENTS = "/api/v1/contracts/{id}/residents";
     public static final String INSTALLMENTS = "/api/v1/installments";

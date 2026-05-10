@@ -63,6 +63,10 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.GET, ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISOR);
         add(routes, HttpMethod.GET, ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISEE);
         crud(routes, ApiPaths.STAFF_POSITIONS, ApiPaths.STAFF_POSITIONS_BY_ID);
+        add(routes, HttpMethod.POST, ApiPaths.STAFF_POSITION_HISTORY);
+        add(routes, HttpMethod.GET, ApiPaths.STAFF_POSITION_HISTORY_BY_PERSON);
+        add(routes, HttpMethod.POST, ApiPaths.STAFF_POSITIONS_SALARY_HISTORY);
+        add(routes, HttpMethod.GET, ApiPaths.STAFF_POSITIONS_SALARY_HISTORY);
         crud(routes, ApiPaths.SHIFT_ATTENDANCE_TYPES, ApiPaths.SHIFT_ATTENDANCE_TYPES_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS);
         add(routes, HttpMethod.GET, ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS);
@@ -118,6 +122,7 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.GET, ApiPaths.CONTRACTS_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.CONTRACTS);
         add(routes, HttpMethod.PUT, ApiPaths.CONTRACTS_BY_ID);
+        add(routes, HttpMethod.PUT, ApiPaths.CONTRACTS_STATUS);
         add(routes, HttpMethod.GET, ApiPaths.INSTALLMENTS);
         add(routes, HttpMethod.GET, ApiPaths.INSTALLMENTS_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.INSTALLMENTS);

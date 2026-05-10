@@ -50,6 +50,9 @@ public enum HrErrorCode implements ErrorCode {
     /** Application not found. */
     APPLICATION_NOT_FOUND(404, "Application not found"),
 
+    /** Application already exists for applicant, position, and date. */
+    APPLICATION_DUPLICATE(409, "Application already exists for applicant, position, and date"),
+
     /** Staff position not found. */
     POSITION_NOT_FOUND(404, "Staff position not found"),
 
@@ -61,6 +64,24 @@ public enum HrErrorCode implements ErrorCode {
 
     /** Qualification not found. */
     QUALIFICATION_NOT_FOUND(404, "Qualification not found"),
+
+    /** Staff position assignment already exists. */
+    STAFF_POSITION_ASSIGNMENT_DUPLICATE(409, "Staff position assignment already exists"),
+
+    /** Position assignment effective date overlaps the current assignment. */
+    STAFF_POSITION_ASSIGNMENT_OVERLAP(409, "Position assignment effective date overlaps the current assignment"),
+
+    /** Position reassignment requires an authorizer. */
+    STAFF_POSITION_AUTHORIZER_REQUIRED(422, "Position reassignment requires an authorizer"),
+
+    /** No current salary history exists for the staff member. */
+    STAFF_SALARY_HISTORY_NOT_FOUND(404, "Current staff salary history not found"),
+
+    /** Staff salary history already exists for this effective date. */
+    STAFF_SALARY_HISTORY_DUPLICATE(409, "Staff salary history already exists for this effective date"),
+
+    /** Position salary history already exists for this effective date. */
+    POSITION_SALARY_HISTORY_DUPLICATE(409, "Position salary history already exists for this effective date"),
 
     /** Shift attendance law row was not found. */
     SHIFT_ATTENDANCE_LAW_NOT_FOUND(404, "Shift attendance law not found"),

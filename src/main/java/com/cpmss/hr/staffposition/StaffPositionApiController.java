@@ -3,9 +3,13 @@ package com.cpmss.hr.staffposition;
 import com.cpmss.platform.common.ApiPaths;
 import com.cpmss.platform.common.ApiResponse;
 import com.cpmss.platform.common.PagedResponse;
+import com.cpmss.hr.staffposition.dto.CreatePositionSalaryHistoryRequest;
 import com.cpmss.hr.staffposition.dto.CreateStaffPositionRequest;
+import com.cpmss.hr.staffposition.dto.PositionSalaryHistoryResponse;
 import com.cpmss.hr.staffposition.dto.StaffPositionResponse;
 import com.cpmss.hr.staffposition.dto.UpdateStaffPositionRequest;
+import com.cpmss.hr.staffpositionhistory.dto.CreateStaffPositionHistoryRequest;
+import com.cpmss.hr.staffpositionhistory.dto.StaffPositionHistoryResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -101,5 +106,57 @@ public class StaffPositionApiController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.status(204).body(ApiResponse.noContent());
+    }
+
+    /**
+     * Assigns a staff member to a position and closes the previous active row.
+     *
+     * @param request assignment details
+     * @return 201 Created with the new history row
+     */
+    @PostMapping(ApiPaths.STAFF_POSITION_HISTORY)
+    public ResponseEntity<ApiResponse<StaffPositionHistoryResponse>> assignStaffPosition(
+            @Valid @RequestBody CreateStaffPositionHistoryRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(service.assignStaffPosition(request)));
+    }
+
+    /**
+     * Lists position assignment history for one person.
+     *
+     * @param personId the staff member UUID
+     * @return 200 OK with assignment history
+     */
+    @GetMapping(ApiPaths.STAFF_POSITION_HISTORY_BY_PERSON)
+    public ResponseEntity<ApiResponse<List<StaffPositionHistoryResponse>>> positionHistoryForPerson(
+            @PathVariable UUID personId) {
+        return ResponseEntity.ok(ApiResponse.ok(service.positionHistoryForPerson(personId)));
+    }
+
+    /**
+     * Records a salary band for a staff position.
+     *
+     * @param id the position UUID
+     * @param request salary-band details
+     * @return 201 Created with the salary history row
+     */
+    @PostMapping(ApiPaths.STAFF_POSITIONS_SALARY_HISTORY)
+    public ResponseEntity<ApiResponse<PositionSalaryHistoryResponse>> createPositionSalaryHistory(
+            @PathVariable UUID id,
+            @Valid @RequestBody CreatePositionSalaryHistoryRequest request) {
+        return ResponseEntity.status(201)
+                .body(ApiResponse.created(service.createPositionSalaryHistory(id, request)));
+    }
+
+    /**
+     * Lists salary-band history for a staff position.
+     *
+     * @param id the position UUID
+     * @return 200 OK with salary-band history
+     */
+    @GetMapping(ApiPaths.STAFF_POSITIONS_SALARY_HISTORY)
+    public ResponseEntity<ApiResponse<List<PositionSalaryHistoryResponse>>> positionSalaryHistory(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.positionSalaryHistory(id)));
     }
 }
