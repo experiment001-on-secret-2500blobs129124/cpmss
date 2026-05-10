@@ -205,15 +205,19 @@ public class PayrollService {
                         a.getStaff().getId(), departmentId))
                 .toList();
 
-        // Group by staff+shift
+        // Group by staff so the month closes once per staff/department/period.
         var grouped = allAttendance.stream()
                 .collect(java.util.stream.Collectors.groupingBy(
-                        a -> a.getStaff().getId() + "|" + a.getShift().getId()));
+                        a -> a.getStaff().getId()));
 
         List<TaskMonthlySalary> results = new java.util.ArrayList<>();
         for (var entry : grouped.entrySet()) {
             List<Attends> records = entry.getValue();
             Attends sample = records.get(0);
+            if (monthlySalaryRepository.existsByStaffIdAndDepartmentIdAndYearAndMonth(
+                    sample.getStaff().getId(), departmentId, year, month)) {
+                throw new ApiException(WorkforceErrorCode.PAYROLL_ALREADY_CLOSED);
+            }
 
             Money totalSalary = sumMoney(records, Attends::getDailySalary, zero);
             Money totalBonus = sumMoney(records, Attends::getDailyBonus, zero);
@@ -226,6 +230,7 @@ public class PayrollService {
                     .subtract(totalDeduction.getAmount())
                     .subtract(tax.getAmount());
             Money netSalary = new Money(netSalaryAmount, totalSalary.getCurrency());
+            validateNetWithinSalaryCap(sample.getStaff().getId(), netSalary);
 
             TaskMonthlySalary monthly = new TaskMonthlySalary();
             monthly.setStaff(sample.getStaff());
@@ -284,10 +289,14 @@ public class PayrollService {
                         .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND))
                 : null;
 
-        // Close current active rate (end_date IS NULL)
-        salaryHistoryRepository.findAll().stream()
-                .filter(h -> h.getStaff().getId().equals(request.staffId()) && h.getEndDate() == null)
-                .findFirst()
+        if (salaryHistoryRepository.existsByStaffIdAndEffectiveDate(
+                request.staffId(), request.effectiveDate())) {
+            throw new ApiException(com.cpmss.hr.common.HrErrorCode
+                    .STAFF_SALARY_HISTORY_DUPLICATE);
+        }
+
+        // Close current active rate (end_date IS NULL).
+        salaryHistoryRepository.findByStaffIdAndEndDateIsNull(request.staffId())
                 .ifPresent(current -> {
                     current.setEndDate(request.effectiveDate().minusDays(1));
                     salaryHistoryRepository.save(current);
@@ -337,6 +346,17 @@ public class PayrollService {
                 m.getPayrollPeriod(),
                 m.getMonthlyDeduction(), m.getMonthlyBonus(), m.getTax(),
                 m.getMonthlySalary(), m.getMonthlyNetSalary());
+    }
+
+
+    private void validateNetWithinSalaryCap(UUID staffId, Money netSalary) {
+        StaffSalaryHistory salaryHistory = salaryHistoryRepository.findByStaffIdAndEndDateIsNull(staffId)
+                .orElseThrow(() -> new ApiException(com.cpmss.hr.common.HrErrorCode
+                        .STAFF_SALARY_HISTORY_NOT_FOUND));
+        if (salaryHistory.getMaximumSalary() != null
+                && netSalary.getAmount().compareTo(salaryHistory.getMaximumSalary()) > 0) {
+            throw new ApiException(WorkforceErrorCode.PAYROLL_NET_EXCEEDS_SALARY_CAP);
+        }
     }
 
     private Money sumMoney(List<Attends> records, Function<Attends, Money> extractor, Money zero) {
