@@ -36,9 +36,27 @@ final class OrganizationAuthorizationRules {
                         // Allow HR to assign department managers.
                         EndpointAuthorizationRules.allow(HttpMethod.POST,
                                 ApiPaths.DEPARTMENTS_MANAGERS, RoleGroups.HR),
-                        // Allow HR to inspect department manager history.
+                        // Allow scoped readers to inspect department manager history.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,
-                                ApiPaths.DEPARTMENTS_MANAGERS, RoleGroups.HR)
+                                ApiPaths.DEPARTMENTS_MANAGERS, RoleGroups.ORGANIZATION_SCOPE_READERS),
+                        // Allow scoped readers to inspect the current department manager.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.DEPARTMENTS_CURRENT_MANAGER,
+                                RoleGroups.ORGANIZATION_SCOPE_READERS),
+                        // Allow HR to create supervision relationships.
+                        EndpointAuthorizationRules.allow(HttpMethod.POST,
+                                ApiPaths.PERSON_SUPERVISIONS, RoleGroups.HR),
+                        // Allow HR to end supervision relationships.
+                        EndpointAuthorizationRules.allow(HttpMethod.PUT,
+                                ApiPaths.PERSON_SUPERVISIONS_END, RoleGroups.HR),
+                        // Allow scoped readers to inspect supervisor teams.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISOR,
+                                RoleGroups.SUPERVISION_READERS),
+                        // Allow scoped readers to inspect a staff member's supervisor chain.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISEE,
+                                RoleGroups.SUPERVISION_READERS)
                 )
         ).stream().flatMap(List::stream).toList();
     }

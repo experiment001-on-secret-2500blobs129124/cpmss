@@ -57,6 +57,14 @@ final class RoleGroups {
     static final List<String> DEPARTMENT_OPERATIONS = roles(
             ADMIN, GENERAL_MANAGER, DEPARTMENT_MANAGER);
 
+    /** Roles allowed to read service-filtered department manager assignments. */
+    static final List<String> ORGANIZATION_SCOPE_READERS = roles(
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER);
+
+    /** Roles allowed to read service-filtered supervision relationships. */
+    static final List<String> SUPERVISION_READERS = roles(
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER, SUPERVISOR);
+
     /** Roles allowed to read broad person records before self-scoped APIs exist. */
     static final List<String> PERSON_READERS = roles(
             ADMIN, GENERAL_MANAGER, HR_OFFICER, SECURITY_OFFICER);

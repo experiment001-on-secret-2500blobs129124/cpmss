@@ -12,6 +12,10 @@ import static com.cpmss.platform.common.ApiPaths.ENTRIES;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.INTERNAL_REPORTS;
+import static com.cpmss.platform.common.ApiPaths.DEPARTMENTS_MANAGERS;
+import static com.cpmss.platform.common.ApiPaths.DEPARTMENTS_CURRENT_MANAGER;
+import static com.cpmss.platform.common.ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISEE;
+import static com.cpmss.platform.common.ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISOR;
 import static com.cpmss.platform.common.ApiPaths.USERS;
 import static com.cpmss.platform.common.ApiPaths.USERS_ROLE;
 import static com.cpmss.platform.common.ApiPaths.USERS_STATUS;
@@ -20,7 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Verifies business role decisions in the endpoint authorization registry.
  *
- * <p>The tests protect important negative permissions while allowing service-owned routes where resource authorization is enforced inside the
+ * <p>The tests protect important negative permissions while allowing
+ * service-owned routes where resource authorization is enforced inside the
  * owning bounded-context service.
  */
 class EndpointAuthorizationRolePolicyTest {
@@ -108,7 +113,9 @@ class EndpointAuthorizationRolePolicyTest {
     private static boolean isServiceOwnedRoute(EndpointAuthorizationRule rule) {
         return isInternalReportRoute(rule)
                 || isGateGuardAssignmentRead(rule)
-                || isGateEntryCreate(rule);
+                || isGateEntryCreate(rule)
+                || isDepartmentManagerRead(rule)
+                || isSupervisionRead(rule);
     }
 
     private static boolean isInternalReportRoute(EndpointAuthorizationRule rule) {
@@ -126,6 +133,22 @@ class EndpointAuthorizationRolePolicyTest {
     private static boolean isGateEntryCreate(EndpointAuthorizationRule rule) {
         return rule.method() == HttpMethod.POST
                 && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(ENTRIES));
+    }
+
+    private static boolean isDepartmentManagerRead(EndpointAuthorizationRule rule) {
+        return rule.method() == HttpMethod.GET
+                && (rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(
+                        DEPARTMENTS_MANAGERS))
+                || rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(
+                        DEPARTMENTS_CURRENT_MANAGER)));
+    }
+
+    private static boolean isSupervisionRead(EndpointAuthorizationRule rule) {
+        return rule.method() == HttpMethod.GET
+                && (rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(
+                        PERSON_SUPERVISIONS_BY_SUPERVISOR))
+                || rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(
+                        PERSON_SUPERVISIONS_BY_SUPERVISEE)));
     }
 
     private static Optional<EndpointAuthorizationRule> rule(HttpMethod method, String apiPath) {
