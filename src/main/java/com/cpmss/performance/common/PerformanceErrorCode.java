@@ -54,6 +54,9 @@ public enum PerformanceErrorCode implements ErrorCode {
     /** Poor rating with promotion or raise. */
     POOR_RATING_INCONSISTENT(422, "A 'Poor' rating cannot result in a promotion or raise"),
 
+    /** Review outcome flags cannot be changed without outcome details. */
+    REVIEW_OUTCOME_IMMUTABLE(409, "Performance review outcomes cannot be changed after creation"),
+
     /** KPI policy is not active for the record date. */
     KPI_POLICY_NOT_ACTIVE(422, "KPI policy is not yet active for this record date"),
 
@@ -65,6 +68,15 @@ public enum PerformanceErrorCode implements ErrorCode {
 
     /** KPI policy not found. */
     KPI_POLICY_NOT_FOUND(404, "KPI policy not found"),
+
+    /** KPI monthly summary already exists. */
+    KPI_MONTH_ALREADY_CLOSED(409, "KPI month is already closed for this staff member"),
+
+    /** Promotion requires a target position. */
+    PROMOTION_POSITION_REQUIRED(422, "Promotion requires a target position"),
+
+    /** Raise requires salary values. */
+    RAISE_SALARY_REQUIRED(422, "Raise requires salary values"),
 
     /** Performance review not found. */
     REVIEW_NOT_FOUND(404, "Performance review not found"),
