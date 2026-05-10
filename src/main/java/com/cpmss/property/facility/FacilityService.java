@@ -298,6 +298,26 @@ public class FacilityService {
                 .stream().map(this::toManagerResponse).toList();
     }
 
+
+    /**
+     * Retrieves the current manager assignment for a facility.
+     *
+     * @param facilityId the facility's UUID
+     * @return current manager assignment
+     * @throws ApiException if the facility or current manager assignment does not exist
+     */
+    @Transactional(readOnly = true)
+    public FacilityManagerResponse getCurrentManager(UUID facilityId) {
+        accessRules.requirePropertyReader(currentUserService.currentUser());
+        if (!repository.existsById(facilityId)) {
+            throw new ApiException(PropertyErrorCode.FACILITY_NOT_FOUND);
+        }
+        return facilityManagerRepository
+                .findFirstByFacilityIdAndManagementEndDateIsNullOrderByManagementStartDateDesc(facilityId)
+                .map(this::toManagerResponse)
+                .orElseThrow(() -> new ApiException(PropertyErrorCode.FACILITY_MANAGER_NOT_FOUND));
+    }
+
     private FacilityHoursHistoryResponse toHoursResponse(FacilityHoursHistory h) {
         return new FacilityHoursHistoryResponse(
                 h.getFacility().getId(), h.getEffectiveDate(),

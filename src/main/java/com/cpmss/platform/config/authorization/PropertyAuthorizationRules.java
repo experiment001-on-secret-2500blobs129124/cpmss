@@ -64,7 +64,10 @@ final class PropertyAuthorizationRules {
                                 ApiPaths.FACILITIES_MANAGERS, RoleGroups.FACILITY),
                         // Allow facility officers to inspect facility manager history.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,
-                                ApiPaths.FACILITIES_MANAGERS, RoleGroups.FACILITY)
+                                ApiPaths.FACILITIES_MANAGERS, RoleGroups.FACILITY),
+                        // Allow facility officers to inspect the current facility manager.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.FACILITIES_CURRENT_MANAGER, RoleGroups.FACILITY)
                 )
         ).stream().flatMap(List::stream).toList();
     }

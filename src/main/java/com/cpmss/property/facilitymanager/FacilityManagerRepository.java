@@ -3,6 +3,7 @@ package com.cpmss.property.facilitymanager;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -21,4 +22,13 @@ public interface FacilityManagerRepository
      * @return manager assignments, most recent first
      */
     List<FacilityManager> findByFacilityIdOrderByManagementStartDateDesc(UUID facilityId);
+
+    /**
+     * Finds the current manager assignment for a facility.
+     *
+     * @param facilityId the facility UUID
+     * @return the active manager assignment, if present
+     */
+    Optional<FacilityManager> findFirstByFacilityIdAndManagementEndDateIsNullOrderByManagementStartDateDesc(
+            UUID facilityId);
 }

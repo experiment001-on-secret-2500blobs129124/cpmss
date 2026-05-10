@@ -155,6 +155,19 @@ public class FacilityApiController {
                 .body(ApiResponse.created(facilityService.assignManager(id, request)));
     }
 
+
+    /**
+     * Retrieves the current manager assignment for a facility.
+     *
+     * @param id the facility UUID
+     * @return 200 OK with current manager assignment
+     */
+    @GetMapping(ApiPaths.FACILITIES_CURRENT_MANAGER)
+    public ResponseEntity<ApiResponse<FacilityManagerResponse>> getCurrentManager(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.ok(facilityService.getCurrentManager(id)));
+    }
+
     /**
      * Retrieves all manager assignments for a facility.
      *

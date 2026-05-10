@@ -66,6 +66,9 @@ public enum PropertyErrorCode implements ErrorCode {
     /** Unit number already exists in this facility. */
     UNIT_DUPLICATE(409, "Unit number already exists in this facility"),
 
+    /** Current facility manager assignment not found. */
+    FACILITY_MANAGER_NOT_FOUND(404, "Facility manager assignment not found"),
+
     /** Facility management type mismatch with compound. */
     FACILITY_MGMT_MISMATCH_RESIDENTIAL(422, "Residential compounds require self management"),
 
