@@ -104,7 +104,12 @@ public class RecruitmentService {
      */
     @Transactional
     public ApplicationResponse submitApplication(CreateApplicationRequest request) {
-        accessRules.requireHrAdministrator(currentUserService.currentUser());
+        accessRules.requireCanSubmitApplication(
+                currentUserService.currentUser(), request.applicantId());
+        if (applicationRepository.existsByApplicantIdAndPositionIdAndApplicationDate(
+                request.applicantId(), request.positionId(), request.applicationDate())) {
+            throw new ApiException(HrErrorCode.APPLICATION_DUPLICATE);
+        }
         Person applicant = findPersonOrThrow(request.applicantId());
         StaffPosition position = findPositionOrThrow(request.positionId());
 

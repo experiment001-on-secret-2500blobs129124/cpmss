@@ -23,9 +23,18 @@ final class HrAuthorizationRules {
      */
     static List<EndpointAuthorizationRule> rules() {
         return List.of(
-                // Allow HR to maintain staff position catalog records.
-                EndpointAuthorizationRules.crud(ApiPaths.STAFF_POSITIONS,
-                        ApiPaths.STAFF_POSITIONS_BY_ID, RoleGroups.HR),
+                List.of(
+                        // Staff position reads are public for the applicant portal.
+                        // Allow HR to create staff position catalog records.
+                        EndpointAuthorizationRules.allow(HttpMethod.POST,
+                                ApiPaths.STAFF_POSITIONS, RoleGroups.HR),
+                        // Allow HR to update staff position catalog records.
+                        EndpointAuthorizationRules.allow(HttpMethod.PUT,
+                                ApiPaths.STAFF_POSITIONS_BY_ID, RoleGroups.HR),
+                        // Allow HR to delete staff position catalog records.
+                        EndpointAuthorizationRules.allow(HttpMethod.DELETE,
+                                ApiPaths.STAFF_POSITIONS_BY_ID, RoleGroups.HR)
+                ),
                 // Allow HR to maintain staff profiles.
                 EndpointAuthorizationRules.crud(ApiPaths.STAFF_PROFILES,
                         ApiPaths.STAFF_PROFILES_BY_ID, RoleGroups.HR),
@@ -45,9 +54,9 @@ final class HrAuthorizationRules {
                         // Allow HR to inspect the current shift attendance law.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,
                                 ApiPaths.SHIFT_ATTENDANCE_TYPES_CURRENT_LAW, RoleGroups.HR),
-                        // Allow HR to submit or import job applications.
+                        // Allow HR to import applications and applicants to submit their own.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.APPLICATIONS,
-                                RoleGroups.HR),
+                                RoleGroups.APPLICATION_SUBMITTERS),
                         // Allow HR to schedule interviews.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.INTERVIEWS,
                                 RoleGroups.HR),

@@ -1,5 +1,6 @@
 package com.cpmss.platform.config;
 
+import com.cpmss.platform.common.ApiPaths;
 import com.cpmss.platform.config.authorization.EndpointAuthorizationRules;
 
 import org.springframework.context.annotation.Bean;
@@ -84,6 +85,10 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/v3/api-docs/**"
                     ).permitAll()
+                    .requestMatchers(HttpMethod.GET,
+                            ApiPaths.STAFF_POSITIONS,
+                            EndpointAuthorizationRules.pathPattern(ApiPaths.STAFF_POSITIONS_BY_ID))
+                    .permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
 
                 EndpointAuthorizationRules.roleRules().forEach(rule ->

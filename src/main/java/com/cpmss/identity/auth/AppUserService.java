@@ -142,7 +142,7 @@ public class AppUserService {
      */
     @Transactional
     public AppUserResponse create(CreateAppUserRequest request) {
-        accessRules.requireAccountManager(currentUserService.currentUser());
+        accessRules.requireAccountCreator(currentUserService.currentUser());
         SystemRole actorRole = getCurrentUserRole();
         EmailAddress loginEmail = EmailAddress.of(request.email());
 

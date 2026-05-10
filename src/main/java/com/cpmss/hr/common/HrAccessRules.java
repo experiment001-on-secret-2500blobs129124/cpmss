@@ -41,6 +41,22 @@ public class HrAccessRules {
     }
 
     /**
+     * Allows HR administrators to submit/import any application and applicants
+     * to submit applications only for their own linked person record.
+     *
+     * @param user        current authenticated user
+     * @param applicantId person UUID on the application payload
+     * @throws ApiException if the user cannot submit for this applicant
+     */
+    public void requireCanSubmitApplication(CurrentUser user, UUID applicantId) {
+        if (isHrAdministrator(user)
+                || (user.hasRole(SystemRole.APPLICANT) && isOwnPerson(user, applicantId))) {
+            return;
+        }
+        throw new ApiException(HrErrorCode.HR_RECORD_ACCESS_DENIED);
+    }
+
+    /**
      * Checks whether the role has full HR authority.
      *
      * @param user current authenticated user

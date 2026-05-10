@@ -44,6 +44,22 @@ class BoundedContextOwnershipAccessRulesTest {
     }
 
     @Test
+    void hrApplicationSubmitAllowsApplicantOnlyForOwnPerson() {
+        UUID applicantId = UUID.randomUUID();
+        HrAccessRules rules = new HrAccessRules();
+
+        assertThatCode(() -> rules.requireCanSubmitApplication(
+                user(SystemRole.APPLICANT, applicantId), applicantId))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> rules.requireCanSubmitApplication(
+                user(SystemRole.APPLICANT, UUID.randomUUID()), applicantId))
+                .isInstanceOf(ApiException.class);
+        assertThatCode(() -> rules.requireCanSubmitApplication(
+                user(SystemRole.HR_OFFICER, UUID.randomUUID()), applicantId))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void workforceDepartmentManagersNeedOwnedDepartmentScope() {
         UUID departmentId = UUID.randomUUID();
         CurrentUser manager = user(SystemRole.DEPARTMENT_MANAGER, UUID.randomUUID());
@@ -164,6 +180,20 @@ class BoundedContextOwnershipAccessRulesTest {
         assertThatCode(() -> accountRules.requireCanViewAccount(staff, accountId))
                 .doesNotThrowAnyException();
         assertThatThrownBy(() -> accountRules.requireAccountManager(staff))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void identityAllowsDepartmentManagersToCreateOnlyLowestLevelAccounts() {
+        AppUserAccessRules accountRules = new AppUserAccessRules();
+        CurrentUser manager = user(SystemRole.DEPARTMENT_MANAGER, UUID.randomUUID());
+
+        assertThatCode(() -> accountRules.requireAccountCreator(manager))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> accountRules.requireAccountManager(manager))
+                .isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> accountRules.requireAccountCreator(
+                user(SystemRole.STAFF, UUID.randomUUID())))
                 .isInstanceOf(ApiException.class);
     }
 

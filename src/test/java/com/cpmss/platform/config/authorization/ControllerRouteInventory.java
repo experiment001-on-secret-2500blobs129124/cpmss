@@ -62,7 +62,9 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.PUT, ApiPaths.PERSON_SUPERVISIONS_END);
         add(routes, HttpMethod.GET, ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISOR);
         add(routes, HttpMethod.GET, ApiPaths.PERSON_SUPERVISIONS_BY_SUPERVISEE);
-        crud(routes, ApiPaths.STAFF_POSITIONS, ApiPaths.STAFF_POSITIONS_BY_ID);
+        add(routes, HttpMethod.POST, ApiPaths.STAFF_POSITIONS);
+        add(routes, HttpMethod.PUT, ApiPaths.STAFF_POSITIONS_BY_ID);
+        add(routes, HttpMethod.DELETE, ApiPaths.STAFF_POSITIONS_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.STAFF_POSITION_HISTORY);
         add(routes, HttpMethod.GET, ApiPaths.STAFF_POSITION_HISTORY_BY_PERSON);
         add(routes, HttpMethod.POST, ApiPaths.STAFF_POSITIONS_SALARY_HISTORY);

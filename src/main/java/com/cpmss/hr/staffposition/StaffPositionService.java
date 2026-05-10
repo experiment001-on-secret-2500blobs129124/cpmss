@@ -89,7 +89,6 @@ public class StaffPositionService {
      */
     @Transactional(readOnly = true)
     public StaffPositionResponse getById(UUID id) {
-        accessRules.requireHrAdministrator(currentUserService.currentUser());
         return mapper.toResponse(repository.findById(id)
                 .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND)));
     }
@@ -102,7 +101,6 @@ public class StaffPositionService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<StaffPositionResponse> listAll(Pageable pageable) {
-        accessRules.requireHrAdministrator(currentUserService.currentUser());
         return PagedResponse.from(repository.findAll(pageable), mapper::toResponse);
     }
 

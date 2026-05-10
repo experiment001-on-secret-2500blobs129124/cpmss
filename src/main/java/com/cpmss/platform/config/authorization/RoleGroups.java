@@ -25,6 +25,7 @@ final class RoleGroups {
     static final String SUPERVISOR = role(SystemRole.SUPERVISOR);
     static final String GATE_GUARD = role(SystemRole.GATE_GUARD);
     static final String STAFF = role(SystemRole.STAFF);
+    static final String APPLICANT = role(SystemRole.APPLICANT);
 
     /** Roles allowed to create login accounts for people they onboard. */
     static final List<String> ACCOUNT_CREATORS = roles(
@@ -39,6 +40,10 @@ final class RoleGroups {
 
     /** Roles that administer staff, hiring, role catalogs, and HR setup. */
     static final List<String> HR = roles(ADMIN, GENERAL_MANAGER, HR_OFFICER);
+
+    /** Roles allowed to submit job applications at route level. */
+    static final List<String> APPLICATION_SUBMITTERS = roles(
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, APPLICANT);
 
     /** Roles that administer contracts, payments, bank accounts, and payroll money. */
     static final List<String> FINANCE = roles(ADMIN, GENERAL_MANAGER, ACCOUNTANT);

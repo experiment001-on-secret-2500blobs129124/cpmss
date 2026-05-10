@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.cpmss.platform.common.ApiPaths.APPLICATIONS;
 import static com.cpmss.platform.common.ApiPaths.ENTRIES;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID;
@@ -77,6 +78,23 @@ class EndpointAuthorizationRolePolicyTest {
     }
 
     /**
+     * Confirms applicant access stays limited to submitting their own application.
+     */
+    @Test
+    void allowsApplicantOnlyToSubmitApplications() {
+        EndpointAuthorizationRule applicationCreate =
+                rule(HttpMethod.POST, APPLICATIONS).orElseThrow();
+
+        assertThat(applicationCreate.roles()).contains(role(SystemRole.APPLICANT));
+        assertThat(rulesContaining(SystemRole.APPLICANT))
+                .allSatisfy(endpointRule ->
+                        assertThat(isServiceOwnedRoute(endpointRule))
+                                .as("APPLICANT route must be service-owned: %s %s",
+                                        endpointRule.method(), endpointRule.pathPattern())
+                                .isTrue());
+    }
+
+    /**
      * Confirms department managers can create accounts without managing users.
      */
     @Test
@@ -114,6 +132,7 @@ class EndpointAuthorizationRolePolicyTest {
         return isInternalReportRoute(rule)
                 || isGateGuardAssignmentRead(rule)
                 || isGateEntryCreate(rule)
+                || isApplicantApplicationSubmit(rule)
                 || isDepartmentManagerRead(rule)
                 || isSupervisionRead(rule);
     }
@@ -133,6 +152,11 @@ class EndpointAuthorizationRolePolicyTest {
     private static boolean isGateEntryCreate(EndpointAuthorizationRule rule) {
         return rule.method() == HttpMethod.POST
                 && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(ENTRIES));
+    }
+
+    private static boolean isApplicantApplicationSubmit(EndpointAuthorizationRule rule) {
+        return rule.method() == HttpMethod.POST
+                && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(APPLICATIONS));
     }
 
     private static boolean isDepartmentManagerRead(EndpointAuthorizationRule rule) {

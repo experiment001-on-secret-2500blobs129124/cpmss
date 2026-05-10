@@ -11,6 +11,21 @@ import java.util.UUID;
 public class AppUserAccessRules {
 
     /**
+     * Requires authority to create login accounts.
+     *
+     * <p>Department managers can create lowest-level STAFF and GATE_GUARD
+     * accounts, while {@link AppUserRules} validates the exact target role.
+     *
+     * @param user current authenticated user
+     */
+    public void requireAccountCreator(CurrentUser user) {
+        if (isAccountManager(user) || user.hasRole(SystemRole.DEPARTMENT_MANAGER)) {
+            return;
+        }
+        throw new ApiException(IdentityErrorCode.IDENTITY_RECORD_ACCESS_DENIED);
+    }
+
+    /**
      * Requires authority to read account management records.
      *
      * @param user current authenticated user
