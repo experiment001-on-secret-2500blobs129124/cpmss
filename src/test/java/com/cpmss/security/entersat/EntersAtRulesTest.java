@@ -1,10 +1,15 @@
 package com.cpmss.security.entersat;
 
 import com.cpmss.identity.auth.SystemRole;
+import com.cpmss.people.person.Person;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.accesspermit.AccessPermit;
+import com.cpmss.security.accesspermit.PermitStatus;
+import com.cpmss.security.accesspermit.PermitValidity;
 import com.cpmss.security.common.SecurityErrorCode;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,4 +51,49 @@ class EntersAtRulesTest {
                 .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
                         .isEqualTo(SecurityErrorCode.GUARD_NOT_ASSIGNED));
     }
+
+    @Test
+    void rejectsInactivePermitForGateEntry() {
+        AccessPermit permit = activePermitThrough(LocalDate.of(2026, 5, 20));
+        permit.setPermitStatus(PermitStatus.SUSPENDED);
+
+        assertThatThrownBy(() -> rules.validatePermitUsableForEntry(
+                permit, LocalDate.of(2026, 5, 10)))
+                .isInstanceOf(ApiException.class)
+                .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
+                        .isEqualTo(SecurityErrorCode.ACCESS_PERMIT_NOT_ACTIVE));
+    }
+
+    @Test
+    void rejectsExpiredPermitForGateEntry() {
+        AccessPermit permit = activePermitThrough(LocalDate.of(2026, 5, 9));
+
+        assertThatThrownBy(() -> rules.validatePermitUsableForEntry(
+                permit, LocalDate.of(2026, 5, 10)))
+                .isInstanceOf(ApiException.class)
+                .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
+                        .isEqualTo(SecurityErrorCode.ACCESS_PERMIT_EXPIRED));
+    }
+
+    @Test
+    void rejectsBlacklistedPermitHolderForGateEntry() {
+        AccessPermit permit = activePermitThrough(LocalDate.of(2026, 5, 20));
+        Person holder = new Person();
+        holder.setIsBlacklisted(true);
+        permit.setPermitHolder(holder);
+
+        assertThatThrownBy(() -> rules.validatePermitUsableForEntry(
+                permit, LocalDate.of(2026, 5, 10)))
+                .isInstanceOf(ApiException.class)
+                .satisfies(error -> assertThat(((ApiException) error).getErrorCode())
+                        .isEqualTo(SecurityErrorCode.ACCESS_PERMIT_HOLDER_BLACKLISTED));
+    }
+
+    private static AccessPermit activePermitThrough(LocalDate expiryDate) {
+        AccessPermit permit = new AccessPermit();
+        permit.setPermitStatus(PermitStatus.ACTIVE);
+        permit.setValidity(new PermitValidity(LocalDate.of(2026, 5, 1), expiryDate));
+        return permit;
+    }
+
 }

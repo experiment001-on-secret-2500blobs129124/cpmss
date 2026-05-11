@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 /**
@@ -123,7 +124,7 @@ public class EntersAtService {
 
         EntersAt entry = EntersAt.builder()
                 .gate(gate)
-                .permit(resolvePermit(request.permitId()))
+                .permit(resolveUsablePermit(request.permitId(), request.enteredAt()))
                 .manualPlateEntry(LicensePlate.ofNullable(request.manualPlateEntry()))
                 .enteredAt(request.enteredAt())
                 .direction(GateDirection.fromLabel(request.direction()))
@@ -166,12 +167,14 @@ public class EntersAtService {
         return null;
     }
 
-    private AccessPermit resolvePermit(UUID id) {
+    private AccessPermit resolveUsablePermit(UUID id, java.time.Instant enteredAt) {
         if (id == null) {
             return null;
         }
-        return accessPermitRepository.findById(id)
+        AccessPermit permit = accessPermitRepository.findById(id)
                 .orElseThrow(() -> new ApiException(SecurityErrorCode.ACCESS_PERMIT_NOT_FOUND));
+        rules.validatePermitUsableForEntry(permit, enteredAt.atZone(ZoneOffset.UTC).toLocalDate());
+        return permit;
     }
 
     private Person resolvePersonNullable(UUID id) {

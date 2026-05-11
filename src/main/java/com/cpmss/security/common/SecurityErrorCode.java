@@ -101,6 +101,15 @@ public enum SecurityErrorCode implements ErrorCode {
     /** Vehicle can only be linked to active permits. */
     VEHICLE_PERMIT_NOT_ACTIVE(422, "Vehicle can only be linked to active permits"),
 
+    /** Gate entry requires an active access permit. */
+    ACCESS_PERMIT_NOT_ACTIVE(422, "Access permit is not active"),
+
+    /** Gate entry requires a permit that has not expired. */
+    ACCESS_PERMIT_EXPIRED(422, "Access permit is expired"),
+
+    /** Blacklisted persons cannot use access permits at the gate. */
+    ACCESS_PERMIT_HOLDER_BLACKLISTED(403, "Permit holder is blacklisted"),
+
     /** Access permit not found. */
     ACCESS_PERMIT_NOT_FOUND(404, "Access permit not found"),
 

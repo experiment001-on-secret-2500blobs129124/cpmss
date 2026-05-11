@@ -2,7 +2,11 @@ package com.cpmss.security.entersat;
 
 import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.platform.exception.ApiException;
+import com.cpmss.security.accesspermit.AccessPermit;
+import com.cpmss.security.accesspermit.PermitStatus;
 import com.cpmss.security.common.SecurityErrorCode;
+
+import java.time.LocalDate;
 
 import java.util.UUID;
 
@@ -68,4 +72,31 @@ public class EntersAtRules {
             throw new ApiException(SecurityErrorCode.GUARD_NOT_ASSIGNED);
         }
     }
+    /**
+     * Validates that the permit is usable at the gate entry date.
+     *
+     * <p>A permit-based gate entry is a business action, not a raw FK insert:
+     * the referenced permit must be active, unexpired for the event date, and
+     * owned by a person who is not blacklisted.
+     *
+     * @param permit the referenced access permit
+     * @param entryDate the date of the gate event
+     * @throws ApiException if the permit cannot be used for entry
+     */
+    public void validatePermitUsableForEntry(AccessPermit permit, LocalDate entryDate) {
+        if (permit == null) {
+            return;
+        }
+        if (permit.getPermitStatusValue() != PermitStatus.ACTIVE) {
+            throw new ApiException(SecurityErrorCode.ACCESS_PERMIT_NOT_ACTIVE);
+        }
+        if (permit.getExpiryDate() != null && permit.getExpiryDate().isBefore(entryDate)) {
+            throw new ApiException(SecurityErrorCode.ACCESS_PERMIT_EXPIRED);
+        }
+        if (permit.getPermitHolder() != null
+                && Boolean.TRUE.equals(permit.getPermitHolder().getIsBlacklisted())) {
+            throw new ApiException(SecurityErrorCode.ACCESS_PERMIT_HOLDER_BLACKLISTED);
+        }
+    }
+
 }
