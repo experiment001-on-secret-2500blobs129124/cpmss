@@ -30,7 +30,7 @@ final class RoleGroups {
 
     /** Roles allowed to create login accounts for people they onboard. */
     static final List<String> ACCOUNT_CREATORS = roles(
-            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER);
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER, ACCOUNTANT);
 
     /** Roles allowed to list users and change login role/status metadata. */
     static final List<String> ACCOUNT_MANAGERS = roles(
@@ -57,7 +57,7 @@ final class RoleGroups {
 
     /** Roles that can operate staff KPI and review endpoints at broad route level. */
     static final List<String> PERFORMANCE = roles(
-            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER);
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER, ACCOUNTANT);
 
     /** Roles that operate department tasks, assignments, and attendance routes. */
     static final List<String> DEPARTMENT_OPERATIONS = roles(
@@ -65,7 +65,7 @@ final class RoleGroups {
 
     /** Roles allowed to read service-filtered department manager assignments. */
     static final List<String> ORGANIZATION_SCOPE_READERS = roles(
-            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER);
+            ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER, ACCOUNTANT);
 
     /** Roles allowed to read service-filtered supervision relationships. */
     static final List<String> SUPERVISION_READERS = roles(

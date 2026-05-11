@@ -14,12 +14,15 @@ public class AppUserAccessRules {
      * Requires authority to create login accounts.
      *
      * <p>Department managers can create lowest-level STAFF and GATE_GUARD
-     * accounts, while {@link AppUserRules} validates the exact target role.
+     * accounts. Accountants can provision investor accounts after investment
+     * onboarding. In both cases, {@link AppUserRules} validates the exact target role.
      *
      * @param user current authenticated user
      */
     public void requireAccountCreator(CurrentUser user) {
-        if (isAccountManager(user) || user.hasRole(SystemRole.DEPARTMENT_MANAGER)) {
+        if (isAccountManager(user)
+                || user.hasRole(SystemRole.DEPARTMENT_MANAGER)
+                || user.hasRole(SystemRole.ACCOUNTANT)) {
             return;
         }
         throw new ApiException(IdentityErrorCode.IDENTITY_RECORD_ACCESS_DENIED);

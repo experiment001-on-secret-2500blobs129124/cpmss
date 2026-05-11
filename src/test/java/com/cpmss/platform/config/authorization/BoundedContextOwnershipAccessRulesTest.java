@@ -187,13 +187,18 @@ class BoundedContextOwnershipAccessRulesTest {
     }
 
     @Test
-    void identityAllowsDepartmentManagersToCreateOnlyLowestLevelAccounts() {
+    void identityAllowsScopedAccountCreatorsWithoutBroadManagementAuthority() {
         AppUserAccessRules accountRules = new AppUserAccessRules();
         CurrentUser manager = user(SystemRole.DEPARTMENT_MANAGER, UUID.randomUUID());
+        CurrentUser accountant = user(SystemRole.ACCOUNTANT, UUID.randomUUID());
 
         assertThatCode(() -> accountRules.requireAccountCreator(manager))
                 .doesNotThrowAnyException();
+        assertThatCode(() -> accountRules.requireAccountCreator(accountant))
+                .doesNotThrowAnyException();
         assertThatThrownBy(() -> accountRules.requireAccountManager(manager))
+                .isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> accountRules.requireAccountManager(accountant))
                 .isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> accountRules.requireAccountCreator(
                 user(SystemRole.STAFF, UUID.randomUUID())))

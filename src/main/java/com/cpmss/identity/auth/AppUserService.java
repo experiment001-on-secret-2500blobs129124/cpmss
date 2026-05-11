@@ -148,6 +148,7 @@ public class AppUserService {
 
         rules.validateEmailUnique(loginEmail.value(), repository.existsByEmail(loginEmail));
         rules.validateAuthorityLevel(actorRole, request.systemRole());
+        rules.validateProvisioningScope(actorRole, request.systemRole());
         rules.validateDeptManagerCanOnlyCreateStaffOrGuard(actorRole, request.systemRole());
 
         AppUser user = AppUser.builder()
@@ -269,6 +270,7 @@ public class AppUserService {
 
         rules.validateCannotChangeOwnRole(actorId, userId);
         rules.validateAuthorityLevel(actorRole, request.systemRole());
+        rules.validateProvisioningScope(actorRole, request.systemRole());
 
         AppUser user = findOrThrow(userId);
         user.setSystemRole(request.systemRole());

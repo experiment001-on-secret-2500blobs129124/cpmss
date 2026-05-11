@@ -95,6 +95,31 @@ public class AppUserRules {
         }
     }
 
+
+    /**
+     * Validates special account-provisioning scopes for external business users.
+     *
+     * <p>Investor accounts are provisioned after an investment is recorded, so
+     * only ADMIN, GENERAL_MANAGER, or ACCOUNTANT may create or assign the
+     * INVESTOR system role. ACCOUNTANT creation authority is limited to
+     * INVESTOR accounts and does not extend to internal staff roles.
+     *
+     * @param actorRole  the system role performing the action
+     * @param targetRole the role being assigned to the target account
+     * @throws ApiException if the role pairing is outside the business scope
+     */
+    public void validateProvisioningScope(SystemRole actorRole, SystemRole targetRole) {
+        if (targetRole == SystemRole.INVESTOR
+                && actorRole != SystemRole.ADMIN
+                && actorRole != SystemRole.GENERAL_MANAGER
+                && actorRole != SystemRole.ACCOUNTANT) {
+            throw new ApiException(IdentityErrorCode.AUTHORITY_INSUFFICIENT);
+        }
+        if (actorRole == SystemRole.ACCOUNTANT && targetRole != SystemRole.INVESTOR) {
+            throw new ApiException(IdentityErrorCode.AUTHORITY_INSUFFICIENT);
+        }
+    }
+
     /**
      * Validates that an email is not already registered.
      *

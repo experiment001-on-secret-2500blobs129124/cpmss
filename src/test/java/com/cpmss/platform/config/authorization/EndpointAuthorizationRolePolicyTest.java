@@ -10,6 +10,9 @@ import java.util.Set;
 
 import static com.cpmss.platform.common.ApiPaths.ACCESS_PERMITS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.APPLICATIONS;
+import static com.cpmss.platform.common.ApiPaths.APPLICATIONS_CV;
+import static com.cpmss.platform.common.ApiPaths.APPLICATIONS_CV_DOWNLOAD_URL;
+import static com.cpmss.platform.common.ApiPaths.APPLICATIONS_MINE;
 import static com.cpmss.platform.common.ApiPaths.ASSIGNED_TASKS;
 import static com.cpmss.platform.common.ApiPaths.ASSIGNED_TASKS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.ATTENDANCE;
@@ -19,6 +22,7 @@ import static com.cpmss.platform.common.ApiPaths.ENTRIES;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.INTERNAL_REPORTS;
+import static com.cpmss.platform.common.ApiPaths.INTERVIEWS_MINE;
 import static com.cpmss.platform.common.ApiPaths.KPI_RECORDS;
 import static com.cpmss.platform.common.ApiPaths.KPI_SUMMARIES;
 import static com.cpmss.platform.common.ApiPaths.PAYROLL;
@@ -101,12 +105,24 @@ class EndpointAuthorizationRolePolicyTest {
     void allowsApplicantOnlyOnServiceOwnedRoutes() {
         EndpointAuthorizationRule applicationCreate =
                 rule(HttpMethod.POST, APPLICATIONS).orElseThrow();
+        EndpointAuthorizationRule applicationMine =
+                rule(HttpMethod.GET, APPLICATIONS_MINE).orElseThrow();
+        EndpointAuthorizationRule applicationCvUpload =
+                rule(HttpMethod.PUT, APPLICATIONS_CV).orElseThrow();
+        EndpointAuthorizationRule applicationCvDownload =
+                rule(HttpMethod.GET, APPLICATIONS_CV_DOWNLOAD_URL).orElseThrow();
+        EndpointAuthorizationRule interviewMine =
+                rule(HttpMethod.GET, INTERVIEWS_MINE).orElseThrow();
         EndpointAuthorizationRule personRead =
                 rule(HttpMethod.GET, PERSONS_BY_ID).orElseThrow();
         EndpointAuthorizationRule personUpdate =
                 rule(HttpMethod.PUT, PERSONS_BY_ID).orElseThrow();
 
         assertThat(applicationCreate.roles()).contains(role(SystemRole.APPLICANT));
+        assertThat(applicationMine.roles()).containsExactly(role(SystemRole.APPLICANT));
+        assertThat(applicationCvUpload.roles()).contains(role(SystemRole.APPLICANT));
+        assertThat(applicationCvDownload.roles()).contains(role(SystemRole.APPLICANT));
+        assertThat(interviewMine.roles()).containsExactly(role(SystemRole.APPLICANT));
         assertThat(personRead.roles()).contains(role(SystemRole.APPLICANT));
         assertThat(personUpdate.roles()).contains(role(SystemRole.APPLICANT));
         assertThat(rulesContaining(SystemRole.APPLICANT))
@@ -118,18 +134,18 @@ class EndpointAuthorizationRolePolicyTest {
     }
 
     /**
-     * Confirms department managers can create accounts without managing users.
+     * Confirms scoped account creators cannot manage user accounts broadly.
      */
     @Test
-    void allowsDepartmentManagersToCreateUsersButNotManageUserAccounts() {
+    void allowsDepartmentManagersAndAccountantsToCreateScopedUsersButNotManageUserAccounts() {
         assertThat(rule(HttpMethod.POST, USERS).orElseThrow().roles())
-                .contains(role(SystemRole.DEPARTMENT_MANAGER));
+                .contains(role(SystemRole.DEPARTMENT_MANAGER), role(SystemRole.ACCOUNTANT));
         assertThat(rule(HttpMethod.GET, USERS).orElseThrow().roles())
-                .doesNotContain(role(SystemRole.DEPARTMENT_MANAGER));
+                .doesNotContain(role(SystemRole.DEPARTMENT_MANAGER), role(SystemRole.ACCOUNTANT));
         assertThat(rule(HttpMethod.PUT, USERS_ROLE).orElseThrow().roles())
-                .doesNotContain(role(SystemRole.DEPARTMENT_MANAGER));
+                .doesNotContain(role(SystemRole.DEPARTMENT_MANAGER), role(SystemRole.ACCOUNTANT));
         assertThat(rule(HttpMethod.PUT, USERS_STATUS).orElseThrow().roles())
-                .doesNotContain(role(SystemRole.DEPARTMENT_MANAGER));
+                .doesNotContain(role(SystemRole.DEPARTMENT_MANAGER), role(SystemRole.ACCOUNTANT));
     }
 
     /**
@@ -156,7 +172,7 @@ class EndpointAuthorizationRolePolicyTest {
                 || isGateGuardAssignmentRead(rule)
                 || isAccessPermitDetailRead(rule)
                 || isGateEntryCreate(rule)
-                || isApplicantApplicationSubmit(rule)
+                || isApplicantApplicationRoute(rule)
                 || isDepartmentManagerRead(rule)
                 || isSupervisionRead(rule)
                 || isSelfServiceRoute(rule);
@@ -212,9 +228,25 @@ class EndpointAuthorizationRolePolicyTest {
                 && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(ENTRIES));
     }
 
-    private static boolean isApplicantApplicationSubmit(EndpointAuthorizationRule rule) {
-        return rule.method() == HttpMethod.POST
-                && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(APPLICATIONS));
+    private static boolean isApplicantApplicationRoute(EndpointAuthorizationRule rule) {
+        if (rule.method() == HttpMethod.POST
+                && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(APPLICATIONS))) {
+            return true;
+        }
+        if (rule.method() == HttpMethod.PUT
+                && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(APPLICATIONS_CV))) {
+            return true;
+        }
+        if (rule.method() == HttpMethod.GET) {
+            return Set.of(
+                    APPLICATIONS_MINE,
+                    APPLICATIONS_CV_DOWNLOAD_URL,
+                    INTERVIEWS_MINE
+            ).stream()
+                    .map(EndpointAuthorizationRules::pathPattern)
+                    .anyMatch(rule.pathPattern()::equals);
+        }
+        return false;
     }
 
     private static boolean isDepartmentManagerRead(EndpointAuthorizationRule rule) {
