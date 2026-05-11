@@ -1,12 +1,10 @@
 package com.cpmss.leasing.contractparty;
 
 import com.cpmss.leasing.common.ContractPartyRole;
-import com.cpmss.leasing.common.ContractPartyRoleConverter;
 import com.cpmss.platform.common.BaseAuditEntity;
 import com.cpmss.leasing.contract.Contract;
 import com.cpmss.people.person.Person;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
@@ -14,6 +12,7 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,11 +49,30 @@ public class ContractParty extends BaseAuditEntity {
     @JoinColumn(name = "contract_id", nullable = false)
     private Contract contract;
 
-    /** The person's role in the contract (part of composite PK). */
+    /** The person's role label in the contract (part of composite PK). */
     @Id
-    @Convert(converter = ContractPartyRoleConverter.class)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "role", nullable = false, length = 50)
-    private ContractPartyRole role;
+    private String role;
+
+    /**
+     * Returns the party role as a domain enum while storing the schema label.
+     *
+     * @return the contract party role, or {@code null} when not assigned
+     */
+    public ContractPartyRole getRole() {
+        return role != null ? ContractPartyRole.fromLabel(role) : null;
+    }
+
+    /**
+     * Stores the party role using the exact Flyway/database label.
+     *
+     * @param role the contract party role
+     */
+    public void setRole(ContractPartyRole role) {
+        this.role = role != null ? role.label() : null;
+    }
 
     /** Date and time the party signed the contract ({@code null} = not yet signed). */
     @Column(name = "date_signed")

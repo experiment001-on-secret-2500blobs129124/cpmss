@@ -26,6 +26,19 @@ public class ContractPartyId implements Serializable {
     /** The contract. */
     private UUID contract;
 
-    /** The person's role in the contract. */
-    private ContractPartyRole role;
+    /** The person's role label in the contract. */
+    private String role;
+
+    /**
+     * Creates a contract-party key from a domain role.
+     *
+     * @param person the person UUID
+     * @param contract the contract UUID
+     * @param role the contract party role
+     */
+    public ContractPartyId(UUID person, UUID contract, ContractPartyRole role) {
+        this.person = person;
+        this.contract = contract;
+        this.role = role != null ? role.label() : null;
+    }
 }
