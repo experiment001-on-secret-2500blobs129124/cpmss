@@ -10,9 +10,17 @@ import java.util.UUID;
  * Spring Data repository for {@link Recruitment} entities.
  *
  * <p>Provides CRUD via {@link JpaRepository} and custom query
- * methods for listing interviews by application composite key.
+ * methods for listing interviews by application composite key and applicant scope.
  */
 public interface RecruitmentRepository extends JpaRepository<Recruitment, RecruitmentId> {
+
+    /**
+     * Finds all interviews visible to one applicant ordered by latest date first.
+     *
+     * @param applicantId applicant person UUID
+     * @return applicant-scoped interview records
+     */
+    List<Recruitment> findByApplicantIdOrderByInterviewDateDesc(UUID applicantId);
 
     /**
      * Finds all interviews for a given application (composite FK).

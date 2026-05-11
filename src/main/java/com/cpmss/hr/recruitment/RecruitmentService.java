@@ -133,6 +133,22 @@ public class RecruitmentService {
     }
 
     /**
+     * Lists applications submitted by the current applicant.
+     *
+     * @return applicant-scoped application responses
+     */
+    @Transactional(readOnly = true)
+    public List<ApplicationResponse> listMyApplications() {
+        var user = currentUserService.currentUser();
+        UUID applicantId = user.requirePersonId("Own application lookup");
+        accessRules.requireCanViewApplication(user, applicantId);
+        return applicationRepository.findByApplicantIdOrderByApplicationDateDesc(applicantId)
+                .stream()
+                .map(this::toApplicationResponse)
+                .toList();
+    }
+
+    /**
      * Lists all applications with pagination.
      *
      * @param pageable pagination parameters
@@ -201,6 +217,36 @@ public class RecruitmentService {
         log.info("Interview result recorded: applicant={}, result={}",
                 id.getApplicant(), result);
         return toRecruitmentResponse(recruitment);
+    }
+
+    /**
+     * Lists all interview records for HR review.
+     *
+     * @param pageable pagination parameters
+     * @return paginated list of interview responses
+     */
+    @Transactional(readOnly = true)
+    public List<RecruitmentResponse> listInterviews(Pageable pageable) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
+        return recruitmentRepository.findAll(pageable)
+                .map(this::toRecruitmentResponse)
+                .getContent();
+    }
+
+    /**
+     * Lists interview schedule/history for the current applicant.
+     *
+     * @return applicant-scoped interview responses
+     */
+    @Transactional(readOnly = true)
+    public List<RecruitmentResponse> listMyInterviews() {
+        var user = currentUserService.currentUser();
+        UUID applicantId = user.requirePersonId("Own interview lookup");
+        accessRules.requireCanViewApplication(user, applicantId);
+        return recruitmentRepository.findByApplicantIdOrderByInterviewDateDesc(applicantId)
+                .stream()
+                .map(this::toRecruitmentResponse)
+                .toList();
     }
 
     // ── Hire Agreement (Transactional Onboarding) ───────────────────────
@@ -303,6 +349,20 @@ public class RecruitmentService {
         return toHireAgreementResponse(agreement);
     }
 
+    /**
+     * Lists all hire agreements for HR review.
+     *
+     * @param pageable pagination parameters
+     * @return paginated list of hire agreement responses
+     */
+    @Transactional(readOnly = true)
+    public List<HireAgreementResponse> listHireAgreements(Pageable pageable) {
+        accessRules.requireHrAdministrator(currentUserService.currentUser());
+        return hireAgreementRepository.findAll(pageable)
+                .map(this::toHireAgreementResponse)
+                .getContent();
+    }
+
     // ── Private helpers ─────────────────────────────────────────────────
 
     private Person findPersonOrThrow(UUID id) {
@@ -316,10 +376,16 @@ public class RecruitmentService {
     }
 
     private ApplicationResponse toApplicationResponse(Application a) {
+        UUID cvUploadedById = a.getCvUploadedBy() != null ? a.getCvUploadedBy().getId() : null;
         return new ApplicationResponse(
                 a.getApplicant().getId(),
                 a.getPosition().getId(),
-                a.getApplicationDate());
+                a.getApplicationDate(),
+                a.getCvOriginalFilename(),
+                a.getCvContentType(),
+                a.getCvSizeBytes(),
+                a.getCvUploadedAt(),
+                cvUploadedById);
     }
 
     private RecruitmentResponse toRecruitmentResponse(Recruitment r) {

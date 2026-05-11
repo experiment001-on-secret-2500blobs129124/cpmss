@@ -2,6 +2,7 @@ package com.cpmss.hr.application;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,5 +31,5 @@ public interface ApplicationRepository extends JpaRepository<Application, Applic
      * @return true when the application already exists
      */
     boolean existsByApplicantIdAndPositionIdAndApplicationDate(
-            UUID applicantId, UUID positionId, java.time.LocalDate applicationDate);
+            UUID applicantId, UUID positionId, LocalDate applicationDate);
 }

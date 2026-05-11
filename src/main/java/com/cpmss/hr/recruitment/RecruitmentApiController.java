@@ -52,6 +52,16 @@ public class RecruitmentApiController {
     }
 
     /**
+     * Lists applications owned by the current applicant.
+     *
+     * @return 200 OK with the applicant's applications
+     */
+    @GetMapping(ApiPaths.APPLICATIONS_MINE)
+    public ResponseEntity<ApiResponse<List<ApplicationResponse>>> listMyApplications() {
+        return ResponseEntity.ok(ApiResponse.ok(recruitmentService.listMyApplications()));
+    }
+
+    /**
      * Lists all applications with pagination.
      *
      * @param pageable pagination parameters
@@ -61,6 +71,28 @@ public class RecruitmentApiController {
     public ResponseEntity<ApiResponse<List<ApplicationResponse>>> listApplications(
             Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(recruitmentService.listApplications(pageable)));
+    }
+
+    /**
+     * Lists all interview records for HR review.
+     *
+     * @param pageable pagination parameters
+     * @return 200 OK with the interview list
+     */
+    @GetMapping(ApiPaths.INTERVIEWS)
+    public ResponseEntity<ApiResponse<List<RecruitmentResponse>>> listInterviews(
+            Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(recruitmentService.listInterviews(pageable)));
+    }
+
+    /**
+     * Lists interview schedule/history for the current applicant.
+     *
+     * @return 200 OK with the applicant's interview records
+     */
+    @GetMapping(ApiPaths.INTERVIEWS_MINE)
+    public ResponseEntity<ApiResponse<List<RecruitmentResponse>>> listMyInterviews() {
+        return ResponseEntity.ok(ApiResponse.ok(recruitmentService.listMyInterviews()));
     }
 
     /**
@@ -92,6 +124,18 @@ public class RecruitmentApiController {
                 request.applicationDate(),
                 request.interviewDate());
         return ResponseEntity.ok(ApiResponse.ok(recruitmentService.recordResult(id, request)));
+    }
+
+    /**
+     * Lists all hire agreements for HR review.
+     *
+     * @param pageable pagination parameters
+     * @return 200 OK with the hire agreement list
+     */
+    @GetMapping(ApiPaths.HIRE_AGREEMENTS)
+    public ResponseEntity<ApiResponse<List<HireAgreementResponse>>> listHireAgreements(
+            Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(recruitmentService.listHireAgreements(pageable)));
     }
 
     /**
