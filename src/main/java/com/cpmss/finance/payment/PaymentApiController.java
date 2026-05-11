@@ -5,6 +5,7 @@ import com.cpmss.platform.common.ApiResponse;
 import com.cpmss.platform.common.PagedResponse;
 import com.cpmss.finance.installmentpayment.dto.CreateInstallmentPaymentRequest;
 import com.cpmss.finance.payment.dto.PaymentResponse;
+import com.cpmss.finance.payment.dto.UpdatePaymentReconciliationRequest;
 import com.cpmss.finance.payrollpayment.dto.CreatePayrollPaymentRequest;
 import com.cpmss.finance.workorderpayment.dto.CreateWorkOrderPaymentRequest;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -61,6 +63,16 @@ public class PaymentApiController {
     public ResponseEntity<ApiResponse<PagedResponse<PaymentResponse>>> listPayments(
             Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(paymentService.findAll(pageable)));
+    }
+
+
+    /** Updates a payment reconciliation status. */
+    @PutMapping(ApiPaths.PAYMENTS_RECONCILIATION)
+    public ResponseEntity<ApiResponse<PaymentResponse>> updateReconciliationStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdatePaymentReconciliationRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                paymentService.updateReconciliationStatus(id, request)));
     }
 
     /** Finds a single payment by ID. */

@@ -54,4 +54,16 @@ public class PaymentRules {
     public PaymentDirection validateDirection(String direction) {
         return PaymentDirection.fromLabel(direction);
     }
+    /**
+     * Validates that the reconciliation status is valid.
+     *
+     * @param reconciliationStatus the target reconciliation status label
+     * @return the typed reconciliation status
+     * @throws com.cpmss.platform.exception.ApiException if the status is
+     *                                      blank or unsupported
+     */
+    public ReconciliationStatus validateReconciliationStatus(String reconciliationStatus) {
+        return ReconciliationStatus.fromLabel(reconciliationStatus);
+    }
+
 }

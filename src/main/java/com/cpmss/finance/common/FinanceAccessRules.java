@@ -38,6 +38,29 @@ public class FinanceAccessRules {
     }
 
     /**
+     * Resolves investment-stake scope for finance users and investor self-service.
+     *
+     * <p>Finance authority may pass {@code null} to list all rows or provide an
+     * investor filter. Investor users are always narrowed to their linked person
+     * and cannot request another investor's stakes.
+     *
+     * @param user current authenticated user
+     * @param requestedInvestorId optional requested investor person UUID
+     * @return {@code null} for broad finance listing, otherwise the scoped investor UUID
+     */
+    public UUID resolveInvestmentStakeInvestorScope(CurrentUser user, UUID requestedInvestorId) {
+        if (hasFinanceAuthority(user)) {
+            return requestedInvestorId;
+        }
+        if (user.hasRole(SystemRole.INVESTOR)
+                && user.personId() != null
+                && (requestedInvestorId == null || user.personId().equals(requestedInvestorId))) {
+            return user.personId();
+        }
+        throw new ApiException(FinanceErrorCode.FINANCE_RECORD_ACCESS_DENIED);
+    }
+
+    /**
      * Allows finance authority or the linked person to request their bank accounts.
      *
      * @param user           current authenticated user

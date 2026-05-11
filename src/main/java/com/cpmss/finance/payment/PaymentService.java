@@ -18,6 +18,7 @@ import com.cpmss.finance.installmentpayment.dto.CreateInstallmentPaymentRequest;
 import com.cpmss.finance.money.Money;
 import com.cpmss.finance.payment.dto.CreatePaymentRequest;
 import com.cpmss.finance.payment.dto.PaymentResponse;
+import com.cpmss.finance.payment.dto.UpdatePaymentReconciliationRequest;
 import com.cpmss.finance.payrollpayment.PayrollPayment;
 import com.cpmss.finance.payrollpayment.PayrollPaymentRepository;
 import com.cpmss.finance.payrollpayment.dto.CreatePayrollPaymentRequest;
@@ -287,6 +288,31 @@ public class PaymentService {
         accessRules.requireFinanceAuthority(currentUserService.currentUser());
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYMENT_NOT_FOUND));
+        return toResponse(payment);
+    }
+
+
+    /**
+     * Updates the reconciliation status for an existing payment.
+     *
+     * <p>Finance workflows create the payment and its subtype detail together;
+     * reconciliation is a later finance review step on the parent payment.
+     *
+     * @param id      the payment UUID primary key
+     * @param request the target reconciliation status
+     * @return the updated payment response
+     * @throws ApiException if the payment is missing or the status is invalid
+     */
+    @Transactional
+    public PaymentResponse updateReconciliationStatus(UUID id,
+                                                      UpdatePaymentReconciliationRequest request) {
+        accessRules.requireFinanceAuthority(currentUserService.currentUser());
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new ApiException(FinanceErrorCode.PAYMENT_NOT_FOUND));
+        payment.setReconciliationStatus(
+                rules.validateReconciliationStatus(request.reconciliationStatus()));
+        payment = paymentRepository.save(payment);
+        log.info("Payment reconciliation status updated: payment={}", id);
         return toResponse(payment);
     }
 
