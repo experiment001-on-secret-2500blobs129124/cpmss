@@ -75,7 +75,7 @@ public class KpiPolicyService {
      *
      * @param id the KPI policy UUID
      * @return the matching KPI policy response
-    * @throws ApiException if no KPI policy exists with this ID
+     * @throws ApiException if no KPI policy exists with this ID
      */
     @Transactional(readOnly = true)
     public KpiPolicyResponse getById(UUID id) {
@@ -100,13 +100,18 @@ public class KpiPolicyService {
      *
      * @param request the KPI policy creation request
      * @return the created KPI policy response
-    * @throws ApiException if the department or approver does not exist, or the
-    *                      tier label, score range, or rates are invalid
+     * @throws ApiException if the department or approver does not exist, or the
+     *                      tier label, score range, or rates are invalid
      */
     @Transactional
     public KpiPolicyResponse create(CreateKpiPolicyRequest request) {
         accessRules.requireHrOrBusinessAdmin(currentUserService.currentUser());
         KpiScoreRange scoreRange = rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
+        rules.validateNoTierOverlap(
+                scoreRange,
+                repository.findByDepartmentIdAndEffectiveDate(
+                        request.departmentId(), request.effectiveDate()),
+                null);
         PerformanceRating tier = PerformanceRating.fromLabel(request.tierLabel());
         PercentageRate bonusRate = PercentageRate.orZero(request.bonusRate());
         PercentageRate deductionRate = PercentageRate.orZero(request.deductionRate());
@@ -137,8 +142,8 @@ public class KpiPolicyService {
      * @param id the KPI policy UUID
      * @param request the replacement KPI policy values
      * @return the updated KPI policy response
-    * @throws ApiException if no KPI policy exists with this ID or the tier
-    *                      label, score range, or rates are invalid
+     * @throws ApiException if no KPI policy exists with this ID or the tier
+     *                      label, score range, or rates are invalid
      */
     @Transactional
     public KpiPolicyResponse update(UUID id, UpdateKpiPolicyRequest request) {
@@ -146,6 +151,11 @@ public class KpiPolicyService {
         KpiPolicy policy = findOrThrow(id);
 
         KpiScoreRange scoreRange = rules.validateScoreRange(request.minKpiScore(), request.maxKpiScore());
+        rules.validateNoTierOverlap(
+                scoreRange,
+                repository.findByDepartmentIdAndEffectiveDate(
+                        policy.getDepartment().getId(), policy.getEffectiveDate()),
+                policy.getId());
 
         policy.setTierLabel(PerformanceRating.fromLabel(request.tierLabel()));
         policy.setMinKpiScore(scoreRange.min());

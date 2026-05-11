@@ -56,4 +56,19 @@ public record KpiScoreRange(KpiScore min, KpiScore max) {
         return score.value().compareTo(min.value()) >= 0
                 && score.value().compareTo(max.value()) <= 0;
     }
+
+    /**
+     * Checks whether this range overlaps another inclusive range.
+     *
+     * @param other the other range
+     * @return true when the ranges share at least one score value
+     * @throws ApiException if the other range is missing
+     */
+    public boolean overlaps(KpiScoreRange other) {
+        if (other == null) {
+            throw new ApiException(PerformanceErrorCode.KPI_SCORE_RANGE_REQUIRED);
+        }
+        return min.value().compareTo(other.max().value()) <= 0
+                && max.value().compareTo(other.min().value()) >= 0;
+    }
 }

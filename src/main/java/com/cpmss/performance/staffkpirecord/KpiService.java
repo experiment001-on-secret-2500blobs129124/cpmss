@@ -8,6 +8,7 @@ import com.cpmss.organization.department.Department;
 import com.cpmss.organization.department.DepartmentRepository;
 import com.cpmss.performance.kpipolicy.KpiPolicy;
 import com.cpmss.performance.kpipolicy.KpiPolicyRepository;
+import com.cpmss.performance.kpipolicy.KpiPolicyRules;
 import com.cpmss.performance.common.PerformanceAccessRules;
 import com.cpmss.performance.common.PerformanceErrorCode;
 import com.cpmss.people.common.PeopleErrorCode;
@@ -18,6 +19,7 @@ import com.cpmss.performance.staffkpimonthlysummary.StaffKpiMonthlySummaryReposi
 import com.cpmss.performance.staffkpimonthlysummary.StaffKpiMonthlySummaryRules;
 import com.cpmss.performance.staffkpimonthlysummary.dto.StaffKpiMonthlySummaryResponse;
 import com.cpmss.performance.common.KpiScore;
+import com.cpmss.performance.common.KpiScoreRange;
 import com.cpmss.performance.staffkpirecord.dto.CreateStaffKpiRecordRequest;
 import com.cpmss.performance.staffkpirecord.dto.StaffKpiRecordResponse;
 import com.cpmss.platform.common.value.YearMonthPeriod;
@@ -61,6 +63,7 @@ public class KpiService {
     private final CurrentUserService currentUserService;
     private final DepartmentScopeService departmentScopeService;
     private final StaffKpiRecordRules recordRules = new StaffKpiRecordRules();
+    private final KpiPolicyRules policyRules = new KpiPolicyRules();
     private final PerformanceAccessRules accessRules = new PerformanceAccessRules();
     private final StaffKpiMonthlySummaryRules summaryRules = new StaffKpiMonthlySummaryRules();
 
@@ -112,6 +115,10 @@ public class KpiService {
                         request.staffId(), request.departmentId()))) {
             throw new ApiException(PerformanceErrorCode.PERFORMANCE_RECORD_ACCESS_DENIED);
         }
+        if (kpiRecordRepository.existsByStaffIdAndDepartmentIdAndRecordDate(
+                request.staffId(), request.departmentId(), request.recordDate())) {
+            throw new ApiException(PerformanceErrorCode.KPI_RECORD_DUPLICATE);
+        }
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
         Department department = departmentRepository.findById(request.departmentId())
@@ -121,8 +128,14 @@ public class KpiService {
         Person recordedBy = personRepository.findById(request.recordedById())
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
 
-        recordRules.validatePolicyActiveForDate(policy, request.recordDate());
         KpiScore score = KpiScore.of(request.kpiScore());
+        KpiScoreRange scoreRange = policy.getScoreRange();
+        policyRules.validatePolicyDepartment(policy, request.departmentId());
+        recordRules.validatePolicyActiveForDate(policy, request.recordDate());
+        LocalDate activeEffectiveDate = activePolicyEffectiveDate(
+                request.departmentId(), request.recordDate());
+        policyRules.validatePolicyMatchesRecord(
+                policy, request.departmentId(), activeEffectiveDate, scoreRange, score);
 
         StaffKpiRecord record = new StaffKpiRecord();
         record.setStaff(staff);
@@ -217,8 +230,7 @@ public class KpiService {
             BigDecimal avgScore = totalScore.divide(
                     BigDecimal.valueOf(daysScored), 2, RoundingMode.HALF_UP);
 
-            // Use the last record's policy for tier info
-            KpiPolicy policy = sample.getKpiPolicy();
+            KpiPolicy policy = activePolicyTierForScore(departmentId, to, KpiScore.of(avgScore));
 
             StaffKpiMonthlySummary summary = new StaffKpiMonthlySummary();
             summary.setStaff(sample.getStaff());
@@ -278,6 +290,34 @@ public class KpiService {
     }
 
     // ── Private helpers ─────────────────────────────────────────────────
+
+    private LocalDate activePolicyEffectiveDate(UUID departmentId, LocalDate recordDate) {
+        List<KpiPolicy> policies = kpiPolicyRepository
+                .findByDepartmentIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
+                        departmentId, recordDate);
+        if (policies.isEmpty()) {
+            throw new ApiException(PerformanceErrorCode.KPI_POLICY_TIER_NOT_FOUND);
+        }
+        return policies.get(0).getEffectiveDate();
+    }
+
+    private KpiPolicy activePolicyTierForScore(UUID departmentId,
+                                               LocalDate recordDate,
+                                               KpiScore score) {
+        List<KpiPolicy> policies = kpiPolicyRepository
+                .findByDepartmentIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
+                        departmentId, recordDate);
+        if (policies.isEmpty()) {
+            throw new ApiException(PerformanceErrorCode.KPI_POLICY_TIER_NOT_FOUND);
+        }
+        LocalDate activeEffectiveDate = policies.get(0).getEffectiveDate();
+        return policies.stream()
+                .takeWhile(policy -> policy.getEffectiveDate().equals(activeEffectiveDate))
+                .filter(policy -> policy.getScoreRange().contains(score))
+                .findFirst()
+                .orElseThrow(() -> new ApiException(
+                        PerformanceErrorCode.KPI_POLICY_TIER_NOT_FOUND));
+    }
 
     private boolean canViewKpiSummary(CurrentUser user, StaffKpiMonthlySummary summary) {
         try {

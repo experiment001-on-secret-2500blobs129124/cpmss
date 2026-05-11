@@ -39,8 +39,8 @@ public enum PerformanceErrorCode implements ErrorCode {
     /** KPI policy already exists for this department. */
     KPI_POLICY_DUPLICATE(409, "KPI policy already exists for this department and KPI type"),
 
-    /** Staff KPI record already exists for this date. */
-    KPI_RECORD_DUPLICATE(409, "KPI record already exists for this staff, date, and KPI policy"),
+    /** Staff KPI record already exists for this staff/department/date. */
+    KPI_RECORD_DUPLICATE(409, "KPI record already exists for this staff, department, and date"),
 
     /** Monthly summary already exists for this period. */
     KPI_SUMMARY_DUPLICATE(409, "Monthly KPI summary already exists for this staff and period"),
@@ -59,6 +59,15 @@ public enum PerformanceErrorCode implements ErrorCode {
 
     /** KPI policy is not active for the record date. */
     KPI_POLICY_NOT_ACTIVE(422, "KPI policy is not yet active for this record date"),
+
+    /** KPI policy does not belong to the requested department. */
+    KPI_POLICY_DEPARTMENT_MISMATCH(422, "KPI policy does not belong to this department"),
+
+    /** KPI score is outside the selected policy tier range. */
+    KPI_POLICY_SCORE_OUT_OF_RANGE(422, "KPI score is outside the selected KPI policy tier range"),
+
+    /** No active KPI tier matches the score for the department and date. */
+    KPI_POLICY_TIER_NOT_FOUND(422, "No active KPI policy tier matches this score for this date"),
 
     /** KPI tier overlaps with an existing tier. */
     KPI_TIER_OVERLAP(409, "KPI tier overlaps with an existing tier in this department"),

@@ -268,8 +268,11 @@ only when a rule or error boundary needs a distinct client contract.
 
 | Code | Status | Use |
 |------|--------|-----|
-| `SALARY_AMOUNT_REQUIRED` | 422 | Salary amount is missing. |
-| `SALARY_AMOUNT_INVALID` | 422 | Salary amount is not positive. |
+| `SALARY_REQUIRED` | 422 | Salary amount is missing. |
+| `SALARY_NEGATIVE` | 422 | Salary amount is negative. |
+| `SALARY_NOT_POSITIVE` | 422 | Salary amount is zero or negative. |
+| `STAFF_SALARY_EXCEEDS_POSITION_MAX` | 422 | Staff salary exceeds the active position salary band. |
+| `POSITION_SALARY_HISTORY_NOT_FOUND` | 404 | No position salary band exists for the effective date. |
 | `STAFF_PROFILE_DUPLICATE` | 409 | Staff profile already exists for a person. |
 | `STAFF_POSITION_DUPLICATE` | 409 | Staff position title already exists in the department. |
 | `HIRE_AGREEMENT_INTERVIEW_REQUIRED` | 422 | Hire agreement lacks a passed interview. |
@@ -293,16 +296,32 @@ only when a rule or error boundary needs a distinct client contract.
 | Code | Status | Use |
 |------|--------|-----|
 | `KPI_SCORE_REQUIRED` | 422 | KPI score is missing. |
-| `KPI_SCORE_INVALID` | 422 | KPI score is negative. |
-| `KPI_SCORE_RANGE_REQUIRED` | 422 | KPI policy range is missing. |
+| `KPI_SCORE_NEGATIVE` | 422 | KPI score is negative. |
+| `KPI_SCORE_RANGE_REQUIRED` | 422 | KPI policy range bounds are missing. |
 | `KPI_SCORE_RANGE_INVALID` | 422 | KPI policy range has max <= min. |
-| `KPI_POLICY_INACTIVE` | 422 | KPI record uses an inactive policy for the date. |
-| `KPI_SUMMARY_CLOSE_INVALID` | 422 | KPI monthly close has no valid records or actor. |
 | `PERCENTAGE_RATE_REQUIRED` | 422 | Percentage/rate value is missing. |
-| `PERCENTAGE_RATE_INVALID` | 422 | Percentage/rate value is negative. |
+| `PERCENTAGE_RATE_NEGATIVE` | 422 | Percentage/rate value is negative. |
 | `PERFORMANCE_RATING_REQUIRED` | 422 | Performance rating is missing. |
 | `PERFORMANCE_RATING_INVALID` | 422 | Performance rating is not allowed. |
-| `PERFORMANCE_SELF_REVIEW_DENIED` | 403 | Staff member attempts to review themselves. |
+| `KPI_POLICY_NOT_FOUND` | 404 | KPI policy was not found. |
+| `KPI_POLICY_NOT_ACTIVE` | 422 | KPI record uses a policy version that is not active for the record date. |
+| `KPI_POLICY_DEPARTMENT_MISMATCH` | 422 | KPI record uses a policy tier from another department. |
+| `KPI_POLICY_SCORE_OUT_OF_RANGE` | 422 | KPI score is outside the selected policy tier range. |
+| `KPI_POLICY_TIER_NOT_FOUND` | 422 | No active policy tier matches the score for the department/date. |
+| `KPI_TIER_OVERLAP` | 409 | KPI tier overlaps an existing tier in the same department policy version. |
+| `KPI_RECORD_DUPLICATE` | 409 | KPI record already exists for this staff, department, and date. |
+| `KPI_SUMMARY_DUPLICATE` | 409 | Monthly KPI summary already exists for this staff and period. |
+| `KPI_MONTH_ALREADY_CLOSED` | 409 | KPI month is already closed for the staff member. |
+| `KPI_SUMMARY_SCOPE_REQUIRED` | 422 | KPI summary lookup lacks department or staff scope. |
+| `KPI_CLOSER_REQUIRED` | 422 | Monthly KPI close lacks an authorized closer. |
+| `SELF_REVIEW_FORBIDDEN` | 403 | Staff member attempts to review themselves. |
+| `REVIEW_DUPLICATE` | 409 | Performance review already exists for the staff/period. |
+| `REVIEW_NOT_FOUND` | 404 | Performance review was not found. |
+| `POOR_RATING_INCONSISTENT` | 422 | Poor rating cannot produce promotion or raise outcomes. |
+| `PROMOTION_POSITION_REQUIRED` | 422 | Promotion outcome lacks target position details. |
+| `RAISE_SALARY_REQUIRED` | 422 | Raise outcome lacks salary details. |
+| `REVIEW_OUTCOME_IMMUTABLE` | 409 | Review outcome flags cannot be changed after creation. |
+| `PERFORMANCE_RECORD_ACCESS_DENIED` | 403 | User cannot access this performance record. |
 
 ### Property, Maintenance, And Communication
 

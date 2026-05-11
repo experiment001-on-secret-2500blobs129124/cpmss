@@ -48,4 +48,15 @@ public interface StaffKpiRecordRepository
      */
     List<StaffKpiRecord> findByDepartmentIdAndRecordDateBetween(
             UUID departmentId, LocalDate from, LocalDate to);
+
+    /**
+     * Checks whether a daily KPI record already exists for the staff/date scope.
+     *
+     * @param staffId the staff member's person UUID
+     * @param departmentId the department UUID
+     * @param recordDate the KPI record date
+     * @return true when a record already exists
+     */
+    boolean existsByStaffIdAndDepartmentIdAndRecordDate(
+            UUID staffId, UUID departmentId, LocalDate recordDate);
 }
