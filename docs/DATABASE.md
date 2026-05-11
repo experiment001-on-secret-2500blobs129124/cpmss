@@ -11,22 +11,25 @@ Flyway runs on application startup and applies any pending files in version orde
 
 ```
 src/main/resources/db/migration/
-  V1__create_initial_tables.sql              ← DDL: baseline CREATE TABLE statements
-  V2__add_constraints.sql                    ← Deferred CHECKs for V1 tables
-  V3__add_auth_tables.sql                    ← App_User table (authentication)
-  V4__add_auth_constraints.sql               ← App_User CHECK constraints (12 system roles)
-  V5__add_team_name.sql                      ← Adds team_name to Person_Supervision
-  V6__add_internal_report.sql                ← Internal_Report table (ticketing system)
-  V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6 (paired)
-  V8__add_application_cv_storage.sql         ← Current application CV object metadata
-  V9__add_application_cv_constraints.sql     ← Deferred CHECKs for V8 (paired)
+  V1__create_initial_tables.sql                 ← DDL: all initial CREATE TABLE statements
+  V2__add_constraints.sql                       ← Deferred CHECK constraints for V1 tables
+  V3__add_auth_tables.sql                       ← App_User table (authentication)
+  V4__add_auth_constraints.sql                  ← App_User CHECK constraints
+  V5__add_team_name.sql                         ← Adds team_name to Person_Supervision
+  V6__add_internal_report.sql                   ← Internal_Report table
+  V7__add_internal_report_constraints.sql       ← Deferred CHECKs for V6
+  V8__add_application_cv_storage.sql            ← Application current-CV metadata columns
+  V9__add_application_cv_constraints.sql        ← Deferred CHECKs for V8
+  V10__seed_catalog_data.sql                    ← Stable startup catalog/reference rows
+  R__seed_dev_data.sql                          ← Dev-only fake/demo data, repeatable
 ```
 
 | File | Runs in prod? | Purpose |
 |---|---|---|
-| `V1`–`V9` | All environments | Current schema structure, auth tables, constraints, internal reports, and application CV object metadata |
-| `V10+` | All environments | New schema changes or required reference data |
-| `Vn__seed_catalog_data.sql` | All environments | Required startup catalog/reference rows after the catalog list is reviewed |
+| `V1`–`V7` | All environments | Current schema structure, auth tables, constraints, team names, and internal reports |
+| `V8`–`V9` | All environments | Application current-CV metadata columns and paired constraints for MinIO-backed uploads |
+| `V10__seed_catalog_data.sql` | All environments | Required stable startup catalog/reference rows: roles, departments, qualifications, and shift attendance types |
+| `V11+` | All environments | New schema changes or required reference data after V10 |
 | `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
 
 **Rules:**
@@ -67,7 +70,7 @@ These schema areas follow fixed storage contracts:
 | Application CV uploads | Current CV object metadata columns on `Applications`; binary files in MinIO; re-upload replaces the current CV reference for that application |
 | Applicant/application document history | Deferred metadata table linked to applicant/application records; binary files in MinIO |
 | Payment attempts/provider transactions | Provider reference, status, attempt time, masked display data if needed |
-| Seed catalog data | Required startup rows for catalogs after review |
+| Seed catalog data | Required stable startup rows for catalogs after review; current seed migration is `V10__seed_catalog_data.sql` |
 | Slugs | URL-friendly identifiers for selected named/catalog resources |
 
 Payment provider data must not include raw card numbers, CVV values, or
