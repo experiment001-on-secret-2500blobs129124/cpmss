@@ -3,3 +3,5 @@ build/
 .env
 *.class
 gradle.properties
+
+.dev-stack/
