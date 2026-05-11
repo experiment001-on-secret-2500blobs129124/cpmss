@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -31,4 +32,15 @@ public interface PositionSalaryHistoryRepository
      * @return true when a duplicate salary band exists
      */
     boolean existsByPositionIdAndSalaryEffectiveDate(UUID positionId, LocalDate salaryEffectiveDate);
+
+    /**
+     * Finds the salary band active for a position at the given date.
+     *
+     * @param positionId the position UUID
+     * @param salaryEffectiveDate latest acceptable effective date
+     * @return the newest salary band active on the date
+     */
+    Optional<PositionSalaryHistory>
+            findFirstByPositionIdAndSalaryEffectiveDateLessThanEqualOrderBySalaryEffectiveDateDesc(
+                    UUID positionId, LocalDate salaryEffectiveDate);
 }

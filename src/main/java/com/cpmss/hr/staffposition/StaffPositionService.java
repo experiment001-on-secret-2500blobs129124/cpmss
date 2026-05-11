@@ -236,12 +236,14 @@ public class StaffPositionService {
         }
         StaffPosition position = repository.findById(positionId)
                 .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
+        StaffPositionRules.PositionSalaryBand salaryBand = rules.validatePositionSalaryBand(
+                request.maximumSalary(), request.baseDailyRate());
 
         PositionSalaryHistory history = new PositionSalaryHistory();
         history.setPosition(position);
         history.setSalaryEffectiveDate(request.salaryEffectiveDate());
-        history.setMaximumSalary(request.maximumSalary());
-        history.setBaseDailyRate(request.baseDailyRate());
+        history.setMaximumSalary(salaryBand.maximumSalary().amount());
+        history.setBaseDailyRate(salaryBand.baseDailyRate().amount());
         history = salaryHistoryRepository.save(history);
         log.info("Position salary band created: position={}, effective={}",
                 positionId, request.salaryEffectiveDate());

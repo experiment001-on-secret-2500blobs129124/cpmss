@@ -1,6 +1,8 @@
 package com.cpmss.hr.staffsalaryhistory;
 
+import com.cpmss.hr.common.HrErrorCode;
 import com.cpmss.hr.compensation.SalaryAmount;
+import com.cpmss.platform.exception.ApiException;
 
 import java.math.BigDecimal;
 
@@ -11,7 +13,7 @@ import java.math.BigDecimal;
  * <ul>
  *   <li>Base daily rate must be positive</li>
  *   <li>Maximum salary must be positive</li>
- *   <li>Maximum salary must not be less than the position's maximum salary</li>
+ *   <li>Staff maximum salary must not exceed the position salary band</li>
  * </ul>
  *
  * @see StaffSalaryHistory
@@ -38,5 +40,21 @@ public class StaffSalaryRules {
      */
     public void validateMaximumSalaryPositive(BigDecimal maximumSalary) {
         SalaryAmount.positive(maximumSalary);
+    }
+
+    /**
+     * Validates that a staff salary is within the active position salary band.
+     *
+     * @param staffMaximumSalary the staff member's proposed maximum salary
+     * @param positionMaximumSalary the active position maximum salary
+     * @throws ApiException if the staff maximum exceeds the position band
+     */
+    public void validateWithinPositionMaximum(BigDecimal staffMaximumSalary,
+                                              BigDecimal positionMaximumSalary) {
+        SalaryAmount staffMaximum = SalaryAmount.positive(staffMaximumSalary);
+        SalaryAmount positionMaximum = SalaryAmount.positive(positionMaximumSalary);
+        if (staffMaximum.amount().compareTo(positionMaximum.amount()) > 0) {
+            throw new ApiException(HrErrorCode.STAFF_SALARY_EXCEEDS_POSITION_MAX);
+        }
     }
 }

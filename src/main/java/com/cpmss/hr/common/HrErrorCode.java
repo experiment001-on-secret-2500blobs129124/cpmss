@@ -74,11 +74,20 @@ public enum HrErrorCode implements ErrorCode {
     /** Position reassignment requires an authorizer. */
     STAFF_POSITION_AUTHORIZER_REQUIRED(422, "Position reassignment requires an authorizer"),
 
+    /** Current staff position assignment was not found. */
+    STAFF_POSITION_HISTORY_NOT_FOUND(404, "Current staff position assignment not found"),
+
     /** No current salary history exists for the staff member. */
     STAFF_SALARY_HISTORY_NOT_FOUND(404, "Current staff salary history not found"),
 
     /** Staff salary history already exists for this effective date. */
     STAFF_SALARY_HISTORY_DUPLICATE(409, "Staff salary history already exists for this effective date"),
+
+    /** Staff salary exceeds the active position salary band. */
+    STAFF_SALARY_EXCEEDS_POSITION_MAX(422, "Staff salary exceeds the active position salary band"),
+
+    /** Position salary history was not found for the effective date. */
+    POSITION_SALARY_HISTORY_NOT_FOUND(404, "Position salary history not found for this effective date"),
 
     /** Position salary history already exists for this effective date. */
     POSITION_SALARY_HISTORY_DUPLICATE(409, "Position salary history already exists for this effective date"),

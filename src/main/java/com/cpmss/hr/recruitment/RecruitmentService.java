@@ -7,8 +7,7 @@ import com.cpmss.hr.application.dto.ApplicationResponse;
 import com.cpmss.hr.application.dto.CreateApplicationRequest;
 import com.cpmss.hr.common.HrAccessRules;
 import com.cpmss.hr.common.HrErrorCode;
-import com.cpmss.identity.auth.CurrentUserService;
-import com.cpmss.platform.exception.ApiException;
+import com.cpmss.hr.compensation.SalaryAmount;
 import com.cpmss.hr.hireagreement.HireAgreement;
 import com.cpmss.hr.hireagreement.HireAgreementRepository;
 import com.cpmss.hr.hireagreement.dto.CreateHireAgreementRequest;
@@ -20,6 +19,8 @@ import com.cpmss.people.qualification.QualificationRepository;
 import com.cpmss.hr.recruitment.dto.CreateRecruitmentRequest;
 import com.cpmss.hr.recruitment.dto.RecruitmentResponse;
 import com.cpmss.hr.recruitment.dto.UpdateRecruitmentRequest;
+import com.cpmss.hr.staffposition.PositionSalaryHistory;
+import com.cpmss.hr.staffposition.PositionSalaryHistoryRepository;
 import com.cpmss.hr.staffposition.StaffPosition;
 import com.cpmss.hr.staffposition.StaffPositionRepository;
 import com.cpmss.hr.staffpositionhistory.StaffPositionHistory;
@@ -28,12 +29,16 @@ import com.cpmss.hr.staffprofile.StaffProfile;
 import com.cpmss.hr.staffprofile.StaffProfileRepository;
 import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistory;
 import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistoryRepository;
+import com.cpmss.hr.staffsalaryhistory.StaffSalaryRules;
+import com.cpmss.identity.auth.CurrentUserService;
+import com.cpmss.platform.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -63,9 +68,11 @@ public class RecruitmentService {
     private final StaffProfileRepository staffProfileRepository;
     private final StaffPositionHistoryRepository staffPositionHistoryRepository;
     private final StaffSalaryHistoryRepository staffSalaryHistoryRepository;
+    private final PositionSalaryHistoryRepository positionSalaryHistoryRepository;
     private final QualificationRepository qualificationRepository;
     private final CurrentUserService currentUserService;
     private final HireAgreementRules hireAgreementRules = new HireAgreementRules();
+    private final StaffSalaryRules salaryRules = new StaffSalaryRules();
     private final HrAccessRules accessRules = new HrAccessRules();
 
     /**
@@ -79,6 +86,7 @@ public class RecruitmentService {
                               StaffProfileRepository staffProfileRepository,
                               StaffPositionHistoryRepository staffPositionHistoryRepository,
                               StaffSalaryHistoryRepository staffSalaryHistoryRepository,
+                              PositionSalaryHistoryRepository positionSalaryHistoryRepository,
                               QualificationRepository qualificationRepository,
                               CurrentUserService currentUserService) {
         this.applicationRepository = applicationRepository;
@@ -89,6 +97,7 @@ public class RecruitmentService {
         this.staffProfileRepository = staffProfileRepository;
         this.staffPositionHistoryRepository = staffPositionHistoryRepository;
         this.staffSalaryHistoryRepository = staffSalaryHistoryRepository;
+        this.positionSalaryHistoryRepository = positionSalaryHistoryRepository;
         this.qualificationRepository = qualificationRepository;
         this.currentUserService = currentUserService;
     }
@@ -231,14 +240,30 @@ public class RecruitmentService {
         hireAgreementRules.validateStartDateNotBeforeApplication(
                 request.employmentStartDate(), request.applicationDate());
 
+        SalaryAmount offeredBaseDailyRate = SalaryAmount.positive(request.offeredBaseDailyRate());
+        SalaryAmount offeredMaximumSalary = SalaryAmount.nullablePositive(
+                request.offeredMaximumSalary());
+        BigDecimal maximumSalary = offeredMaximumSalary != null
+                ? offeredMaximumSalary.amount()
+                : offeredBaseDailyRate.amount().multiply(BigDecimal.valueOf(30));
+
+        PositionSalaryHistory activeBand = positionSalaryHistoryRepository
+                .findFirstByPositionIdAndSalaryEffectiveDateLessThanEqualOrderBySalaryEffectiveDateDesc(
+                        request.positionId(), request.employmentStartDate())
+                .orElseThrow(() -> new ApiException(
+                        HrErrorCode.POSITION_SALARY_HISTORY_NOT_FOUND));
+        salaryRules.validateWithinPositionMaximum(maximumSalary, activeBand.getMaximumSalary());
+
         // 1. Create HireAgreement
         HireAgreement agreement = new HireAgreement();
         agreement.setApplicant(application.getApplicant());
         agreement.setPosition(application.getPosition());
         agreement.setApplicationDate(application.getApplicationDate());
         agreement.setEmploymentStartDate(request.employmentStartDate());
-        agreement.setOfferedBaseDailyRate(request.offeredBaseDailyRate());
-        agreement.setOfferedMaximumSalary(request.offeredMaximumSalary());
+        agreement.setOfferedBaseDailyRate(offeredBaseDailyRate.amount());
+        agreement.setOfferedMaximumSalary(offeredMaximumSalary != null
+                ? offeredMaximumSalary.amount()
+                : null);
         agreement = hireAgreementRepository.save(agreement);
 
         Person applicant = application.getApplicant();
@@ -268,10 +293,8 @@ public class RecruitmentService {
         StaffSalaryHistory salaryHistory = new StaffSalaryHistory();
         salaryHistory.setStaff(applicant);
         salaryHistory.setEffectiveDate(request.employmentStartDate());
-        salaryHistory.setBaseDailyRate(request.offeredBaseDailyRate());
-        salaryHistory.setMaximumSalary(request.offeredMaximumSalary() != null
-                ? request.offeredMaximumSalary()
-                : request.offeredBaseDailyRate().multiply(java.math.BigDecimal.valueOf(30)));
+        salaryHistory.setBaseDailyRate(offeredBaseDailyRate.amount());
+        salaryHistory.setMaximumSalary(maximumSalary);
         salaryHistory.setApprovedBy(null); // null for initial hire
         staffSalaryHistoryRepository.save(salaryHistory);
 
