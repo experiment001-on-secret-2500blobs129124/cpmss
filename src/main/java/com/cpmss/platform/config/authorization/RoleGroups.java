@@ -79,6 +79,10 @@ final class RoleGroups {
     static final List<String> FACILITY_READERS = roles(
             ADMIN, GENERAL_MANAGER, FACILITY_OFFICER, ACCOUNTANT);
 
+    /** Roles allowed to read individual access permits at a gate checkpoint. */
+    static final List<String> ACCESS_PERMIT_READERS = roles(
+            ADMIN, GENERAL_MANAGER, SECURITY_OFFICER, GATE_GUARD);
+
     /** Roles allowed to read gate assignments before service ownership narrows rows. */
     static final List<String> GATE_GUARD_ASSIGNMENT_READERS = roles(
             ADMIN, GENERAL_MANAGER, SECURITY_OFFICER, GATE_GUARD);

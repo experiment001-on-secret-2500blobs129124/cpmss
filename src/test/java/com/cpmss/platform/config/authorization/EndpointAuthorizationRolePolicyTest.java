@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.cpmss.platform.common.ApiPaths.ACCESS_PERMITS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.APPLICATIONS;
 import static com.cpmss.platform.common.ApiPaths.ASSIGNED_TASKS;
 import static com.cpmss.platform.common.ApiPaths.ASSIGNED_TASKS_BY_ID;
@@ -77,10 +78,13 @@ class EndpointAuthorizationRolePolicyTest {
                 rule(HttpMethod.GET, GATE_GUARD_ASSIGNMENTS).orElseThrow();
         EndpointAuthorizationRule assignmentDetail =
                 rule(HttpMethod.GET, GATE_GUARD_ASSIGNMENTS_BY_ID).orElseThrow();
+        EndpointAuthorizationRule permitDetail =
+                rule(HttpMethod.GET, ACCESS_PERMITS_BY_ID).orElseThrow();
 
         assertThat(entryCreate.roles()).contains(role(SystemRole.GATE_GUARD));
         assertThat(assignmentList.roles()).contains(role(SystemRole.GATE_GUARD));
         assertThat(assignmentDetail.roles()).contains(role(SystemRole.GATE_GUARD));
+        assertThat(permitDetail.roles()).contains(role(SystemRole.GATE_GUARD));
 
         assertThat(rulesContaining(SystemRole.GATE_GUARD))
                 .allSatisfy(endpointRule ->
@@ -150,6 +154,7 @@ class EndpointAuthorizationRolePolicyTest {
     private static boolean isServiceOwnedRoute(EndpointAuthorizationRule rule) {
         return isInternalReportRoute(rule)
                 || isGateGuardAssignmentRead(rule)
+                || isAccessPermitDetailRead(rule)
                 || isGateEntryCreate(rule)
                 || isApplicantApplicationSubmit(rule)
                 || isDepartmentManagerRead(rule)
@@ -194,6 +199,12 @@ class EndpointAuthorizationRolePolicyTest {
                         GATE_GUARD_ASSIGNMENTS))
                 || rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(
                         GATE_GUARD_ASSIGNMENTS_BY_ID)));
+    }
+
+    private static boolean isAccessPermitDetailRead(EndpointAuthorizationRule rule) {
+        return rule.method() == HttpMethod.GET
+                && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(
+                        ACCESS_PERMITS_BY_ID));
     }
 
     private static boolean isGateEntryCreate(EndpointAuthorizationRule rule) {

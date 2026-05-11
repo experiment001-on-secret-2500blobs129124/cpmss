@@ -84,12 +84,12 @@ public class AccessPermitService {
      * Retrieves an access permit by its unique identifier.
      *
      * @param id the permit's UUID primary key
-    * @return the matching permit response
-    * @throws ApiException if no permit exists with this ID
+     * @return the matching permit response
+     * @throws ApiException if no permit exists with this ID
      */
     @Transactional(readOnly = true)
     public AccessPermitResponse getById(UUID id) {
-        accessRules.validateSecurityAdministrator(currentUserService.currentUser());
+        accessRules.validateCanReadAccessPermit(currentUserService.currentUser());
         return mapper.toResponse(findOrThrow(id));
     }
 
@@ -109,8 +109,8 @@ public class AccessPermitService {
      * Creates a new access permit with entitlement validation.
      *
      * @param request the create request with permit details
-    * @return the created permit response
-    * @throws ApiException if entitlement rule is violated or a reference is missing
+     * @return the created permit response
+     * @throws ApiException if entitlement rule is violated or a reference is missing
      */
     @Transactional
     public AccessPermitResponse create(CreateAccessPermitRequest request) {
@@ -143,8 +143,8 @@ public class AccessPermitService {
      *
      * @param id      the permit's UUID
      * @param request the update request
-    * @return the updated permit response
-    * @throws ApiException if no permit exists with this ID
+     * @return the updated permit response
+     * @throws ApiException if no permit exists with this ID
      */
     @Transactional
     public AccessPermitResponse update(UUID id, UpdateAccessPermitRequest request) {

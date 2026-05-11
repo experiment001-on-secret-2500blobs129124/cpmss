@@ -34,9 +34,10 @@ final class SecurityAuthorizationRules {
                         // Allow security officers to browse access permits.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.ACCESS_PERMITS,
                                 RoleGroups.SECURITY),
-                        // Allow security officers to inspect an access permit.
+                        // Allow security officers and gate guards to inspect an access permit.
                         EndpointAuthorizationRules.allow(HttpMethod.GET,
-                                ApiPaths.ACCESS_PERMITS_BY_ID, RoleGroups.SECURITY),
+                                ApiPaths.ACCESS_PERMITS_BY_ID,
+                                RoleGroups.ACCESS_PERMIT_READERS),
                         // Allow security officers to issue access permits.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.ACCESS_PERMITS,
                                 RoleGroups.SECURITY),

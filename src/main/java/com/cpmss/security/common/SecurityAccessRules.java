@@ -30,6 +30,24 @@ public class SecurityAccessRules {
     }
 
     /**
+     * Validates access to a single access permit lookup.
+     *
+     * <p>Security administrators can administer and inspect all permits. Gate
+     * guards can read individual permit records for checkpoint verification,
+     * but broad listing remains restricted to security administration.
+     *
+     * @param currentUser authenticated user
+     * @throws ApiException if the user cannot read individual permits
+     */
+    public void validateCanReadAccessPermit(CurrentUser currentUser) {
+        if (isSecurityAdministrator(currentUser)
+                || currentUser.hasRole(SystemRole.GATE_GUARD)) {
+            return;
+        }
+        throw new ApiException(SecurityErrorCode.SECURITY_RECORD_ACCESS_DENIED);
+    }
+
+    /**
      * Validates access to a specific guard assignment.
      *
      * <p>Security administrators can inspect every assignment. A gate guard can
