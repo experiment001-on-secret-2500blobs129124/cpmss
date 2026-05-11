@@ -11,20 +11,22 @@ Flyway runs on application startup and applies any pending files in version orde
 
 ```
 src/main/resources/db/migration/
-  V1__create_initial_tables.sql              ← DDL: all CREATE TABLE statements
+  V1__create_initial_tables.sql              ← DDL: baseline CREATE TABLE statements
   V2__add_constraints.sql                    ← Deferred CHECKs for V1 tables
   V3__add_auth_tables.sql                    ← App_User table (authentication)
   V4__add_auth_constraints.sql               ← App_User CHECK constraints (12 system roles)
   V5__add_team_name.sql                      ← Adds team_name to Person_Supervision
   V6__add_internal_report.sql                ← Internal_Report table (ticketing system)
   V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6 (paired)
+  V8__add_application_cv_storage.sql         ← Current application CV object metadata
+  V9__add_application_cv_constraints.sql     ← Deferred CHECKs for V8 (paired)
 ```
 
 | File | Runs in prod? | Purpose |
 |---|---|---|
-| `V1`–`V7` | All environments | Current schema structure, auth tables, constraints, and internal reports |
-| `V8+` | All environments | New schema changes or required reference data |
-| `V8__seed_catalog_data.sql` | All environments | Required startup catalog/reference rows after the catalog list is reviewed |
+| `V1`–`V9` | All environments | Current schema structure, auth tables, constraints, internal reports, and application CV object metadata |
+| `V10+` | All environments | New schema changes or required reference data |
+| `Vn__seed_catalog_data.sql` | All environments | Required startup catalog/reference rows after the catalog list is reviewed |
 | `R__seed_dev_data.sql` | Dev only | Fixed fake records for local dev and testing only |
 
 **Rules:**
@@ -36,6 +38,8 @@ src/main/resources/db/migration/
 - `V3`/`V4` (auth) follow the same DDL → constraints pattern as `V1`/`V2`.
 - `V5` adds `team_name` to `Person_Supervision`.
 - `V6`/`V7` add `Internal_Report` and its deferred constraints.
+- `V8`/`V9` add current application CV object metadata and its deferred
+  constraints.
 - `R__` stands for **Repeatable** — Flyway re-runs it whenever the file content changes (checksum-based). You can edit it freely. Used only in `dev` profile.
 - A `CommandLineRunner` for randomized bulk demo data belongs in the `dev`
   profile only.
@@ -60,7 +64,8 @@ These schema areas follow fixed storage contracts:
 
 | Area | Storage contract |
 |---|---|
-| Applicant/application documents | Metadata table linked to applicant/application records; binary files in MinIO |
+| Application CV uploads | Current CV object metadata columns on `Applications`; binary files in MinIO; re-upload replaces the current CV reference for that application |
+| Applicant/application document history | Deferred metadata table linked to applicant/application records; binary files in MinIO |
 | Payment attempts/provider transactions | Provider reference, status, attempt time, masked display data if needed |
 | Seed catalog data | Required startup rows for catalogs after review |
 | Slugs | URL-friendly identifiers for selected named/catalog resources |
@@ -82,7 +87,7 @@ already have a business reference such as `payment_no`, `contract_reference`,
 | Primary keys | `UUID DEFAULT gen_random_uuid()` on all mapped tables |
 | Audit columns | `created_at TIMESTAMPTZ`, `updated_at TIMESTAMPTZ`, `created_by VARCHAR(255)`, `updated_by VARCHAR(255)` on every `@Entity` table |
 | Business logic | Java service layer only — no PL/pgSQL triggers |
-| CHECK constraints | All go to V2 — V1 is pure DDL (column types, NOT NULL, PK, FK, UNIQUE only) |
+| CHECK constraints | Go in the paired constraints migration for their DDL batch: V2 for V1, V4 for V3, V7 for V6, V9 for V8, and so on |
 | Date-only fields | `DATE` — for facts with day-level precision: birthdays, contract dates, effective dates |
 | Event timestamps | `TIMESTAMPTZ` — for precise moments with timezone: audit fields, payment events |
 | Total participation | Enforced in the service layer (`@Transactional`) — `DEFERRABLE INITIALLY DEFERRED` constraint triggers are a valid PostgreSQL alternative but are deliberately not used here. Logic stays in Java where it is testable and explicit. |
@@ -91,7 +96,7 @@ already have a business reference such as `payment_no`, `contract_reference`,
 
 ### Constraint Types
 
-All CHECK constraints are deferred to `V2__add_constraints.sql` — V1 is pure DDL. Each constraint belongs to one of these types:
+CHECK constraints are deferred to the paired constraints migration for the DDL batch that introduced the columns or tables. V1 constraints live in `V2__add_constraints.sql`; V3 constraints live in `V4__add_auth_constraints.sql`; V6 constraints live in `V7__add_internal_report_constraints.sql`; V8 constraints live in `V9__add_application_cv_constraints.sql`. Each constraint belongs to one of these types:
 
 | Type | When to use |
 |---|---|
@@ -371,14 +376,47 @@ The service layer bridges them: when `PersonService` assigns the Staff role to a
 
 Binary files (CVs, documents, images) are stored in **MinIO**, not in
 PostgreSQL. The database stores metadata and MinIO object keys, never file
-bytes.
+bytes. Presigned URLs are response-time artifacts generated after
+authorization; they are not stored as durable database values.
 
-For document-style uploads, the database should store metadata such as owner,
-business record link, storage key, content type, original filename, size,
-created timestamp, and authorization scope. MinIO stores the binary object.
+### Application CV Storage
+
+Applicant CV storage belongs to the application workflow, not to
+`Staff_Profile`. An applicant is not staff during registration or application
+submission, and a rejected applicant must not receive a `Staff_Profile` row.
+
+`Staff_Profile.cv_file_url` is therefore a staff-profile field used after a
+person becomes staff. Application-time CV uploads are stored as current CV
+metadata on `Applications`:
+
+| Column | Purpose |
+|--------|---------|
+| `cv_object_key` | MinIO object key for the current CV attached to the application |
+| `cv_original_filename` | display/download filename |
+| `cv_content_type` | MIME type validated by the upload flow |
+| `cv_size_bytes` | uploaded object size |
+| `cv_uploaded_at` | upload timestamp |
+| `cv_uploaded_by_id` | person who uploaded or replaced the current CV |
+
+One application has one current CV reference. Re-uploading a CV for the same
+application replaces the current object metadata. A new application may carry a
+different CV because `Applications` is keyed by applicant, position, and
+application date.
+
+Previous-CV history and general applicant/application document history are
+deferred to a later document-history feature. When that feature is implemented,
+add a separate metadata table linked to the applicant/application workflow
+rather than storing file bytes in PostgreSQL or treating applicants as staff.
+
+### Document Metadata Shape
+
+For document-style uploads that require history or multiple files per business
+record, the database should store metadata such as owner, business record link,
+storage key, content type, original filename, size, created timestamp, and
+authorization scope. MinIO stores the binary object.
 
 ```sql
-file_url VARCHAR(500)  -- object path, e.g. "resource-type/record-id/filename.ext"
+object_key VARCHAR(500)  -- object key, e.g. "resource-type/record-id/filename.ext"
 ```
 
 Document metadata shape:
@@ -404,9 +442,6 @@ secrets:
 {resource-type}/{record-id}/{document-id}/{safe-filename}
 ```
 
-Presigned URLs are response-time artifacts. Store object keys in the database,
-not long-lived presigned URLs.
-
 MinIO is an S3-compatible self-hosted object storage server running as a Docker
 service (see [DEVOPS.md](./DEVOPS.md)). File services store MinIO object keys
 in database metadata rows and create presigned URLs only as response-time
@@ -416,8 +451,9 @@ schema or code logic changes.
 
 File access rules belong in services/rules classes:
 
-- applicant can access own CV/application files,
+- applicants can access CV files on their own applications,
 - HR can access applicant and staff files needed for hiring,
 - staff can access own uploaded/owned files where allowed,
 - `GENERAL_MANAGER` can access business files,
+- `ACCOUNTANT` can access finance/business files required by finance workflows,
 - `ADMIN` remains break-glass and should not be normal document access.

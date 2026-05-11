@@ -157,7 +157,7 @@ ADMIN (bootstrap via POST /setup — IT guy)
   ├── APPLICANT (self-registration via job portal — no staff involvement)
   │     └── On hire: HR changes role APPLICANT → STAFF (or higher)
   │
-  ├── INVESTOR (created by ADMIN or GENERAL_MANAGER)
+  ├── INVESTOR (created by GENERAL_MANAGER or ACCOUNTANT finance authority)
   │     └── Read-only dashboard, no management capabilities
   │
   └── Emergency: can change ANY user's role (break-glass)
@@ -172,6 +172,7 @@ ADMIN (bootstrap via POST /setup — IT guy)
 | Create officer-level accounts (HR, Finance, Security, Facility) | ADMIN or GENERAL_MANAGER | Owner appoints their leadership team |
 | Create DEPARTMENT_MANAGER account | ADMIN, GENERAL_MANAGER, or HR_OFFICER | HR onboards department heads |
 | Create STAFF / GATE_GUARD account | ADMIN, GENERAL_MANAGER, HR_OFFICER, or DEPARTMENT_MANAGER | Lowest-level account creation |
+| Create INVESTOR account | GENERAL_MANAGER or ACCOUNTANT system role | Investor access is provisioned after the business investment is recorded; this is a finance/owner workflow, not self-registration and not a department-manager permission |
 | Change someone's system_role | ADMIN or GENERAL_MANAGER (anyone) · HR_OFFICER (below officer level only) | Promotion/demotion is an HR function, but you can't promote yourself above your own level |
 | Deactivate an account (is_active = false) | Same rules as role change | Firing / access revocation |
 | **Cannot ever do**: change your OWN role | Nobody | Prevents privilege escalation |
@@ -464,8 +465,12 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 ```
 - Can self-register (creates own Person + AppUser with role = APPLICANT)
 - Can update own profile (name, contact info, qualifications)
-- Can upload CV (via MinIO — stored as file_url)
-- Can view applicant document/CV history through document metadata.
+- Can upload the current CV for each application (binary file in MinIO;
+  current object metadata on the Applications row)
+- Re-uploading a CV for the same application replaces that application's current
+  CV reference; applying again can carry a different CV on the new Application
+- Full previous-CV history and general applicant document history are deferred
+  to a later document-metadata feature
 - Can view open positions (Staff_Position catalog — read only)
 - Can submit Applications (applicant_id = self, position_id, application_date)
 - Can view own application status and history
@@ -478,6 +483,9 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 ### INVESTOR
 
 ```
+- Receives an INVESTOR login account from GENERAL_MANAGER or the ACCOUNTANT
+  system role after the business investment is recorded; investors do not
+  self-register
 - Can view own investment stakes (Person_Invests_in_Compound — own records)
 - Can view compound financial summaries (aggregate Payment data — read only)
 - Can view occupancy rates (aggregate Contract/Unit_Status data — read only)
@@ -907,9 +915,12 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 ```
 1. Applicant visits /register → creates own Person record + AppUser (role = APPLICANT)
 2. APPLICANT fills in profile: name, contact info, qualifications
-3. APPLICANT uploads CV (file stored in MinIO, URL saved in Person.cv_url or Application)
-4. APPLICANT browses open positions (Staff_Position catalog — public read)
-5. APPLICANT submits Application (applicant_id = self, position_id, date)
+3. APPLICANT browses open positions (Staff_Position catalog — public read)
+4. APPLICANT submits Application (applicant_id = self, position_id, date)
+5. APPLICANT uploads or replaces the current CV for that application (file
+   stored in MinIO; object metadata saved on the Applications row, not Person
+   and not Staff_Profile). The upload may be part of the application-submission
+   request or a follow-up action against the created Application.
 6. From here → US-1 (Hiring Pipeline) takes over at step 3
 7. On hire: HR changes AppUser.system_role from APPLICANT → STAFF
 8. Old APPLICANT account is consumed — they now see the STAFF dashboard
@@ -928,14 +939,20 @@ need explicit confirmation before implementation.
 - Applicant login through APPLICANT system role.
 - Own profile management.
 - Own applications and interview schedule/history.
-- CV upload/download through MinIO.
-- Applicant document history through document metadata.
+- Current application CV upload/download through MinIO.
+- Current CV metadata belongs to the Applications row; re-upload for the same
+  application overwrites the current reference.
+- Full previous-CV history and general applicant document history through a
+  metadata table are deferred.
 ```
 
 ### Investor Portal
 
 ```
-- Investor login through INVESTOR system role.
+- Investor login through INVESTOR system role provisioned by GENERAL_MANAGER
+  or the ACCOUNTANT system role after the investment is recorded.
+- Investor accounts are not self-registered and are not created by a
+  DEPARTMENT_MANAGER who merely manages an accounting department.
 - Own investment stake visibility.
 - Read-only dashboard.
 - Aggregate financial and occupancy statistics.
@@ -1037,7 +1054,7 @@ deactivate), AppUser becomes a **managed resource** and needs DTOs.
 
 | Method | Path | Role required | What it does |
 |--------|------|--------------|-------------|
-| `POST` | `/api/v1/users` | ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER | Create a new AppUser account |
+| `POST` | `/api/v1/users` | ADMIN, GENERAL_MANAGER, HR_OFFICER, DEPARTMENT_MANAGER, ACCOUNTANT for INVESTOR only | Create a new AppUser account |
 | `GET` | `/api/v1/users` | ADMIN, GENERAL_MANAGER, HR_OFFICER | List all user accounts (paginated) |
 | `GET` | `/api/v1/users/{id}` | ADMIN, GENERAL_MANAGER, HR_OFFICER | Get one user account |
 | `PUT` | `/api/v1/users/{id}/role` | ADMIN, GENERAL_MANAGER, HR_OFFICER | Change a user's system_role |
@@ -1064,6 +1081,8 @@ auth/dto/
 - DEPARTMENT_MANAGER can only create STAFF and GATE_GUARD accounts
 - HR_OFFICER can only create/promote up to DEPARTMENT_MANAGER level
 - GENERAL_MANAGER can create/promote up to SECURITY_OFFICER level
+- ACCOUNTANT can create INVESTOR accounts only as part of the investment
+  onboarding workflow
 - Only ADMIN can create GENERAL_MANAGER accounts
 ```
 
