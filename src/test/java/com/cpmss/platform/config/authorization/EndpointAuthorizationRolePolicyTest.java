@@ -23,6 +23,7 @@ import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS;
 import static com.cpmss.platform.common.ApiPaths.GATE_GUARD_ASSIGNMENTS_BY_ID;
 import static com.cpmss.platform.common.ApiPaths.INTERNAL_REPORTS;
 import static com.cpmss.platform.common.ApiPaths.INTERVIEWS_MINE;
+import static com.cpmss.platform.common.ApiPaths.INVESTMENT_STAKES;
 import static com.cpmss.platform.common.ApiPaths.KPI_RECORDS;
 import static com.cpmss.platform.common.ApiPaths.KPI_SUMMARIES;
 import static com.cpmss.platform.common.ApiPaths.PAYROLL;
@@ -134,6 +135,23 @@ class EndpointAuthorizationRolePolicyTest {
     }
 
     /**
+     * Confirms investor access stays limited to owned investment stake reads.
+     */
+    @Test
+    void allowsInvestorOnlyOnServiceOwnedInvestmentRoutes() {
+        EndpointAuthorizationRule investmentStakes =
+                rule(HttpMethod.GET, INVESTMENT_STAKES).orElseThrow();
+
+        assertThat(investmentStakes.roles()).contains(role(SystemRole.INVESTOR));
+        assertThat(rulesContaining(SystemRole.INVESTOR))
+                .allSatisfy(endpointRule ->
+                        assertThat(isServiceOwnedRoute(endpointRule))
+                                .as("INVESTOR route must be service-owned: %s %s",
+                                        endpointRule.method(), endpointRule.pathPattern())
+                                .isTrue());
+    }
+
+    /**
      * Confirms scoped account creators cannot manage user accounts broadly.
      */
     @Test
@@ -173,6 +191,7 @@ class EndpointAuthorizationRolePolicyTest {
                 || isAccessPermitDetailRead(rule)
                 || isGateEntryCreate(rule)
                 || isApplicantApplicationRoute(rule)
+                || isInvestorStakeRead(rule)
                 || isDepartmentManagerRead(rule)
                 || isSupervisionRead(rule)
                 || isSelfServiceRoute(rule);
@@ -247,6 +266,12 @@ class EndpointAuthorizationRolePolicyTest {
                     .anyMatch(rule.pathPattern()::equals);
         }
         return false;
+    }
+
+    private static boolean isInvestorStakeRead(EndpointAuthorizationRule rule) {
+        return rule.method() == HttpMethod.GET
+                && rule.pathPattern().equals(EndpointAuthorizationRules.pathPattern(
+                        INVESTMENT_STAKES));
     }
 
     private static boolean isDepartmentManagerRead(EndpointAuthorizationRule rule) {

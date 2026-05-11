@@ -83,6 +83,7 @@ public final class ApiPaths {
     public static final String STAFF_PROFILES_BY_ID = "/api/v1/staff-profiles/{id}";
     public static final String BANK_ACCOUNTS = "/api/v1/bank-accounts";
     public static final String BANK_ACCOUNTS_BY_ID = "/api/v1/bank-accounts/{id}";
+    public static final String INVESTMENT_STAKES = "/api/v1/investments/stakes";
 
     // Phase 5 — Contracts & Occupancy
     public static final String CONTRACTS = "/api/v1/contracts";
@@ -124,6 +125,8 @@ public final class ApiPaths {
     // Phase 10 — Payments
     public static final String PAYMENTS = "/api/v1/payments";
     public static final String PAYMENTS_BY_ID = "/api/v1/payments/{id}";
+    public static final String PAYMENTS_RECONCILIATION =
+            "/api/v1/payments/{id}/reconciliation-status";
 
     // Internal Reports
     public static final String INTERNAL_REPORTS = "/api/v1/internal-reports";

@@ -137,6 +137,8 @@ final class ControllerRouteInventory {
         add(routes, HttpMethod.POST, ApiPaths.PAYMENTS_PAYROLL);
         add(routes, HttpMethod.GET, ApiPaths.PAYMENTS);
         add(routes, HttpMethod.GET, ApiPaths.PAYMENTS_BY_ID);
+        add(routes, HttpMethod.PUT, ApiPaths.PAYMENTS_RECONCILIATION);
+        add(routes, HttpMethod.GET, ApiPaths.INVESTMENT_STAKES);
         add(routes, HttpMethod.GET, ApiPaths.BANK_ACCOUNTS);
         add(routes, HttpMethod.GET, ApiPaths.BANK_ACCOUNTS_BY_ID);
         add(routes, HttpMethod.POST, ApiPaths.BANK_ACCOUNTS);

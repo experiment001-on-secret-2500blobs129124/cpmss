@@ -39,6 +39,12 @@ final class FinanceAuthorizationRules {
                 // Allow finance to inspect a payment.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.PAYMENTS_BY_ID,
                         RoleGroups.FINANCE),
+                // Allow finance to reconcile a payment.
+                EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.PAYMENTS_RECONCILIATION,
+                        RoleGroups.FINANCE),
+                // Allow finance and investors to browse service-filtered investment stakes.
+                EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.INVESTMENT_STAKES,
+                        RoleGroups.INVESTMENT_STAKE_READERS),
                 // Allow staff-based users to browse service-filtered bank accounts.
                 EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.BANK_ACCOUNTS,
                         RoleGroups.STAFF_SELF_READERS),

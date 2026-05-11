@@ -49,6 +49,10 @@ final class RoleGroups {
     /** Roles that administer contracts, payments, bank accounts, and payroll money. */
     static final List<String> FINANCE = roles(ADMIN, GENERAL_MANAGER, ACCOUNTANT);
 
+    /** Roles allowed to read finance-scoped investor stake rows. */
+    static final List<String> INVESTMENT_STAKE_READERS = roles(
+            ADMIN, GENERAL_MANAGER, ACCOUNTANT, INVESTOR);
+
     /** Roles that administer access permits, gates, vehicles, and guard posts. */
     static final List<String> SECURITY = roles(ADMIN, GENERAL_MANAGER, SECURITY_OFFICER);
 
