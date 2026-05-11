@@ -276,6 +276,14 @@ public class RecruitmentService {
         Application application = applicationRepository.findById(appId)
                 .orElseThrow(() -> new ApiException(HrErrorCode.APPLICATION_NOT_FOUND));
 
+        if (hireAgreementRepository.existsById(appId)) {
+            throw new ApiException(HrErrorCode.HIRE_AGREEMENT_DUPLICATE);
+        }
+
+        if (staffProfileRepository.existsById(request.applicantId())) {
+            throw new ApiException(HrErrorCode.STAFF_PROFILE_DUPLICATE);
+        }
+
         // Validate at least one Pass
         List<Recruitment> interviews = recruitmentRepository
                 .findByApplicantIdAndPositionIdAndApplicationDate(
@@ -315,17 +323,15 @@ public class RecruitmentService {
         Person applicant = application.getApplicant();
         StaffPosition position = application.getPosition();
 
-        // 2. Create StaffProfile (if not already exists)
-        if (!staffProfileRepository.existsById(applicant.getId())) {
-            Qualification qualification = qualificationRepository.findById(request.qualificationId())
-                    .orElseThrow(() -> new ApiException(HrErrorCode.QUALIFICATION_NOT_FOUND));
+        // 2. Create StaffProfile. Existing staff must use the reassignment workflows.
+        Qualification qualification = qualificationRepository.findById(request.qualificationId())
+                .orElseThrow(() -> new ApiException(HrErrorCode.QUALIFICATION_NOT_FOUND));
 
-            StaffProfile profile = StaffProfile.builder()
-                    .person(applicant)
-                    .qualification(qualification)
-                    .build();
-            staffProfileRepository.save(profile);
-        }
+        StaffProfile profile = StaffProfile.builder()
+                .person(applicant)
+                .qualification(qualification)
+                .build();
+        staffProfileRepository.save(profile);
 
         // 3. Create initial StaffPositionHistory (authorized_by = null for hire)
         StaffPositionHistory positionHistory = new StaffPositionHistory();

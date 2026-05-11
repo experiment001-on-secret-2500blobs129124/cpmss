@@ -272,30 +272,39 @@ only when a rule or error boundary needs a distinct client contract.
 | `SALARY_REQUIRED` | 422 | Salary amount is missing. |
 | `SALARY_NEGATIVE` | 422 | Salary amount is negative. |
 | `SALARY_NOT_POSITIVE` | 422 | Salary amount is zero or negative. |
-| `STAFF_SALARY_EXCEEDS_POSITION_MAX` | 422 | Staff salary exceeds the active position salary band. |
-| `POSITION_SALARY_HISTORY_NOT_FOUND` | 404 | No position salary band exists for the effective date. |
-| `STAFF_PROFILE_DUPLICATE` | 409 | Staff profile already exists for a person. |
-| `STAFF_POSITION_DUPLICATE` | 409 | Staff position title already exists in the department. |
-| `HIRE_AGREEMENT_INTERVIEW_REQUIRED` | 422 | Hire agreement lacks a passed interview. |
-| `HIRE_AGREEMENT_START_DATE_INVALID` | 422 | Employment start date is before application date. |
+| `OVERTIME_HOURS_REQUIRED` | 422 | Overtime hours are missing. |
+| `OVERTIME_HOURS_NEGATIVE` | 422 | Overtime hours are negative. |
+| `WORK_HOURS_REQUIRED` | 422 | Work hours are missing. |
+| `WORK_HOURS_NEGATIVE` | 422 | Work hours are negative. |
+| `APPLICATION_NOT_FOUND` | 404 | Application row was not found. |
+| `APPLICATION_DUPLICATE` | 409 | Application already exists for applicant, position, and date. |
+| `HIRE_AGREEMENT_DUPLICATE` | 409 | Hire agreement already exists for applicant, position, and date. |
+| `NO_PASSING_INTERVIEW` | 422 | Hire agreement creation lacks a passed interview. |
+| `START_DATE_BEFORE_APPLICATION` | 422 | Employment start date is before application date. |
+| `INTERVIEW_RESULT_INVALID` | 422 | Interview result is not `Pass`, `Fail`, or `Pending`. |
+| `RECRUITMENT_NOT_FOUND` | 404 | Recruitment/interview row was not found. |
 | `APPLICATION_CV_FILE_REQUIRED` | 422 | Current application CV upload is missing file content. |
 | `APPLICATION_CV_FILENAME_REQUIRED` | 422 | Current application CV upload is missing display filename. |
 | `APPLICATION_CV_CONTENT_TYPE_REQUIRED` | 422 | Current application CV upload is missing content type. |
 | `APPLICATION_CV_SIZE_INVALID` | 422 | Current application CV size must be positive. |
 | `APPLICATION_CV_NOT_FOUND` | 404 | The application has no current CV metadata. |
-| `RECRUITMENT_RESULT_FINAL` | 422 | Interview result cannot be changed after final state. |
-| `SHIFT_TIME_WINDOW_INVALID` | 422 | Shift start/end time is missing or out of order. |
-| `ATTENDANCE_TIME_WINDOW_INVALID` | 422 | Check-in/check-out time is missing or out of order. |
-| `ATTENDANCE_ABSENT_TIME_INVALID` | 422 | Absent attendance includes check-in/out times. |
-| `ATTENDANCE_PRESENT_TIME_INVALID` | 422 | Present attendance lacks check-in/out times. |
-| `ATTENDANCE_DUPLICATE` | 409 | Staff already has the shift/date attendance or task row. |
-| `PAYROLL_PERIOD_REQUIRED` | 422 | Payroll period is missing. |
-| `PAYROLL_PERIOD_INVALID` | 422 | Payroll period year/month is invalid. |
-| `HOURS_AMOUNT_REQUIRED` | 422 | Hours amount is missing. |
-| `HOURS_AMOUNT_INVALID` | 422 | Hours amount is not positive. |
-| `HOUR_DELTA_REQUIRED` | 422 | Hour delta is missing. |
-| `TASK_DUPLICATE` | 409 | Task title already exists in the department. |
-| `SHIFT_ATTENDANCE_TYPE_DUPLICATE` | 409 | Shift attendance type already exists. |
+| `POSITION_NOT_FOUND` | 404 | Staff position was not found. |
+| `STAFF_PROFILE_NOT_FOUND` | 404 | Staff profile was not found. |
+| `STAFF_PROFILE_DUPLICATE` | 409 | Staff profile already exists for a person. |
+| `PERSON_NOT_FOUND` | 404 | Person row was not found in an HR workflow. |
+| `QUALIFICATION_NOT_FOUND` | 404 | Qualification catalog row was not found. |
+| `STAFF_POSITION_ASSIGNMENT_DUPLICATE` | 409 | Staff position assignment already exists for the effective date. |
+| `STAFF_POSITION_ASSIGNMENT_OVERLAP` | 409 | Position reassignment overlaps the current assignment. |
+| `STAFF_POSITION_AUTHORIZER_REQUIRED` | 422 | Position reassignment requires an authorizer. |
+| `STAFF_POSITION_HISTORY_NOT_FOUND` | 404 | Current staff position assignment was not found. |
+| `STAFF_SALARY_HISTORY_NOT_FOUND` | 404 | Current staff salary history was not found. |
+| `STAFF_SALARY_HISTORY_DUPLICATE` | 409 | Staff salary history already exists for the effective date. |
+| `STAFF_SALARY_EXCEEDS_POSITION_MAX` | 422 | Staff salary exceeds the active position salary band. |
+| `POSITION_SALARY_HISTORY_NOT_FOUND` | 404 | No position salary band exists for the effective date. |
+| `POSITION_SALARY_HISTORY_DUPLICATE` | 409 | Position salary band already exists for the effective date. |
+| `SHIFT_ATTENDANCE_LAW_NOT_FOUND` | 404 | Shift attendance law row was not found. |
+| `SHIFT_ATTENDANCE_LAW_DUPLICATE` | 409 | Shift attendance law already exists for the effective date. |
+| `HR_RECORD_ACCESS_DENIED` | 403 | Current user cannot access the HR record. |
 
 ### Performance
 

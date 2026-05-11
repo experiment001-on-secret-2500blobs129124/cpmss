@@ -53,6 +53,9 @@ public enum HrErrorCode implements ErrorCode {
     /** Application already exists for applicant, position, and date. */
     APPLICATION_DUPLICATE(409, "Application already exists for applicant, position, and date"),
 
+    /** Hire agreement already exists for applicant, position, and date. */
+    HIRE_AGREEMENT_DUPLICATE(409, "Hire agreement already exists for applicant, position, and date"),
+
     /** Application CV file is missing. */
     APPLICATION_CV_FILE_REQUIRED(422, "Application CV file is required"),
 

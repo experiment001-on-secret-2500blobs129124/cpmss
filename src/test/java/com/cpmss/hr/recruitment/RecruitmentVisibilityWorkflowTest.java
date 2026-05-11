@@ -1,10 +1,13 @@
 package com.cpmss.hr.recruitment;
 
 import com.cpmss.hr.application.Application;
+import com.cpmss.hr.application.ApplicationId;
 import com.cpmss.hr.application.ApplicationRepository;
 import com.cpmss.hr.hireagreement.HireAgreementRepository;
+import com.cpmss.hr.hireagreement.dto.CreateHireAgreementRequest;
 import com.cpmss.hr.staffposition.StaffPosition;
 import com.cpmss.hr.staffposition.StaffPositionRepository;
+import com.cpmss.hr.common.HrErrorCode;
 import com.cpmss.hr.staffposition.PositionSalaryHistoryRepository;
 import com.cpmss.hr.staffpositionhistory.StaffPositionHistoryRepository;
 import com.cpmss.hr.staffprofile.StaffProfileRepository;
@@ -15,16 +18,20 @@ import com.cpmss.identity.auth.SystemRole;
 import com.cpmss.people.person.Person;
 import com.cpmss.people.person.PersonRepository;
 import com.cpmss.people.qualification.QualificationRepository;
+import com.cpmss.platform.exception.ApiException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -103,6 +110,48 @@ class RecruitmentVisibilityWorkflowTest {
         assertThat(response.getFirst().interviewResult()).isEqualTo("Pending");
     }
 
+
+    @Test
+    void hireAgreementCreationRejectsDuplicateApplicationOnboarding() {
+        UUID applicantId = UUID.randomUUID();
+        UUID positionId = UUID.randomUUID();
+        LocalDate applicationDate = LocalDate.of(2026, 5, 10);
+        ApplicationId applicationId = new ApplicationId(applicantId, positionId, applicationDate);
+
+        when(currentUserService.currentUser()).thenReturn(new CurrentUser(
+                UUID.randomUUID(), UUID.randomUUID(), SystemRole.HR_OFFICER, "hr@example.com"));
+        when(applicationRepository.findById(applicationId))
+                .thenReturn(Optional.of(application(applicantId, positionId, applicationDate)));
+        when(hireAgreementRepository.existsById(applicationId)).thenReturn(true);
+
+        assertThatThrownBy(() -> service().createHireAgreement(hireRequest(
+                applicantId, positionId, applicationDate)))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getErrorCode())
+                .isEqualTo(HrErrorCode.HIRE_AGREEMENT_DUPLICATE);
+    }
+
+    @Test
+    void hireAgreementCreationRejectsApplicantWhoAlreadyHasStaffProfile() {
+        UUID applicantId = UUID.randomUUID();
+        UUID positionId = UUID.randomUUID();
+        LocalDate applicationDate = LocalDate.of(2026, 5, 10);
+        ApplicationId applicationId = new ApplicationId(applicantId, positionId, applicationDate);
+
+        when(currentUserService.currentUser()).thenReturn(new CurrentUser(
+                UUID.randomUUID(), UUID.randomUUID(), SystemRole.HR_OFFICER, "hr@example.com"));
+        when(applicationRepository.findById(applicationId))
+                .thenReturn(Optional.of(application(applicantId, positionId, applicationDate)));
+        when(hireAgreementRepository.existsById(applicationId)).thenReturn(false);
+        when(staffProfileRepository.existsById(applicantId)).thenReturn(true);
+
+        assertThatThrownBy(() -> service().createHireAgreement(hireRequest(
+                applicantId, positionId, applicationDate)))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getErrorCode())
+                .isEqualTo(HrErrorCode.STAFF_PROFILE_DUPLICATE);
+    }
+
     private RecruitmentService service() {
         return new RecruitmentService(
                 applicationRepository,
@@ -116,6 +165,19 @@ class RecruitmentVisibilityWorkflowTest {
                 positionSalaryHistoryRepository,
                 qualificationRepository,
                 currentUserService);
+    }
+
+
+    private CreateHireAgreementRequest hireRequest(UUID applicantId, UUID positionId,
+                                                   LocalDate applicationDate) {
+        return new CreateHireAgreementRequest(
+                applicantId,
+                positionId,
+                applicationDate,
+                applicationDate.plusDays(14),
+                BigDecimal.valueOf(500),
+                BigDecimal.valueOf(15000),
+                UUID.randomUUID());
     }
 
     private Application application(UUID applicantId, UUID positionId, LocalDate date) {
