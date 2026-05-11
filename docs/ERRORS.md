@@ -254,6 +254,9 @@ only when a rule or error boundary needs a distinct client contract.
 | `PERMIT_ACCESS_LEVEL_REQUIRED` | 422 | Access level is required for a path that needs it. |
 | `PERMIT_ACCESS_LEVEL_INVALID` | 422 | Access level is not allowed. |
 | `PERMIT_VALIDITY_INVALID` | 422 | Permit issue/expiry dates are missing or out of order. |
+| `ACCESS_PERMIT_NOT_ACTIVE` | 422 | Gate entry attempted with an inactive permit. |
+| `ACCESS_PERMIT_EXPIRED` | 422 | Gate entry attempted after the permit expiry date. |
+| `ACCESS_PERMIT_HOLDER_BLACKLISTED` | 403 | Gate entry attempted for a blacklisted permit holder. |
 | `ENTRY_SOURCE_INVALID` | 422 | Gate entry has neither or both permit/manual plate. |
 | `GATE_DIRECTION_REQUIRED` | 422 | Gate entry direction is missing. |
 | `GATE_DIRECTION_INVALID` | 422 | Gate entry direction is not allowed. |

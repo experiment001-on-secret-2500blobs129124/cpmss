@@ -783,7 +783,9 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 3. HR/GM reviews and approves the Task_Monthly_Salary records
 4. ACCOUNTANT creates Payment (direction = 'Outbound', type = 'Payroll')
 5. ACCOUNTANT creates Payroll_Payment (links Payment to Task_Monthly_Salary)
-6. After disbursement: ACCOUNTANT updates Payment.reconciliation_status → 'Reconciled'
+6. After disbursement: ACCOUNTANT updates Payment.reconciliation_status → 'Reconciled'.
+   Reconciliation is a parent Payment workflow action after the subtype link
+   exists; accepted values are Pending, Reconciled, and Disputed.
 7. Monthly salary snapshots are now FROZEN — cannot be recalculated
 ```
 
@@ -798,10 +800,11 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 3. ACCOUNTANT adds Person_Resides_Under rows (who actually lives there)
 4. ACCOUNTANT generates Installment schedule (monthly due dates, expected amounts)
 5. Each month: tenant pays → ACCOUNTANT creates Payment + Installment_Payment
-6. ACCOUNTANT updates Installment.installment_status → 'Paid'
-7. If overdue: late_fee_amount is added to the Installment_Payment
-8. At contract end: ACCOUNTANT updates Contract.contract_status → 'Expired'
-9. If renewed: new Contract created, old one stays as historical record
+6. ACCOUNTANT may update Payment.reconciliation_status after bank/cash review
+7. ACCOUNTANT updates Installment.installment_status → 'Paid'
+8. If overdue: late_fee_amount is added to the Installment_Payment
+9. At contract end: ACCOUNTANT updates Contract.contract_status → 'Expired'
+10. If renewed: new Contract created, old one stays as historical record
 ```
 
 ### US-4: Gate Entry (Permit Scan)
@@ -812,8 +815,8 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 ```
 1. Person presents permit at gate
 2. GATE_GUARD scans permit → system looks up Access_Permit by permit_no
-3. System validates: permit_status = 'Active', expiry_date >= today,
-   person is not blacklisted
+3. System validates: permit_status = 'Active', expiry_date >= entry date,
+   and the permit holder is not blacklisted before any entry row is saved
 4. If valid → GATE_GUARD creates Enters_At record:
    gate_id, permit_id, entered_at = now(), direction = 'In'
 5. processed_by_id = optional (permit scan is self-service)
@@ -844,7 +847,7 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 1. FACILITY_OFFICER or tenant (via officer) creates Work_Order
    (requester_id, description, priority, service_category, facility_id)
 2. FACILITY_OFFICER assigns vendor → creates Work_Order_Assigned_To
-   (company_id, date_assigned)
+   (company_id, date_assigned) and moves Work_Order.job_status to 'Assigned'
 3. FACILITY_OFFICER updates Work_Order.job_status as work progresses
    (Scheduled → In Progress → Completed)
 4. On completion: FACILITY_OFFICER sets date_completed and cost_amount
@@ -861,8 +864,10 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 1. DEPARTMENT_MANAGER creates Staff_Performance_Review
    (staff_id, reviewer_id = self, department_id, review_date, overall_rating)
 2. If resulted_in_raise = true (single @Transactional):
-   a. Close current Staff_Salary_History (set end_date = today)
-   b. Create new Staff_Salary_History (new rate, approved_by_id, review_id)
+   a. Resolve the active/current staff position for the review date
+   b. Validate the new maximum salary against that position salary band
+   c. Close current Staff_Salary_History (set end_date = today)
+   d. Create new Staff_Salary_History (new rate, approved_by_id, review_id)
 3. If resulted_in_promotion = true (single @Transactional):
    a. Close current Staff_Position_History (set end_date = today)
    b. Create new Staff_Position_History (new position, authorized_by_id)
@@ -957,7 +962,8 @@ implemented.
   or the ACCOUNTANT system role after the investment is recorded.
 - Investor accounts are not self-registered and are not created by a
   DEPARTMENT_MANAGER who merely manages an accounting department.
-- Own investment stake visibility.
+- Own investment stake visibility is service-scoped to the investor's linked
+  person record; finance authority may list all investor stakes.
 - Read-only dashboard.
 - Aggregate financial and occupancy statistics.
 - No operational write access.
