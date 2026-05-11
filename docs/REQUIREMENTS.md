@@ -547,7 +547,7 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 - Position_Salary_History: base_daily_rate and maximum_salary must be > 0
   → PositionSalaryRules.java
 
-- Staff_Salary_History: individual maximum_salary ≤ position's maximum_salary
+- Staff_Salary_History: individual maximum_salary ≤ active Position_Salary_History.maximum_salary
   → StaffSalaryRules.java
 
 - authorized_by_id on Staff_Position_History is NULL only for the initial hire
@@ -626,8 +626,8 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 - A staff member cannot have two Attends rows for same shift + date
   → AttendsRules.java (enforced by composite PK)
 
-- daily_salary, daily_bonus, daily_deduction are computed snapshots — frozen after payroll close
-  → AttendsRules.java (amount and currency immutable after month close)
+- daily_salary, daily_bonus, daily_deduction, and daily_net_salary are computed snapshots — frozen after payroll close. During payroll close, the backend fills any missing Attends snapshot amounts from the active Staff_Salary_History and Law_of_Shift_Attendance for the attendance date: daily_salary uses the staff base_daily_rate (or zero when absent), daily_bonus uses positive diff_hour × one_hour_extra_bonus, daily_deduction uses absolute negative diff_hour × one_hour_diff_discount, and daily_net_salary is salary + bonus - deduction, floored at zero.
+  → AttendsRules.java / PayrollService.java (amount and currency immutable after month close)
 
 - Task_Monthly_Salary monthly_net_salary ≤ Staff_Salary_History.maximum_salary
   → PayrollRules.java
@@ -642,11 +642,17 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 ### KPI Rules
 
 ```
-- KPI_Policy tiers must not overlap within a department (min_kpi_score/max_kpi_score ranges)
+- KPI_Policy tiers must not overlap within the same department policy version
+  (same department_id + effective_date, min_kpi_score/max_kpi_score ranges)
   → KpiPolicyRules.java
 
-- Staff_KPI_Record: kpi_policy_id must reference the active policy for the department on that date
-  → StaffKpiRecordRules.java
+- Staff_KPI_Record: kpi_policy_id must reference the latest active policy version
+  for the department on that date, and kpi_score must fall inside the selected tier range
+  → StaffKpiRecordRules.java + KpiPolicyRules.java
+
+- Staff_KPI_Monthly_Summary applicable_tier/payroll rates must be copied from
+  the latest active KPI_Policy tier that matches avg_kpi_score at period close
+  → StaffKpiMonthlySummaryRules.java + KpiPolicyRules.java
 
 - Staff_KPI_Monthly_Summary values are snapshots — do not recalculate after month close
   → StaffKpiMonthlySummaryRules.java
@@ -866,7 +872,8 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
 2. At month-end: DEPARTMENT_MANAGER triggers close
 3. System aggregates daily records → creates Staff_KPI_Monthly_Summary
    (avg_kpi_score, total_kpi_score, days_scored, applicable_tier,
-    payroll_bonus_rate, payroll_deduct_rate)
+    payroll_bonus_rate, payroll_deduct_rate copied from the latest active
+    KPI_Policy tier matching avg_kpi_score at period close)
 4. closed_by_id = the manager who triggered the close
 5. Summary values are now FROZEN — used directly by payroll (US-2)
 ```
