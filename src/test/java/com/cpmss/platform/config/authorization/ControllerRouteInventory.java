@@ -145,9 +145,15 @@ final class ControllerRouteInventory {
 
     private static void addRecruitment(Set<String> routes) {
         add(routes, HttpMethod.GET, ApiPaths.APPLICATIONS);
+        add(routes, HttpMethod.GET, ApiPaths.APPLICATIONS_MINE);
+        add(routes, HttpMethod.PUT, ApiPaths.APPLICATIONS_CV);
+        add(routes, HttpMethod.GET, ApiPaths.APPLICATIONS_CV_DOWNLOAD_URL);
         add(routes, HttpMethod.POST, ApiPaths.APPLICATIONS);
+        add(routes, HttpMethod.GET, ApiPaths.INTERVIEWS);
+        add(routes, HttpMethod.GET, ApiPaths.INTERVIEWS_MINE);
         add(routes, HttpMethod.POST, ApiPaths.INTERVIEWS);
         add(routes, HttpMethod.PUT, ApiPaths.INTERVIEWS_RESULT);
+        add(routes, HttpMethod.GET, ApiPaths.HIRE_AGREEMENTS);
         add(routes, HttpMethod.POST, ApiPaths.HIRE_AGREEMENTS);
     }
 
