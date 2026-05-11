@@ -23,6 +23,16 @@ public interface StaffSalaryHistoryRepository
     Optional<StaffSalaryHistory> findByStaffIdAndEndDateIsNull(UUID staffId);
 
     /**
+     * Finds the most recent salary row effective on or before a business date.
+     *
+     * @param staffId the staff member UUID
+     * @param effectiveDate the business date used for effective-dated lookup
+     * @return the newest salary row whose effective date is not after the date
+     */
+    Optional<StaffSalaryHistory> findFirstByStaffIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
+            UUID staffId, LocalDate effectiveDate);
+
+    /**
      * Checks whether a salary row already exists for the same staff/date.
      *
      * @param staffId the staff member UUID

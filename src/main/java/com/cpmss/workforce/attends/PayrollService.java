@@ -1,7 +1,11 @@
 package com.cpmss.workforce.attends;
 
+import com.cpmss.finance.common.FinanceErrorCode;
 import com.cpmss.finance.money.Money;
 import com.cpmss.hr.common.HrAccessRules;
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.hr.lawofshiftattendance.LawOfShiftAttendance;
+import com.cpmss.hr.lawofshiftattendance.LawOfShiftAttendanceRepository;
 import com.cpmss.identity.auth.CurrentUser;
 import com.cpmss.identity.auth.CurrentUserService;
 import com.cpmss.organization.common.DepartmentScopeService;
@@ -19,6 +23,10 @@ import com.cpmss.workforce.common.WorkforceAccessRules;
 import com.cpmss.workforce.common.WorkforceErrorCode;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceType;
 import com.cpmss.workforce.shiftattendancetype.ShiftAttendanceTypeRepository;
+import com.cpmss.hr.staffposition.PositionSalaryHistory;
+import com.cpmss.hr.staffposition.PositionSalaryHistoryRepository;
+import com.cpmss.hr.staffpositionhistory.StaffPositionHistory;
+import com.cpmss.hr.staffpositionhistory.StaffPositionHistoryRepository;
 import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistory;
 import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistoryRepository;
 import com.cpmss.hr.staffsalaryhistory.StaffSalaryRules;
@@ -37,6 +45,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -44,7 +53,7 @@ import java.util.function.Function;
  * Orchestrates attendance recording, monthly payroll close, and salary changes.
  *
  * <p>Manages the daily attendance → monthly aggregation → payroll snapshot
- * lifecycle described in REQUIREMENTS.md US-8.
+ * lifecycle described in REQUIREMENTS.md US-2.
  *
  * @see AttendsRules
  * @see StaffSalaryRules
@@ -57,6 +66,9 @@ public class PayrollService {
     private final AttendsRepository attendsRepository;
     private final TaskMonthlySalaryRepository monthlySalaryRepository;
     private final StaffSalaryHistoryRepository salaryHistoryRepository;
+    private final StaffPositionHistoryRepository positionHistoryRepository;
+    private final PositionSalaryHistoryRepository positionSalaryHistoryRepository;
+    private final LawOfShiftAttendanceRepository lawRepository;
     private final PersonRepository personRepository;
     private final ShiftAttendanceTypeRepository shiftRepository;
     private final DepartmentRepository departmentRepository;
@@ -75,6 +87,9 @@ public class PayrollService {
      * @param attendsRepository attendance data access
      * @param monthlySalaryRepository monthly payroll snapshot data access
      * @param salaryHistoryRepository staff salary history data access
+     * @param positionHistoryRepository staff position history data access
+     * @param positionSalaryHistoryRepository position salary band data access
+     * @param lawRepository attendance law data access
      * @param personRepository person data access
      * @param shiftRepository shift attendance type data access
      * @param departmentRepository department data access
@@ -83,6 +98,9 @@ public class PayrollService {
     public PayrollService(AttendsRepository attendsRepository,
                           TaskMonthlySalaryRepository monthlySalaryRepository,
                           StaffSalaryHistoryRepository salaryHistoryRepository,
+                          StaffPositionHistoryRepository positionHistoryRepository,
+                          PositionSalaryHistoryRepository positionSalaryHistoryRepository,
+                          LawOfShiftAttendanceRepository lawRepository,
                           PersonRepository personRepository,
                           ShiftAttendanceTypeRepository shiftRepository,
                           DepartmentRepository departmentRepository,
@@ -92,6 +110,9 @@ public class PayrollService {
         this.attendsRepository = attendsRepository;
         this.monthlySalaryRepository = monthlySalaryRepository;
         this.salaryHistoryRepository = salaryHistoryRepository;
+        this.positionHistoryRepository = positionHistoryRepository;
+        this.positionSalaryHistoryRepository = positionSalaryHistoryRepository;
+        this.lawRepository = lawRepository;
         this.personRepository = personRepository;
         this.shiftRepository = shiftRepository;
         this.departmentRepository = departmentRepository;
@@ -175,8 +196,9 @@ public class PayrollService {
      * Closes monthly payroll for a department — aggregates daily attendance into
      * TaskMonthlySalary snapshots.
      *
-     * <p>For each staff member with attendance in the period, sums daily
-     * salary/bonus/deduction fields into a monthly record. Once closed,
+     * <p>For each staff member with attendance in the period, fills any
+     * missing daily salary/bonus/deduction snapshots from the active salary
+     * and shift law, then aggregates them into a monthly record. Once closed,
      * these values are frozen.
      *
      * @param departmentId the department UUID
@@ -210,14 +232,19 @@ public class PayrollService {
                 .collect(java.util.stream.Collectors.groupingBy(
                         a -> a.getStaff().getId()));
 
-        List<TaskMonthlySalary> results = new java.util.ArrayList<>();
         for (var entry : grouped.entrySet()) {
-            List<Attends> records = entry.getValue();
-            Attends sample = records.get(0);
+            Attends sample = entry.getValue().get(0);
             if (monthlySalaryRepository.existsByStaffIdAndDepartmentIdAndYearAndMonth(
                     sample.getStaff().getId(), departmentId, year, month)) {
                 throw new ApiException(WorkforceErrorCode.PAYROLL_ALREADY_CLOSED);
             }
+        }
+
+        List<TaskMonthlySalary> results = new java.util.ArrayList<>();
+        for (var entry : grouped.entrySet()) {
+            List<Attends> records = entry.getValue();
+            Attends sample = records.get(0);
+            records.forEach(record -> ensureDailyPayrollSnapshot(record, currency));
 
             Money totalSalary = sumMoney(records, Attends::getDailySalary, zero);
             Money totalBonus = sumMoney(records, Attends::getDailyBonus, zero);
@@ -228,9 +255,11 @@ public class PayrollService {
             BigDecimal netSalaryAmount = totalSalary.getAmount()
                     .add(totalBonus.getAmount())
                     .subtract(totalDeduction.getAmount())
-                    .subtract(tax.getAmount());
+                    .subtract(tax.getAmount())
+                    .max(BigDecimal.ZERO)
+                    .setScale(2, RoundingMode.HALF_UP);
             Money netSalary = new Money(netSalaryAmount, totalSalary.getCurrency());
-            validateNetWithinSalaryCap(sample.getStaff().getId(), netSalary);
+            validateNetWithinSalaryCap(sample.getStaff().getId(), period.lastDay(), netSalary);
 
             TaskMonthlySalary monthly = new TaskMonthlySalary();
             monthly.setStaff(sample.getStaff());
@@ -301,6 +330,18 @@ public class PayrollService {
         hrAccessRules.requireHrAdministrator(currentUserService.currentUser());
         salaryRules.validateBaseDailyRatePositive(request.baseDailyRate());
         salaryRules.validateMaximumSalaryPositive(request.maximumSalary());
+
+        StaffPositionHistory currentPosition = positionHistoryRepository
+                .findByPersonIdAndEndDateIsNull(request.staffId())
+                .orElseThrow(() -> new ApiException(
+                        HrErrorCode.STAFF_POSITION_HISTORY_NOT_FOUND));
+        PositionSalaryHistory activeBand = positionSalaryHistoryRepository
+                .findFirstByPositionIdAndSalaryEffectiveDateLessThanEqualOrderBySalaryEffectiveDateDesc(
+                        currentPosition.getPosition().getId(), request.effectiveDate())
+                .orElseThrow(() -> new ApiException(
+                        HrErrorCode.POSITION_SALARY_HISTORY_NOT_FOUND));
+        salaryRules.validateWithinPositionMaximum(
+                request.maximumSalary(), activeBand.getMaximumSalary());
 
         Person staff = personRepository.findById(request.staffId())
                 .orElseThrow(() -> new ApiException(PeopleErrorCode.PERSON_NOT_FOUND));
@@ -378,10 +419,83 @@ public class PayrollService {
     }
 
 
-    private void validateNetWithinSalaryCap(UUID staffId, Money netSalary) {
-        StaffSalaryHistory salaryHistory = salaryHistoryRepository.findByStaffIdAndEndDateIsNull(staffId)
-                .orElseThrow(() -> new ApiException(com.cpmss.hr.common.HrErrorCode
-                        .STAFF_SALARY_HISTORY_NOT_FOUND));
+    private void ensureDailyPayrollSnapshot(Attends attends, String currency) {
+        if (attends.getDailySalary() != null
+                && attends.getDailyBonus() != null
+                && attends.getDailyDeduction() != null
+                && attends.getDailyNetSalary() != null) {
+            return;
+        }
+
+        Money zero = new Money(BigDecimal.ZERO, currency);
+        if (Boolean.TRUE.equals(attends.getIsAbsent())) {
+            setDailySnapshot(attends, zero, zero, zero, zero);
+            return;
+        }
+
+        StaffSalaryHistory salaryHistory = effectiveSalaryFor(
+                attends.getStaff().getId(), attends.getDate());
+        LawOfShiftAttendance law = lawRepository
+                .findFirstByShiftIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
+                        attends.getShift().getId(), attends.getDate())
+                .orElseThrow(() -> new ApiException(
+                        HrErrorCode.SHIFT_ATTENDANCE_LAW_NOT_FOUND));
+
+        Money dailySalary = new Money(roundMoney(salaryHistory.getBaseDailyRate()), currency);
+        BigDecimal diffHours = attends.getDiffHour() != null
+                ? attends.getDiffHour().hours()
+                : BigDecimal.ZERO;
+        Money dailyBonus = diffHours.signum() > 0
+                ? moneyFromRate(law.getOneHourExtraBonus(), diffHours, currency)
+                : zero;
+        Money dailyDeduction = diffHours.signum() < 0
+                ? moneyFromRate(law.getOneHourDiffDiscount(), diffHours.abs(), currency)
+                : zero;
+        BigDecimal netAmount = dailySalary.getAmount()
+                .add(dailyBonus.getAmount())
+                .subtract(dailyDeduction.getAmount())
+                .max(BigDecimal.ZERO)
+                .setScale(2, RoundingMode.HALF_UP);
+        setDailySnapshot(attends, dailySalary, dailyBonus, dailyDeduction,
+                new Money(netAmount, currency));
+    }
+
+    private StaffSalaryHistory effectiveSalaryFor(UUID staffId, LocalDate date) {
+        StaffSalaryHistory salaryHistory = salaryHistoryRepository
+                .findFirstByStaffIdAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
+                        staffId, date)
+                .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_SALARY_HISTORY_NOT_FOUND));
+        if (salaryHistory.getEndDate() != null && salaryHistory.getEndDate().isBefore(date)) {
+            throw new ApiException(HrErrorCode.STAFF_SALARY_HISTORY_NOT_FOUND);
+        }
+        return salaryHistory;
+    }
+
+    private Money moneyFromRate(Money rate, BigDecimal hours, String currency) {
+        if (rate == null) {
+            return new Money(BigDecimal.ZERO, currency);
+        }
+        if (!rate.getCurrency().equals(currency.strip().toUpperCase(Locale.ROOT))) {
+            throw new ApiException(FinanceErrorCode.MONEY_CURRENCY_MISMATCH);
+        }
+        return new Money(roundMoney(rate.getAmount().multiply(hours)), currency);
+    }
+
+    private BigDecimal roundMoney(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private void setDailySnapshot(Attends attends, Money salary, Money bonus,
+                                  Money deduction, Money netSalary) {
+        attends.setDailySalary(salary);
+        attends.setDailyBonus(bonus);
+        attends.setDailyDeduction(deduction);
+        attends.setDailyNetSalary(netSalary);
+        attendsRepository.save(attends);
+    }
+
+    private void validateNetWithinSalaryCap(UUID staffId, LocalDate periodEnd, Money netSalary) {
+        StaffSalaryHistory salaryHistory = effectiveSalaryFor(staffId, periodEnd);
         if (salaryHistory.getMaximumSalary() != null
                 && netSalary.getAmount().compareTo(salaryHistory.getMaximumSalary()) > 0) {
             throw new ApiException(WorkforceErrorCode.PAYROLL_NET_EXCEEDS_SALARY_CAP);
