@@ -56,6 +56,33 @@ public class HrAccessRules {
         throw new ApiException(HrErrorCode.HR_RECORD_ACCESS_DENIED);
     }
 
+
+    /**
+     * Allows HR administrators or the owning applicant to read application data.
+     *
+     * @param user        current authenticated user
+     * @param applicantId person UUID on the application
+     * @throws ApiException if the user cannot read this application
+     */
+    public void requireCanViewApplication(CurrentUser user, UUID applicantId) {
+        if (isHrAdministrator(user)
+                || (user.hasRole(SystemRole.APPLICANT) && isOwnPerson(user, applicantId))) {
+            return;
+        }
+        throw new ApiException(HrErrorCode.HR_RECORD_ACCESS_DENIED);
+    }
+
+    /**
+     * Allows HR administrators or the owning applicant to upload/replace a CV.
+     *
+     * @param user        current authenticated user
+     * @param applicantId person UUID on the application
+     * @throws ApiException if the user cannot modify this application CV
+     */
+    public void requireCanUploadApplicationCv(CurrentUser user, UUID applicantId) {
+        requireCanViewApplication(user, applicantId);
+    }
+
     /**
      * Checks whether the role has full HR authority.
      *

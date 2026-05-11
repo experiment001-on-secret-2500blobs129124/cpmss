@@ -921,17 +921,20 @@ Inherits: all STAFF permissions (view own paycheck, own attendance, etc.)
    stored in MinIO; object metadata saved on the Applications row, not Person
    and not Staff_Profile). The upload may be part of the application-submission
    request or a follow-up action against the created Application.
-6. From here → US-1 (Hiring Pipeline) takes over at step 3
-7. On hire: HR changes AppUser.system_role from APPLICANT → STAFF
-8. Old APPLICANT account is consumed — they now see the STAFF dashboard
+6. APPLICANT can list their own Applications and interview schedule/history,
+   while HR retains broad Recruitment/Hire_Agreement review access.
+7. From here → US-1 (Hiring Pipeline) takes over at step 3
+8. On hire: HR changes AppUser.system_role from APPLICANT → STAFF
+9. Old APPLICANT account is consumed — they now see the STAFF dashboard
 ```
 
 ---
 
-## 7. Deferred Product Contracts and Open Questions
+## 7. Product Contracts and Deferred Open Questions
 
-This section captures accepted product contracts and product decisions that
-need explicit confirmation before implementation.
+This section captures accepted product contracts plus remaining product
+decisions that are intentionally deferred until the owning workflow is
+implemented.
 
 ### Applicant Portal
 
@@ -939,7 +942,8 @@ need explicit confirmation before implementation.
 - Applicant login through APPLICANT system role.
 - Own profile management.
 - Own applications and interview schedule/history.
-- Current application CV upload/download through MinIO.
+- Current application CV upload/download through MinIO using object keys stored
+  on Applications and short-lived response-time download URLs.
 - Current CV metadata belongs to the Applications row; re-upload for the same
   application overwrites the current reference.
 - Full previous-CV history and general applicant document history through a

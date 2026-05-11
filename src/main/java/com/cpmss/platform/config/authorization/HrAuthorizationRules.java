@@ -60,6 +60,16 @@ final class HrAuthorizationRules {
                         // Allow HR to browse job applications.
                         EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.APPLICATIONS,
                                 RoleGroups.HR),
+                        // Allow applicants to browse their own applications; service narrows scope.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.APPLICATIONS_MINE,
+                                RoleGroups.roles(RoleGroups.APPLICANT)),
+                        // Allow HR/applicants to upload current CVs; service narrows scope.
+                        EndpointAuthorizationRules.allow(HttpMethod.PUT, ApiPaths.APPLICATIONS_CV,
+                                RoleGroups.APPLICATION_SUBMITTERS),
+                        // Allow HR/applicants to request current CV download URLs; service narrows scope.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.APPLICATIONS_CV_DOWNLOAD_URL,
+                                RoleGroups.APPLICATION_SUBMITTERS),
                         // Allow HR to add shift attendance laws.
                         EndpointAuthorizationRules.allow(HttpMethod.POST,
                                 ApiPaths.SHIFT_ATTENDANCE_TYPES_LAWS, RoleGroups.HR),
@@ -72,12 +82,21 @@ final class HrAuthorizationRules {
                         // Allow HR to import applications and applicants to submit their own.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.APPLICATIONS,
                                 RoleGroups.APPLICATION_SUBMITTERS),
+                        // Allow HR to browse interview records.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.INTERVIEWS,
+                                RoleGroups.HR),
+                        // Allow applicants to browse own interview schedule/history; service narrows scope.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET, ApiPaths.INTERVIEWS_MINE,
+                                RoleGroups.roles(RoleGroups.APPLICANT)),
                         // Allow HR to schedule interviews.
                         EndpointAuthorizationRules.allow(HttpMethod.POST, ApiPaths.INTERVIEWS,
                                 RoleGroups.HR),
                         // Allow HR to record interview outcomes.
                         EndpointAuthorizationRules.allow(HttpMethod.PUT,
                                 ApiPaths.INTERVIEWS_RESULT, RoleGroups.HR),
+                        // Allow HR to inspect hire agreements.
+                        EndpointAuthorizationRules.allow(HttpMethod.GET,
+                                ApiPaths.HIRE_AGREEMENTS, RoleGroups.HR),
                         // Allow HR to create hire agreements.
                         EndpointAuthorizationRules.allow(HttpMethod.POST,
                                 ApiPaths.HIRE_AGREEMENTS, RoleGroups.HR),

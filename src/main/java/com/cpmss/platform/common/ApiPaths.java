@@ -101,6 +101,10 @@ public final class ApiPaths {
 
     // Phase 7 — Recruitment
     public static final String APPLICATIONS = "/api/v1/applications";
+    public static final String APPLICATIONS_MINE = "/api/v1/applications/mine";
+    public static final String APPLICATIONS_CV = "/api/v1/applications/cv";
+    public static final String APPLICATIONS_CV_DOWNLOAD_URL =
+            "/api/v1/applications/cv/download-url";
 
     // Phase 8 — Attendance & Payroll
     public static final String ASSIGNED_TASKS = "/api/v1/assigned-tasks";
@@ -131,6 +135,7 @@ public final class ApiPaths {
 
     // Recruitment / Hiring Pipeline
     public static final String INTERVIEWS = "/api/v1/interviews";
+    public static final String INTERVIEWS_MINE = "/api/v1/interviews/mine";
     public static final String INTERVIEWS_RESULT = "/api/v1/interviews/result";
     public static final String HIRE_AGREEMENTS = "/api/v1/hire-agreements";
 

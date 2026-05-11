@@ -53,6 +53,21 @@ public enum HrErrorCode implements ErrorCode {
     /** Application already exists for applicant, position, and date. */
     APPLICATION_DUPLICATE(409, "Application already exists for applicant, position, and date"),
 
+    /** Application CV file is missing. */
+    APPLICATION_CV_FILE_REQUIRED(422, "Application CV file is required"),
+
+    /** Application CV filename is missing. */
+    APPLICATION_CV_FILENAME_REQUIRED(422, "Application CV filename is required"),
+
+    /** Application CV content type is missing. */
+    APPLICATION_CV_CONTENT_TYPE_REQUIRED(422, "Application CV content type is required"),
+
+    /** Application CV size must be positive. */
+    APPLICATION_CV_SIZE_INVALID(422, "Application CV size must be positive"),
+
+    /** Application has no current CV. */
+    APPLICATION_CV_NOT_FOUND(404, "Application CV not found"),
+
     /** Staff position not found. */
     POSITION_NOT_FOUND(404, "Staff position not found"),
 
