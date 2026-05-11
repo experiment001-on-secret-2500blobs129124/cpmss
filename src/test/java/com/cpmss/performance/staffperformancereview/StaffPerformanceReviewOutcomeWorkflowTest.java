@@ -1,6 +1,10 @@
 package com.cpmss.performance.staffperformancereview;
 
+import com.cpmss.hr.common.HrErrorCode;
+import com.cpmss.hr.staffposition.PositionSalaryHistoryRepository;
+import com.cpmss.hr.staffposition.StaffPosition;
 import com.cpmss.hr.staffposition.StaffPositionRepository;
+import com.cpmss.hr.staffpositionhistory.StaffPositionHistory;
 import com.cpmss.hr.staffpositionhistory.StaffPositionHistoryRepository;
 import com.cpmss.hr.staffsalaryhistory.StaffSalaryHistoryRepository;
 import com.cpmss.identity.auth.CurrentUser;
@@ -50,6 +54,9 @@ class StaffPerformanceReviewOutcomeWorkflowTest {
 
     @Mock
     private StaffPositionHistoryRepository positionHistoryRepository;
+
+    @Mock
+    private PositionSalaryHistoryRepository positionSalaryHistoryRepository;
 
     @Mock
     private StaffSalaryHistoryRepository salaryHistoryRepository;
@@ -131,6 +138,60 @@ class StaffPerformanceReviewOutcomeWorkflowTest {
         verify(reviewRepository, never()).save(any(StaffPerformanceReview.class));
     }
 
+
+
+    @Test
+    void raiseOutcomeRequiresCurrentPositionSalaryBand() {
+        UUID staffId = UUID.randomUUID();
+        UUID reviewerId = UUID.randomUUID();
+        UUID departmentId = UUID.randomUUID();
+        UUID positionId = UUID.randomUUID();
+        Person staff = person(staffId);
+        Person reviewer = person(reviewerId);
+        Department department = new Department();
+        department.setId(departmentId);
+        StaffPosition position = new StaffPosition();
+        position.setId(positionId);
+        StaffPositionHistory currentPosition = new StaffPositionHistory();
+        currentPosition.setPerson(staff);
+        currentPosition.setPosition(position);
+        currentPosition.setEffectiveDate(LocalDate.of(2025, 1, 1));
+        StaffPerformanceReview saved = new StaffPerformanceReview();
+        saved.setId(UUID.randomUUID());
+
+        when(currentUserService.currentUser()).thenReturn(new CurrentUser(
+                UUID.randomUUID(), reviewerId, SystemRole.HR_OFFICER, "hr@example.com"));
+        when(personRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(personRepository.findById(reviewerId)).thenReturn(Optional.of(reviewer));
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(reviewRepository.save(any(StaffPerformanceReview.class))).thenReturn(saved);
+        when(positionHistoryRepository.findByPersonIdAndEndDateIsNull(staffId))
+                .thenReturn(Optional.of(currentPosition));
+        when(positionSalaryHistoryRepository
+                .findFirstByPositionIdAndSalaryEffectiveDateLessThanEqualOrderBySalaryEffectiveDateDesc(
+                        positionId, LocalDate.of(2026, 5, 1)))
+                .thenReturn(Optional.empty());
+
+        StaffPerformanceReviewService service = service();
+
+        assertThatThrownBy(() -> service.create(new CreateStaffPerformanceReviewRequest(
+                staffId,
+                reviewerId,
+                departmentId,
+                LocalDate.of(2026, 5, 1),
+                new BigDecimal("88.50"),
+                PerformanceRating.GOOD.label(),
+                "Ready for raise",
+                false,
+                true,
+                null,
+                new BigDecimal("300.00"),
+                new BigDecimal("9000.00"))))
+                .isInstanceOfSatisfying(ApiException.class, ex ->
+                        assertThat(ex.getErrorCode()).isEqualTo(
+                                HrErrorCode.POSITION_SALARY_HISTORY_NOT_FOUND));
+    }
+
     private StaffPerformanceReviewService service() {
         return new StaffPerformanceReviewService(
                 reviewRepository,
@@ -138,6 +199,7 @@ class StaffPerformanceReviewOutcomeWorkflowTest {
                 departmentRepository,
                 staffPositionRepository,
                 positionHistoryRepository,
+                positionSalaryHistoryRepository,
                 salaryHistoryRepository,
                 mapper,
                 currentUserService,

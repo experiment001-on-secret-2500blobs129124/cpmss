@@ -2,6 +2,8 @@ package com.cpmss.performance.staffperformancereview;
 
 import com.cpmss.hr.common.HrErrorCode;
 import com.cpmss.hr.staffposition.StaffPosition;
+import com.cpmss.hr.staffposition.PositionSalaryHistory;
+import com.cpmss.hr.staffposition.PositionSalaryHistoryRepository;
 import com.cpmss.hr.staffposition.StaffPositionRepository;
 import com.cpmss.hr.staffpositionhistory.StaffPositionHistory;
 import com.cpmss.hr.staffpositionhistory.StaffPositionHistoryRepository;
@@ -54,6 +56,7 @@ public class StaffPerformanceReviewService {
     private final DepartmentRepository departmentRepository;
     private final StaffPositionRepository staffPositionRepository;
     private final StaffPositionHistoryRepository positionHistoryRepository;
+    private final PositionSalaryHistoryRepository positionSalaryHistoryRepository;
     private final StaffSalaryHistoryRepository salaryHistoryRepository;
     private final StaffPerformanceReviewMapper mapper;
     private final CurrentUserService currentUserService;
@@ -70,6 +73,7 @@ public class StaffPerformanceReviewService {
      * @param departmentRepository repository used to resolve departments
      * @param staffPositionRepository repository used to resolve promotion positions
      * @param positionHistoryRepository repository used to write promotion history
+     * @param positionSalaryHistoryRepository repository used to resolve salary bands
      * @param salaryHistoryRepository repository used to write raise history
      * @param mapper mapper used to expose primitive DTO values
      */
@@ -78,6 +82,7 @@ public class StaffPerformanceReviewService {
                                          DepartmentRepository departmentRepository,
                                          StaffPositionRepository staffPositionRepository,
                                          StaffPositionHistoryRepository positionHistoryRepository,
+                                         PositionSalaryHistoryRepository positionSalaryHistoryRepository,
                                          StaffSalaryHistoryRepository salaryHistoryRepository,
                                          StaffPerformanceReviewMapper mapper,
                                          CurrentUserService currentUserService,
@@ -87,6 +92,7 @@ public class StaffPerformanceReviewService {
         this.departmentRepository = departmentRepository;
         this.staffPositionRepository = staffPositionRepository;
         this.positionHistoryRepository = positionHistoryRepository;
+        this.positionSalaryHistoryRepository = positionSalaryHistoryRepository;
         this.salaryHistoryRepository = salaryHistoryRepository;
         this.mapper = mapper;
         this.currentUserService = currentUserService;
@@ -263,6 +269,13 @@ public class StaffPerformanceReviewService {
         }
         salaryRules.validateBaseDailyRatePositive(request.newBaseDailyRate());
         salaryRules.validateMaximumSalaryPositive(request.newMaximumSalary());
+        StaffPosition raisePosition = resolveRaisePosition(request, staff);
+        PositionSalaryHistory salaryBand = positionSalaryHistoryRepository
+                .findFirstByPositionIdAndSalaryEffectiveDateLessThanEqualOrderBySalaryEffectiveDateDesc(
+                        raisePosition.getId(), request.reviewDate())
+                .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_SALARY_HISTORY_NOT_FOUND));
+        salaryRules.validateWithinPositionMaximum(
+                request.newMaximumSalary(), salaryBand.getMaximumSalary());
         if (salaryHistoryRepository.existsByStaffIdAndEffectiveDate(
                 staff.getId(), request.reviewDate())) {
             throw new ApiException(HrErrorCode.STAFF_SALARY_HISTORY_DUPLICATE);
@@ -281,6 +294,18 @@ public class StaffPerformanceReviewService {
         history.setApprovedBy(reviewer);
         history.setReviewId(review.getId());
         salaryHistoryRepository.save(history);
+    }
+
+
+    private StaffPosition resolveRaisePosition(CreateStaffPerformanceReviewRequest request,
+                                               Person staff) {
+        if (Boolean.TRUE.equals(request.resultedInPromotion())) {
+            return staffPositionRepository.findById(request.newPositionId())
+                    .orElseThrow(() -> new ApiException(HrErrorCode.POSITION_NOT_FOUND));
+        }
+        return positionHistoryRepository.findByPersonIdAndEndDateIsNull(staff.getId())
+                .map(StaffPositionHistory::getPosition)
+                .orElseThrow(() -> new ApiException(HrErrorCode.STAFF_POSITION_HISTORY_NOT_FOUND));
     }
 
     private boolean canViewReview(CurrentUser user, StaffPerformanceReview review) {

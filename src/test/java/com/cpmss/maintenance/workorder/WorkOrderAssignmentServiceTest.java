@@ -80,6 +80,7 @@ class WorkOrderAssignmentServiceTest {
         verify(assignmentRepository).save(assignmentCaptor.capture());
         verify(repository).save(workOrder);
         assertThat(workOrder.getCompany()).isSameAs(company);
+        assertThat(workOrder.getJobStatus()).isEqualTo(WorkOrderStatus.ASSIGNED);
         assertThat(assignmentCaptor.getValue().getWorkOrder()).isSameAs(workOrder);
         assertThat(assignmentCaptor.getValue().getCompany()).isSameAs(company);
         assertThat(response.companyId()).isEqualTo(companyId);
@@ -118,6 +119,7 @@ class WorkOrderAssignmentServiceTest {
     private static WorkOrder workOrder(UUID id) {
         WorkOrder workOrder = new WorkOrder();
         workOrder.setId(id);
+        workOrder.setJobStatus(WorkOrderStatus.PENDING);
         return workOrder;
     }
 

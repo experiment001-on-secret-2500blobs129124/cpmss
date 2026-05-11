@@ -185,6 +185,8 @@ public class WorkOrderService {
             throw new ApiException(MaintenanceErrorCode.WORK_ORDER_ASSIGNMENT_DUPLICATE);
         }
 
+        rules.validateStatusTransition(workOrder.getJobStatus(), WorkOrderStatus.ASSIGNED);
+
         WorkOrderAssignedTo assignment = new WorkOrderAssignedTo();
         assignment.setWorkOrder(workOrder);
         assignment.setCompany(company);
@@ -192,6 +194,7 @@ public class WorkOrderService {
         assignment = assignmentRepository.save(assignment);
 
         workOrder.setCompany(company);
+        workOrder.setJobStatus(WorkOrderStatus.ASSIGNED);
         repository.save(workOrder);
 
         log.info("Vendor assigned to work order: workOrder={}, company={}, date={}",
