@@ -52,6 +52,9 @@ public enum CommonErrorCode implements ErrorCode {
 
     // --- Unexpected ---
 
+    /** Object-storage operation failed. */
+    FILE_STORAGE_FAILURE(500, "File storage operation failed"),
+
     /** Unexpected server failure. */
     UNEXPECTED_ERROR(500, "An unexpected error occurred"),
 

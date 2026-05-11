@@ -150,6 +150,7 @@ only when a rule or error boundary needs a distinct client contract.
 | `RESOURCE_NOT_FOUND` | 404 | Requested entity or aggregate was not found. |
 | `RESOURCE_CONFLICT` | 409 | Existing state conflicts with the requested change. |
 | `UNEXPECTED_ERROR` | 500 | Unexpected server failure. |
+| `FILE_STORAGE_FAILURE` | 500 | MinIO/S3 object-storage operation failed. |
 
 ### Identity And Authorization
 
@@ -277,6 +278,11 @@ only when a rule or error boundary needs a distinct client contract.
 | `STAFF_POSITION_DUPLICATE` | 409 | Staff position title already exists in the department. |
 | `HIRE_AGREEMENT_INTERVIEW_REQUIRED` | 422 | Hire agreement lacks a passed interview. |
 | `HIRE_AGREEMENT_START_DATE_INVALID` | 422 | Employment start date is before application date. |
+| `APPLICATION_CV_FILE_REQUIRED` | 422 | Current application CV upload is missing file content. |
+| `APPLICATION_CV_FILENAME_REQUIRED` | 422 | Current application CV upload is missing display filename. |
+| `APPLICATION_CV_CONTENT_TYPE_REQUIRED` | 422 | Current application CV upload is missing content type. |
+| `APPLICATION_CV_SIZE_INVALID` | 422 | Current application CV size must be positive. |
+| `APPLICATION_CV_NOT_FOUND` | 404 | The application has no current CV metadata. |
 | `RECRUITMENT_RESULT_FINAL` | 422 | Interview result cannot be changed after final state. |
 | `SHIFT_TIME_WINDOW_INVALID` | 422 | Shift start/end time is missing or out of order. |
 | `ATTENDANCE_TIME_WINDOW_INVALID` | 422 | Check-in/check-out time is missing or out of order. |

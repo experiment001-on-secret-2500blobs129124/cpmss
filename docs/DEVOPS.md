@@ -23,6 +23,8 @@ DB_PASSWORD=changeme
 
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=changeme
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_BUCKET=cpmss-files
 
 JWT_SECRET=your-secret-key
 ```
@@ -38,6 +40,12 @@ spring:
     password: ${DB_PASSWORD}
 jwt:
   secret: ${JWT_SECRET}
+storage:
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ROOT_USER:minioadmin}
+    secret-key: ${MINIO_ROOT_PASSWORD:minioadmin}
+    bucket: ${MINIO_BUCKET:cpmss-files}
 ```
 
 ### Secret Management Per Environment
@@ -283,8 +291,9 @@ pipeline {
                     sh '''
                         # Write secrets to a temp .env file locally — never inline in the command
                         # string, which would expose them in the server process list (ps aux).
-                        printf 'DB_PASSWORD=%s\nJWT_SECRET=%s\nMINIO_ROOT_USER=%s\nMINIO_ROOT_PASSWORD=%s\n' \
-                            "$DB_PASSWORD" "$JWT_SECRET" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" > /tmp/deploy.env
+                        printf 'DB_PASSWORD=%s\nJWT_SECRET=%s\nMINIO_ROOT_USER=%s\nMINIO_ROOT_PASSWORD=%s\nMINIO_ENDPOINT=%s\nMINIO_BUCKET=%s\n' \
+                            "$DB_PASSWORD" "$JWT_SECRET" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" \
+                            "http://minio:9000" "cpmss-files" > /tmp/deploy.env
 
                         # Transfer the .env file to the server, then deploy
                         scp -i $SSH_KEY /tmp/deploy.env deploy@server:/app/.env

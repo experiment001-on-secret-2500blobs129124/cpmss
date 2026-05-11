@@ -107,13 +107,16 @@ src/main/resources/db/migration/
   V5__add_team_name.sql                      ← Adds team_name to Person_Supervision
   V6__add_internal_report.sql                ← Internal_Report table
   V7__add_internal_report_constraints.sql    ← Deferred CHECKs for V6
+  V8__add_application_cv_storage.sql         ← Application current-CV metadata
+  V9__add_application_cv_constraints.sql     ← Deferred CHECKs for V8
 ```
 
 Numbered migrations run once, in order.
 After the schema is shared or released, add a new migration instead of editing
 an applied one. Pre-release baseline edits require a database reset.
 `V3`/`V4` add the auth tables and constraints. `V6`/`V7` add the internal
-reporting table and constraints. The `R__` prefix is Flyway's repeatable
+reporting table and constraints. `V8`/`V9` add current application-CV
+metadata and constraints. The `R__` prefix is Flyway's repeatable
 migration convention for dev-only seed data.
 
 A `CommandLineRunner` bean annotated with `@Profile("dev")` can run dev-only
